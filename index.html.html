@@ -1,0 +1,2560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Die Akker — Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --burg:#7a1528;--burg2:#9e1e35;
+  --cream:#faf7f4;--white:#ffffff;--ink:#1a0d10;
+  --border:#e0d5cc;--surface:#f2ece6;--muted:#9a8070;
+  --gold:#c8922a;--gold2:#e8b84b;--gold-l:#fdf6e8;
+  --green:#1a7a45;--green-l:#eaf5ee;--green-b:#b8dfc7;
+  --orange:#b85c10;--red:#8e1a1a;--red-l:#fdeaea;--red-b:#f5b8b8;
+  --blue:#1a4a7a;--blue-l:#e8f0f8;
+  --navy:#0d1b2e;--navy2:#152438;
+  --sh:0 2px 12px rgba(122,21,40,0.08);--sh2:0 8px 30px rgba(122,21,40,0.12);
+  --sw:260px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
+
+/* LOADING SCREEN */
+#loadScreen{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:1rem;}
+#loadScreen h1{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:#fff;letter-spacing:0.1em;}
+#loadScreen p{color:rgba(255,255,255,0.4);font-size:0.85rem;letter-spacing:0.1em;}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* LOGIN */
+#ls{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,var(--navy) 0%,#1c0a14 55%,var(--burg) 100%);
+  z-index:1000;padding:1.5rem;display:none;}
+.lc{width:100%;max-width:360px;background:rgba(255,255,255,0.06);backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:2.5rem 1.8rem;
+  box-shadow:0 24px 64px rgba(0,0,0,0.5);}
+.lc-logo{text-align:center;margin-bottom:2rem;}
+.lc-logo h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:0.1em;color:#fff;line-height:1;}
+.lc-logo p{font-size:0.68rem;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-top:0.3rem;}
+.gold-line{width:40px;height:2px;background:var(--gold);margin:0.7rem auto;}
+.rg{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:1.5rem;}
+.rb{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:12px;
+  padding:0.9rem 0.4rem;cursor:pointer;text-align:center;transition:all 0.2s;
+  color:rgba(255,255,255,0.5);font-family:'Karla',sans-serif;}
+.rb:hover{border-color:rgba(200,146,42,0.5);color:var(--gold2);}
+.rb.sel{background:var(--burg);border-color:var(--burg2);color:#fff;box-shadow:0 4px 16px rgba(122,21,40,0.4);}
+.rb .ri{font-size:1.4rem;display:block;margin-bottom:0.3rem;}
+.rb .rl{font-size:0.7rem;font-weight:600;letter-spacing:0.05em;}
+.lf{display:flex;flex-direction:column;gap:0.7rem;}
+.lf input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;
+  padding:0.85rem 1rem;color:#fff;font-family:'Karla',sans-serif;font-size:0.95rem;outline:none;transition:border-color 0.2s;}
+.lf input::placeholder{color:rgba(255,255,255,0.25);}
+.lf input:focus{border-color:var(--gold);}
+.lerr{color:#f87171;font-size:0.8rem;text-align:center;display:none;padding:0.3rem 0;}
+.lbtn{background:var(--burg);color:#fff;border:none;border-radius:10px;padding:0.9rem;
+  font-family:'Karla',sans-serif;font-weight:700;font-size:0.88rem;letter-spacing:0.1em;
+  text-transform:uppercase;cursor:pointer;transition:all 0.2s;width:100%;}
+.lbtn:hover{background:var(--burg2);}
+.lhint{text-align:center;font-size:0.68rem;color:rgba(255,255,255,0.2);margin-top:1rem;line-height:1.8;}
+
+/* APP */
+#app{display:none;height:100%;flex-direction:row;}
+#app.show{display:flex;}
+
+/* SIDEBAR */
+.sb{width:var(--sw);height:100%;background:var(--navy2);display:flex;flex-direction:column;
+  flex-shrink:0;transition:transform 0.3s cubic-bezier(.4,0,.2,1);z-index:200;overflow-y:auto;}
+.sb-hd{padding:1.2rem 1rem 1rem;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;}
+.sb-brand{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.09em;color:#fff;}
+.sb-tag{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-top:0.1rem;}
+.sb-user{display:flex;align-items:center;gap:0.6rem;background:rgba(255,255,255,0.05);border-radius:10px;padding:0.6rem 0.8rem;margin-top:0.8rem;}
+.sb-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;flex-shrink:0;}
+.sb-un{font-size:0.82rem;font-weight:600;color:#fff;}
+.sb-ur{font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);}
+.sb-nav{padding:0.8rem 0.7rem;flex:1;}
+.nlbl{font-size:0.58rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:0.5rem 0.5rem 0.25rem;}
+.ni{display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0.8rem;border-radius:8px;cursor:pointer;color:rgba(255,255,255,0.5);font-size:0.84rem;font-weight:500;transition:all 0.15s;margin-bottom:0.1rem;}
+.ni:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.85);}
+.ni.act{background:var(--burg);color:#fff;box-shadow:0 2px 8px rgba(122,21,40,0.4);}
+.ni .ic{font-size:1rem;width:20px;text-align:center;flex-shrink:0;}
+.ni .lb{flex:1;}
+.ni .bdg{background:var(--gold);color:var(--navy);font-size:0.58rem;font-weight:700;padding:0.12rem 0.45rem;border-radius:20px;}
+.ngh{display:flex;align-items:center;gap:0.7rem;padding:0.55rem 0.8rem;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);color:rgba(255,255,255,0.55);font-size:0.78rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:0.15rem;transition:all 0.15s;}
+.ngh:hover{background:rgba(255,255,255,0.07);}
+.ngh .arr{font-size:0.6rem;transition:transform 0.2s;margin-left:auto;}
+.ngh.op .arr{transform:rotate(180deg);}
+.ngs{display:none;padding-left:0.4rem;}
+.ngs.op{display:block;}
+.nsi{display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.8rem;border-radius:6px;cursor:pointer;color:rgba(255,255,255,0.4);font-size:0.82rem;transition:all 0.15s;margin-bottom:0.08rem;}
+.nsi:hover{color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.04);}
+.nsi.act{color:var(--gold2);background:rgba(200,146,42,0.1);}
+.nsi .dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.sb-ft{padding:0.8rem 0.7rem;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;}
+.lout{display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0.8rem;border-radius:8px;cursor:pointer;color:rgba(255,255,255,0.3);font-size:0.82rem;transition:all 0.15s;}
+.lout:hover{color:var(--red-l);background:rgba(142,26,26,0.15);}
+
+/* SYNC INDICATOR */
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-left:auto;flex-shrink:0;}
+.sync-dot.syncing{background:var(--gold);animation:pulse 1s infinite;}
+.sync-dot.err{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* MAIN */
+.main{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:var(--white);border-bottom:2px solid var(--burg);padding:0 1.2rem;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 8px rgba(122,21,40,0.06);}
+.tb-l{display:flex;align-items:center;gap:0.8rem;}
+.tb-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.07em;color:var(--burg);}
+.tb-r{display:flex;align-items:center;gap:0.7rem;}
+.tb-date{font-size:0.72rem;color:var(--muted);font-weight:500;}
+.ham{background:none;border:none;cursor:pointer;width:36px;height:36px;display:none;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0;}
+.ham:hover{background:var(--surface);}
+.hl{display:flex;flex-direction:column;gap:4px;}
+.hl span{display:block;width:20px;height:2px;background:var(--burg);border-radius:2px;}
+.sa{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.ct-area{padding:1.2rem;max-width:900px;}
+
+/* OVERLAY */
+.ov{display:none;position:fixed;inset:0;background:rgba(13,27,46,0.55);z-index:199;backdrop-filter:blur(2px);}
+.ov.show{display:block;}
+
+/* PANELS */
+.pnl{display:none;animation:fu .2s ease;}
+.pnl.act{display:block;}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.1rem;box-shadow:var(--sh);margin-bottom:0.9rem;}
+.card-title{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.07em;color:var(--burg);margin-bottom:0.8rem;}
+.stitle{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:0.07em;color:var(--burg);margin:1.4rem 0 0.7rem;display:flex;align-items:center;gap:0.7rem;}
+.stitle::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* STATS */
+.sgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.7rem;margin-bottom:1rem;}
+@media(min-width:500px){.sgrid{grid-template-columns:repeat(4,1fr);}}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem 0.9rem;box-shadow:var(--sh);border-top:3px solid var(--border);}
+.stat.cb{border-top-color:var(--burg);}.stat.cg{border-top-color:var(--green);}.stat.co{border-top-color:var(--gold);}.stat.cr{border-top-color:var(--red);}
+.snum{font-family:'Bebas Neue',sans-serif;font-size:2rem;line-height:1;}
+.slbl{font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-top:0.2rem;}
+.nb{color:var(--burg);}.ng{color:var(--green);}.no{color:var(--gold);}.nr{color:var(--red);}
+
+/* BADGES */
+.bdg{display:inline-block;font-size:0.63rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:0.18rem 0.55rem;border-radius:20px;}
+.bgg{background:var(--green-l);color:var(--green);border:1px solid var(--green-b);}
+.bgr{background:var(--red-l);color:var(--red);border:1px solid var(--red-b);}
+.bgo{background:var(--gold-l);color:var(--gold);border:1px solid #f0d090;}
+.bgb{background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;}
+.bgm{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+
+/* BUTTONS */
+.btn{font-family:'Karla',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.65rem 1.1rem;border:none;border-radius:8px;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.4rem;}
+.bp{background:var(--burg);color:#fff;}.bp:hover{background:var(--burg2);}
+.bs{background:var(--surface);color:var(--ink);border:1px solid var(--border);}.bs:hover{border-color:var(--burg);color:var(--burg);}
+.bgn{background:var(--green);color:#fff;}
+.bsm{padding:0.38rem 0.8rem;font-size:0.7rem;}
+.brow{display:flex;gap:0.6rem;flex-wrap:wrap;}
+
+/* FORMS */
+.fg{margin-bottom:0.75rem;}
+.fg label{display:block;font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem;}
+.fg input,.fg select,.fg textarea{width:100%;background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.9rem;color:var(--ink);outline:none;transition:border-color 0.2s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--burg);background:#fff;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:0.7rem;}
+@media(max-width:400px){.fg2{grid-template-columns:1fr;}}
+
+/* TABLES */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tbl{width:100%;border-collapse:collapse;font-size:0.82rem;min-width:280px;}
+.tbl th{background:var(--surface);color:var(--muted);font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.6rem 0.7rem;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+.tbl td{padding:0.6rem 0.7rem;border-bottom:1px solid var(--surface);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--cream);}
+.tbl .r{text-align:right;font-weight:600;}
+
+/* SEARCH */
+.sb2{display:flex;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.6rem 0.9rem;margin-bottom:0.8rem;gap:0.5rem;}
+.sb2 input{flex:1;border:none;background:none;font-family:'Karla',sans-serif;font-size:0.88rem;color:var(--ink);outline:none;}
+.sb2 input::placeholder{color:var(--muted);}
+
+/* CAT TABS */
+.ctabs{display:flex;gap:0.4rem;overflow-x:auto;padding-bottom:0.4rem;margin-bottom:0.8rem;scrollbar-width:none;}
+.ctabs::-webkit-scrollbar{display:none;}
+.ct{background:var(--white);border:1px solid var(--border);color:var(--muted);font-family:'Karla',sans-serif;font-size:0.73rem;font-weight:700;padding:0.32rem 0.75rem;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+.ct.act{background:var(--burg);color:#fff;border-color:var(--burg);}
+.ct:hover:not(.act){border-color:var(--burg);color:var(--burg);}
+
+/* STOCKTAKE */
+.sti{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.8rem;transition:border-color 0.2s;}
+.sti:focus-within{border-color:var(--burg);}
+.sti-inf{flex:1;min-width:0;}
+.sti-name{font-weight:600;font-size:0.88rem;}
+.sti-meta{font-size:0.7rem;color:var(--muted);margin-top:0.1rem;}
+.sti-ctrl{display:flex;flex-direction:column;align-items:flex-end;gap:0.1rem;}
+.sti-in{width:70px;text-align:center;border:1px solid var(--border);border-radius:7px;padding:0.4rem 0.3rem;font-family:'Bebas Neue',sans-serif;font-size:1.25rem;color:var(--burg);background:var(--cream);outline:none;-moz-appearance:textfield;}
+.sti-in::-webkit-outer-spin-button,.sti-in::-webkit-inner-spin-button{-webkit-appearance:none;}
+.sti-in:focus{border-color:var(--burg);background:#fff;}
+.sti-u{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
+
+/* CASHUP */
+.cu-card{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:0.8rem;overflow:hidden;box-shadow:var(--sh);}
+.cu-hdr{background:linear-gradient(135deg,var(--burg),var(--burg2));padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;}
+.cu-hdr input{border:none;background:transparent;font-family:'Karla',sans-serif;font-weight:700;font-size:0.95rem;color:#fff;outline:none;flex:1;}
+.cu-hdr input::placeholder{color:rgba(255,255,255,0.5);}
+.cu-pill{background:rgba(255,255,255,0.15);border-radius:20px;padding:0.2rem 0.7rem;font-size:0.75rem;font-weight:700;color:#fff;white-space:nowrap;}
+.cu-flds{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;padding:0.8rem;}
+.cf{display:flex;flex-direction:column;gap:0.2rem;}
+.cf label{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
+.cf input{border:1px solid var(--border);border-radius:7px;padding:0.45rem 0.6rem;font-family:'Karla',sans-serif;font-size:0.9rem;color:var(--ink);background:var(--cream);outline:none;text-align:right;transition:border-color 0.2s;}
+.cf input:focus{border-color:var(--burg);background:#fff;}
+.cu-ft{background:var(--surface);padding:0.55rem 1rem;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);font-size:0.8rem;color:var(--muted);}
+.cu-ft strong{color:var(--ink);}
+
+/* DENOM */
+.dg{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;padding:0.2rem 0;}
+.di{display:flex;flex-direction:column;align-items:center;gap:0.2rem;}
+.di-l{font-size:0.65rem;font-weight:700;color:var(--muted);}
+.di-i{width:100%;border:1px solid var(--border);border-radius:7px;padding:0.4rem 0.3rem;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--burg);background:var(--cream);outline:none;-moz-appearance:textfield;}
+.di-i::-webkit-outer-spin-button,.di-i::-webkit-inner-spin-button{-webkit-appearance:none;}
+.di-i:focus{border-color:var(--burg);background:#fff;}
+.di-v{font-size:0.7rem;color:var(--green);font-weight:600;}
+
+/* SUMMARY ROWS */
+.sr{display:flex;justify-content:space-between;align-items:center;padding:0.55rem 0;border-bottom:1px solid var(--surface);font-size:0.84rem;}
+.sr:last-child{border-bottom:none;}
+.sr.tot{font-weight:700;font-size:0.92rem;padding:0.7rem 0;border-top:2px solid var(--border);border-bottom:none;margin-top:0.2rem;}
+.am{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;}
+
+/* VARIANCE */
+.vc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;}
+.vc-i{flex:1;min-width:0;}
+.vc-nm{font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.vc-mt{font-size:0.7rem;color:var(--muted);margin-top:0.1rem;}
+.vc-d{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;min-width:50px;text-align:right;}
+.vpos{color:var(--green);}.vneg{color:var(--red);}.vzero{color:var(--muted);}
+
+/* PAYROLL */
+.pr{display:flex;align-items:center;padding:0.7rem 0;border-bottom:1px solid var(--surface);gap:0.5rem;}
+.pr:last-child{border-bottom:none;}
+.prav{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0;}
+.pri{flex:1;min-width:0;}
+.prn{font-weight:600;font-size:0.88rem;}
+.prp{font-size:0.7rem;color:var(--muted);}
+.ri{width:65px;text-align:right;border:1px solid var(--blue-l);border-radius:6px;padding:0.3rem;font-size:0.85rem;color:var(--blue);background:var(--blue-l);outline:none;}
+.ri:focus{border-color:var(--blue);}
+.hi{width:52px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:0.3rem;font-size:0.88rem;color:var(--burg);background:var(--cream);outline:none;}
+.hi:focus{border-color:var(--burg);}
+.pnet{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:var(--green);min-width:78px;text-align:right;}
+
+/* SUPPLIER */
+.sc{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.6rem;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:0.8rem;box-shadow:var(--sh);}
+.sc:active{transform:scale(0.98);}
+.sc:hover{border-color:var(--burg);box-shadow:var(--sh2);}
+
+/* PENDING */
+.pc{background:var(--white);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;padding:1rem;margin-bottom:0.8rem;box-shadow:var(--sh);}
+
+/* ROSTER */
+.roster-card{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:0.8rem;overflow:hidden;box-shadow:var(--sh);}
+.roster-staff-hdr{background:linear-gradient(135deg,var(--burg),var(--burg2));padding:0.7rem 1rem;display:flex;align-items:center;gap:0.7rem;}
+.roster-staff-av{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0;}
+.roster-staff-name{font-weight:700;font-size:0.92rem;color:#fff;flex:1;}
+.roster-staff-role{font-size:0.68rem;color:rgba(255,255,255,0.7);}
+.roster-hours-pill{background:rgba(255,255,255,0.15);border-radius:20px;padding:0.2rem 0.7rem;font-size:0.75rem;font-weight:700;color:#fff;}
+.roster-day{display:flex;align-items:center;padding:0.55rem 0.9rem;border-bottom:1px solid var(--surface);gap:0.7rem;}
+.roster-day:last-child{border-bottom:none;}
+.roster-day.weekend{background:#fdf6f0;}
+.roster-day-label{width:36px;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;flex-shrink:0;}
+.roster-day-date{width:22px;font-size:0.72rem;color:var(--muted);flex-shrink:0;}
+.roster-day.weekend .roster-day-label{color:var(--gold);}
+.roster-time-group{display:flex;align-items:center;gap:0.4rem;flex:1;flex-wrap:wrap;}
+.rtime{width:72px;border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.4rem;font-family:'Karla',sans-serif;font-size:0.85rem;color:var(--ink);background:var(--cream);outline:none;text-align:center;transition:border-color 0.2s;}
+.rtime:focus{border-color:var(--burg);background:#fff;}
+.rbreak{width:52px;border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.4rem;font-family:'Karla',sans-serif;font-size:0.82rem;color:var(--orange);background:#fef9f5;outline:none;text-align:center;}
+.rbreak:focus{border-color:var(--orange);}
+.roster-day-hrs{min-width:40px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--green);}
+.roster-day-hrs.zero{color:var(--surface);}
+.rt-lbl{font-size:0.58rem;color:var(--muted);text-align:center;display:block;margin-top:1px;letter-spacing:0.05em;}
+.sum-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+.sum-table th{background:var(--surface);color:var(--muted);font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.5rem 0.7rem;text-align:left;border-bottom:1px solid var(--border);}
+.sum-table td{padding:0.55rem 0.7rem;border-bottom:1px solid var(--surface);vertical-align:middle;}
+.sum-table tr:last-child td{border-bottom:none;}
+.sum-table .r{text-align:right;font-weight:600;}
+.sum-table .earn{color:var(--green);font-family:'Bebas Neue',sans-serif;font-size:1rem;}
+
+/* LEAVE */
+.leave-summary{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.6rem;box-shadow:var(--sh);}
+.leave-row{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.8rem 1rem;margin-bottom:0.5rem;box-shadow:var(--sh);}
+.leave-row-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem;}
+.leave-row-meta{font-size:0.72rem;color:var(--muted);line-height:1.5;}
+.lp-annual{background:#e8f0f8;color:var(--blue);border:1px solid #b8cfe8;}
+.lp-sick{background:var(--red-l);color:var(--red);border:1px solid var(--red-b);}
+.lp-unpaid{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.lp-family{background:var(--green-l);color:var(--green);border:1px solid var(--green-b);}
+
+/* DOCS */
+.doc-staff-row{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.8rem 1rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.8rem;cursor:pointer;box-shadow:var(--sh);transition:border-color 0.15s;}
+.doc-staff-row:hover{border-color:var(--burg);}
+.doc-check-row{display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--surface);font-size:0.84rem;}
+.doc-check-row:last-child{border-bottom:none;}
+.doc-tick{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;}
+.dt-yes{background:var(--green-l);color:var(--green);}
+.dt-no{background:var(--surface);color:var(--muted);}
+.doc-log-item{background:var(--surface);border-radius:8px;padding:0.65rem 0.8rem;margin-bottom:0.4rem;}
+.doc-log-type{font-weight:700;font-size:0.85rem;}
+.doc-log-meta{font-size:0.72rem;color:var(--muted);margin-top:0.1rem;}
+.sbar{height:3px;background:var(--surface);border-radius:2px;margin-top:0.3rem;overflow:hidden;}
+.sbf{height:100%;border-radius:2px;}
+
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(13,27,46,0.6);z-index:500;align-items:flex-end;justify-content:center;}
+.mo.open{display:flex;}
+.md{background:var(--white);border-radius:18px 18px 0 0;padding:1.5rem 1.2rem 2.5rem;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;animation:su .25s ease;}
+@keyframes su{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.md-title{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:var(--burg);letter-spacing:0.06em;margin-bottom:1rem;}
+.md-close{float:right;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted);}
+
+/* WAITER LOG */
+.wl-summary-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.6rem;box-shadow:var(--sh);}
+.wl-summary-hdr{display:flex;align-items:center;gap:0.7rem;margin-bottom:0.6rem;}
+.wl-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:#fff;flex-shrink:0;}
+.wl-stat-row{display:flex;gap:0.4rem;flex-wrap:wrap;}
+.wl-stat{font-size:0.72rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:20px;white-space:nowrap;}
+.wl-void{background:var(--red-l);color:var(--red);border:1px solid var(--red-b);}
+.wl-promo{background:var(--gold-l);color:var(--gold);border:1px solid #f0d090;}
+.wl-late{background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;}
+.wl-other{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.wl-event-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.8rem 1rem;margin-bottom:0.5rem;box-shadow:var(--sh);}
+.wl-event-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem;}
+.wl-event-meta{font-size:0.72rem;color:var(--muted);line-height:1.6;}
+.wl-pin-dot-filled{background:var(--burg)!important;border-color:var(--burg)!important;}
+
+/* TOAST */
+.toast{position:fixed;top:1rem;right:1rem;left:1rem;background:var(--green);color:#fff;padding:0.85rem 1.1rem;border-radius:10px;font-size:0.85rem;font-weight:600;z-index:999;display:none;box-shadow:0 4px 20px rgba(0,0,0,0.2);text-align:center;max-width:400px;margin:0 auto;}
+.toast.err{background:var(--red);}
+.toast.on{display:block;animation:fu .3s ease;}
+
+/* MOBILE */
+@media(max-width:700px){
+  .sb{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:200;}
+  .sb.open{transform:translateX(0);}
+  .main{width:100%;}
+  .ham{display:flex;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadScreen">
+  <h1>DIE AKKER</h1>
+  <div class="spinner"></div>
+  <p>CONNECTING...</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div id="ls">
+  <div class="lc">
+    <div class="lc-logo">
+      <h1>DIE AKKER</h1>
+      <div class="gold-line"></div>
+      <p>Koffiehuis — Management System</p>
+    </div>
+    <div class="lf">
+      <input type="text" id="lu" placeholder="Username" autocomplete="username" autocapitalize="none">
+      <input type="password" id="lp" placeholder="Password" autocomplete="current-password">
+      <div class="lerr" id="lerr">Incorrect username or password</div>
+      <button class="lbtn" onclick="doLogin()">Sign In →</button>
+    </div>
+    <div class="lhint">Contact your owner if you don't have login details</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="ov" id="ov" onclick="closeSb()"></div>
+  <nav class="sb" id="sb">
+    <div class="sb-hd">
+      <div class="sb-brand">DIE AKKER</div>
+      <div class="sb-tag">Koffiehuis — Potchefstroom</div>
+      <div class="sb-user">
+        <div class="sb-av" id="sbAv">Z</div>
+        <div style="flex:1"><div class="sb-un" id="sbNm">Zavier</div><div class="sb-ur" id="sbRl">Owner</div></div>
+        <div class="sync-dot" id="syncDot" title="Live sync"></div>
+      </div>
+    </div>
+    <div class="sb-nav">
+      <div class="ni act" onclick="go('dashboard',this)" id="n-dashboard"><span class="ic">📊</span><span class="lb">Dashboard</span></div>
+      <div class="nlbl" style="margin-top:0.5rem">Stock</div>
+      <div class="ngh op" onclick="tg(this,'g-stock')"><span>📦</span>&nbsp;STOCK<span class="arr">▼</span></div>
+      <div class="ngs op" id="g-stock">
+        <div class="nsi act" onclick="go('stocktake',this)" id="n-stocktake"><span class="dot"></span>Stock Take</div>
+        <div class="nsi" onclick="go('stockdb',this)" id="n-stockdb" data-r="manager"><span class="dot"></span>Stock Database</div>
+        <div class="nsi" onclick="go('pending',this)" id="n-pending" data-r="manager"><span class="dot"></span>Pending <span class="bdg" id="pendBdg">0</span></div>
+      </div>
+      <div class="nlbl" style="margin-top:0.5rem">Orders</div>
+      <div class="ngh" onclick="tg(this,'g-orders')"><span>🛒</span>&nbsp;ORDERS<span class="arr">▼</span></div>
+      <div class="ngs" id="g-orders">
+        <div class="nsi" onclick="go('orders',this)" id="n-orders" data-r="manager"><span class="dot"></span>Supplier Orders</div>
+      </div>
+      <div class="nlbl" style="margin-top:0.5rem">Finance</div>
+      <div class="ngh" onclick="tg(this,'g-fin')"><span>💰</span>&nbsp;FINANCE<span class="arr">▼</span></div>
+      <div class="ngs" id="g-fin">
+        <div class="nsi" onclick="go('cashup',this)" id="n-cashup" data-r="manager"><span class="dot"></span>Daily Cash Up</div>
+        <div class="nsi" onclick="go('reports',this)" id="n-reports" data-r="manager"><span class="dot"></span>Reports & Variance</div>
+        <div class="nsi" onclick="go('waiterlog',this)" id="n-waiterlog" data-r="manager"><span class="dot"></span>Waiter Accountability</div>
+      </div>
+      <div class="nlbl" style="margin-top:0.5rem">People</div>
+      <div class="ngh" onclick="tg(this,'g-hr')"><span>👥</span>&nbsp;HUMAN RESOURCES<span class="arr">▼</span></div>
+      <div class="ngs" id="g-hr">
+        <div class="nsi" onclick="go('roster',this)"  id="n-roster"  data-r="manager"><span class="dot"></span>Shift Roster</div>
+        <div class="nsi" onclick="go('payroll',this)" id="n-payroll" data-r="manager"><span class="dot"></span>Payroll</div>
+        <div class="nsi" onclick="go('staff',this)"   id="n-staff"   data-r="owner"><span class="dot"></span>Staff Management</div>
+        <div class="nsi" onclick="go('leave',this)"   id="n-leave"   data-r="manager"><span class="dot"></span>Leave Management</div>
+        <div class="nsi" onclick="go('docs',this)"    id="n-docs"    data-r="manager"><span class="dot"></span>Staff Documents</div>
+      </div>
+      <div class="nlbl" style="margin-top:0.5rem">System</div>
+      <div class="ni" onclick="go('auditlog',this)" id="n-auditlog" data-r="owner"><span class="ic">📋</span><span class="lb">Audit Log</span></div>
+      <div class="ni" onclick="go('settings',this)" id="n-settings" data-r="owner"><span class="ic">⚙️</span><span class="lb">Settings</span></div>
+    </div>
+    <div class="sb-ft"><div class="lout" onclick="doLogout()"><span>🚪</span> Sign Out</div></div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-l">
+        <button class="ham" onclick="toggleSb()"><div class="hl"><span></span><span></span><span></span></div></button>
+        <div class="tb-title" id="tbTitle">Dashboard</div>
+      </div>
+      <div class="tb-r">
+        <div class="tb-date" id="tbDate"></div>
+        <span class="bdg bgo" id="tbRole">Owner</span>
+      </div>
+    </div>
+    <div class="sa"><div class="ct-area">
+
+      <!-- DASHBOARD -->
+      <div class="pnl act" id="p-dashboard">
+        <div id="ownerSt" style="display:none">
+          <div class="sgrid">
+            <div class="stat cb"><div class="snum nb" id="ds-tot">—</div><div class="slbl">Total Items</div></div>
+            <div class="stat cg"><div class="snum ng" id="ds-ok">—</div><div class="slbl">Healthy Stock</div></div>
+            <div class="stat co"><div class="snum no" id="ds-low">—</div><div class="slbl">Low Stock</div></div>
+            <div class="stat cr"><div class="snum nr" id="ds-out">—</div><div class="slbl">Out of Stock</div></div>
+          </div>
+        </div>
+        <div class="stitle">Low Stock Alerts</div>
+        <div class="card" id="dashAl"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
+        <div class="stitle">Recent Activity</div>
+        <div class="card" id="dashActivity"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
+      </div>
+
+      <!-- STOCK TAKE -->
+      <div class="pnl" id="p-stocktake">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem">
+          <div style="font-size:0.82rem;color:var(--muted)">Enter physical count for each item.</div>
+          <button class="btn bp bsm" onclick="submitST()">Submit ✓</button>
+        </div>
+        <select id="stDiv" onchange="renderST()" style="width:100%;padding:0.65rem 0.9rem;border:1px solid var(--border);border-radius:8px;background:var(--white);font-family:'Karla',sans-serif;font-size:0.88rem;outline:none;margin-bottom:0.8rem">
+          <option value="all">All Divisions</option>
+          <option>Meat</option><option>Dairy</option><option>Produce</option>
+          <option>Dry Goods</option><option>Bar</option><option>Bakery</option>
+          <option>Freezer</option><option>Cleaning</option>
+        </select>
+        <div class="sb2"><span>🔍</span><input type="text" id="stSrch" placeholder="Search items..." oninput="renderST()"></div>
+        <div id="stList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading stock...</div></div>
+      </div>
+
+      <!-- STOCK DB -->
+      <div class="pnl" id="p-stockdb">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem">
+          <div style="font-size:0.82rem;color:var(--muted)">Tap any item to update stock.</div>
+          <button class="btn bs bsm" id="addStBtn" onclick="openMo('moAddStock')">+ Add Item</button>
+        </div>
+        <div class="sb2"><span>🔍</span><input type="text" id="dbSrch" placeholder="Search..." oninput="renderDB()"></div>
+        <div class="ctabs" id="dbTabs"></div>
+        <div class="card" style="padding:0.5rem 1rem" id="dbList"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
+      </div>
+
+      <!-- PENDING -->
+      <div class="pnl" id="p-pending">
+        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Stocktakes submitted by staff awaiting your approval.</div>
+        <div id="pendList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading...</div></div>
+      </div>
+
+      <!-- ORDERS -->
+      <div class="pnl" id="p-orders">
+        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Select a supplier to build and send an order.</div>
+        <div id="supList"></div>
+      </div>
+
+      <!-- CASH UP -->
+      <div class="pnl" id="p-cashup">
+        <div class="card">
+          <div class="fg2">
+            <div class="fg"><label>Date</label><input type="date" id="cuDate"></div>
+            <div class="fg"><label>Shift</label><select id="cuShift"><option>Morning</option><option>Afternoon</option><option>Evening</option></select></div>
+          </div>
+        </div>
+        <div id="cuCards"></div>
+        <div class="stitle">Denomination Count</div>
+        <div class="card" id="denomCard"></div>
+        <div class="stitle">Summary</div>
+        <div class="card" id="cuTots"></div>
+        <div class="brow" style="margin-top:0.8rem">
+          <button class="btn bp" onclick="saveCU()">Save Cash Up</button>
+          <button class="btn bs" onclick="window.print()">🖨️ Print</button>
+        </div>
+      </div>
+
+      <!-- REPORTS -->
+      <div class="pnl" id="p-reports">
+        <div class="stitle">Variance Report</div>
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.8rem;flex-wrap:wrap">
+          <button class="ct act" onclick="fVar('all',this)">All</button>
+          <button class="ct" onclick="fVar('loss',this)">🔴 Losses</button>
+          <button class="ct" onclick="fVar('over',this)">🟢 Overstock</button>
+        </div>
+        <div id="varList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading...</div></div>
+        <div class="stitle">Top Loss Items</div>
+        <div class="card" id="topLoss"></div>
+      </div>
+
+      <!-- WAITER ACCOUNTABILITY -->
+      <div class="pnl" id="p-waiterlog">
+        <!-- Top bar: log event + filter -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem">
+          <div style="font-size:0.82rem;color:var(--muted)">Track voids, promos and late arrivals per waiter.</div>
+          <button class="btn bp bsm" onclick="openWLModal(null)">+ Log Event</button>
+        </div>
+        <!-- Date filter -->
+        <div class="card" style="padding:0.7rem 1rem;margin-bottom:0.8rem">
+          <div style="display:flex;align-items:center;gap:0.7rem;flex-wrap:wrap">
+            <div class="fg" style="margin:0;flex:1;min-width:120px"><label>From</label><input type="date" id="wlFrom" oninput="renderWL()"></div>
+            <div class="fg" style="margin:0;flex:1;min-width:120px"><label>To</label><input type="date" id="wlTo" oninput="renderWL()"></div>
+            <button class="btn bs bsm" onclick="wlToday()">Today</button>
+            <button class="btn bs bsm" onclick="wlMonth()">This Month</button>
+          </div>
+        </div>
+        <!-- Waiter summary cards -->
+        <div id="wlSummaryCards"></div>
+        <!-- Event type filter tabs -->
+        <div class="stitle">Event Log</div>
+        <div class="ctabs" id="wlTypeTabs">
+          <button class="ct act" onclick="filterWL('all',this)">All</button>
+          <button class="ct" onclick="filterWL('void',this)">🚫 Voids</button>
+          <button class="ct" onclick="filterWL('promo',this)">🎁 Promos</button>
+          <button class="ct" onclick="filterWL('late',this)">⏰ Late</button>
+          <button class="ct" onclick="filterWL('other',this)">📋 Other</button>
+        </div>
+        <!-- Waiter filter -->
+        <div class="ctabs" id="wlWaiterTabs"></div>
+        <!-- Log list -->
+        <div id="wlList"></div>
+      </div>
+
+      <!-- ROSTER -->
+      <div class="pnl" id="p-roster">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem">
+          <button class="btn bs bsm" onclick="rosterWeek(-1)">‹ Prev</button>
+          <div style="text-align:center">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--burg)" id="rosterWeekLabel"></div>
+            <div style="font-size:0.7rem;color:var(--muted)" id="rosterWeekRange"></div>
+          </div>
+          <button class="btn bs bsm" onclick="rosterWeek(1)">Next ›</button>
+        </div>
+        <div class="ctabs" id="rosterGroupTabs"></div>
+        <div id="rosterGrid"></div>
+        <div class="stitle">Week Summary</div>
+        <div class="card" id="rosterSummary"></div>
+        <div class="brow" style="margin-top:0.5rem">
+          <button class="btn bp" onclick="saveRoster()">Save Roster</button>
+          <button class="btn bs" onclick="printRoster()">🖨️ Print Roster</button>
+        </div>
+      </div>
+
+      <!-- PAYROLL -->
+      <div class="pnl" id="p-payroll">
+        <div class="stitle">Managers Payroll</div>
+        <div class="card">
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">🔵 Blue = hourly rate (owner can edit) · Enter hours worked this month</div>
+          <div id="mgrPay"></div>
+          <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;color:var(--green)">Total Manager Net Pay:</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="mgrTot">R 0.00</span>
+          </div>
+        </div>
+        <div class="stitle">Kitchen Staff Payroll</div>
+        <div class="card">
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">🔵 Blue = hourly rate (owner can edit) · Enter hours worked this month</div>
+          <div id="kitPay"></div>
+          <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;color:var(--green)">Total Kitchen Net Pay:</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="kitTot">R 0.00</span>
+          </div>
+        </div>
+        <div class="stitle">Waiters / Floor Staff</div>
+        <div class="card">
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Enter monthly sales and tips per waiter to calculate commission</div>
+          <div id="waiterPay"></div>
+          <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;color:var(--green)">Total Waiter Net Pay:</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="waiterTot">R 0.00</span>
+          </div>
+        </div>
+        <div class="brow" style="margin-top:0.5rem">
+          <button class="btn bp" onclick="savePay()">Save Payroll</button>
+        </div>
+      </div>
+
+      <!-- STAFF -->
+      <div class="pnl" id="p-staff">
+        <!-- Tab switcher -->
+        <div class="ctabs" id="staffTabs" style="margin-bottom:0.8rem">
+          <button class="ct act" onclick="switchStaffTab('list',this)">👥 Staff List</button>
+          <button class="ct" onclick="switchStaffTab('logins',this)">🔐 User Logins</button>
+        </div>
+
+        <!-- STAFF LIST TAB -->
+        <div id="staffTabList">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+            <div style="font-size:0.82rem;color:var(--muted)">Manage all staff records.</div>
+            <div class="brow">
+              <button class="btn bs bsm" onclick="openPinSetup()">🔑 Set Waiter PINs</button>
+              <button class="btn bp bsm" onclick="openEditStf(null)">+ Add Staff</button>
+            </div>
+          </div>
+          <div class="card" style="padding:0.5rem 1rem" id="staffList"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
+        </div>
+
+        <!-- USER LOGINS TAB -->
+        <div id="staffTabLogins" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+            <div style="font-size:0.82rem;color:var(--muted)">Create and manage individual login accounts for each staff member.</div>
+            <button class="btn bp bsm" onclick="openAddLogin()">+ Create Login</button>
+          </div>
+          <div id="loginsList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- LEAVE -->
+      <div class="pnl" id="p-leave">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem">
+          <div style="font-size:0.82rem;color:var(--muted)">Kitchen staff leave.</div>
+          <button class="btn bp bsm" onclick="openLeaveModal(null)">+ Record Leave</button>
+        </div>
+        <div class="ctabs" id="leaveTabs"></div>
+        <div id="leaveCards"></div>
+        <div class="stitle">Leave Log</div>
+        <div id="leaveLog"></div>
+      </div>
+
+      <!-- DOCS -->
+      <div class="pnl" id="p-docs">
+        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">Documents for all staff.</div>
+        <div class="sb2"><span>🔍</span><input type="text" id="docSearch" placeholder="Search staff..." oninput="renderDocs()"></div>
+        <div id="docStaffList"></div>
+      </div>
+
+      <!-- AUDIT LOG -->
+      <div class="pnl" id="p-auditlog">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem">
+          <div style="font-size:0.82rem;color:var(--muted)">All important actions taken by staff in the system.</div>
+          <button class="btn bs bsm" onclick="loadAuditLog()">🔄 Refresh</button>
+        </div>
+        <!-- Filters -->
+        <div class="card" style="padding:0.7rem 1rem;margin-bottom:0.8rem">
+          <div style="display:flex;gap:0.7rem;flex-wrap:wrap;align-items:center">
+            <div class="fg" style="margin:0;flex:1;min-width:120px"><label>From</label><input type="date" id="auFrom"></div>
+            <div class="fg" style="margin:0;flex:1;min-width:120px"><label>To</label><input type="date" id="auTo"></div>
+            <div class="fg" style="margin:0;flex:1;min-width:120px"><label>User</label><select id="auUser" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"><option value="">All Users</option></select></div>
+          </div>
+          <div class="ctabs" style="margin-top:0.7rem;margin-bottom:0">
+            <button class="ct act" onclick="auFilter('all',this)">All Actions</button>
+            <button class="ct" onclick="auFilter('login',this)">🔐 Logins</button>
+            <button class="ct" onclick="auFilter('stock',this)">📦 Stock</button>
+            <button class="ct" onclick="auFilter('cashup',this)">💰 Cash Up</button>
+            <button class="ct" onclick="auFilter('approval',this)">✓ Approvals</button>
+            <button class="ct" onclick="auFilter('leave',this)">📅 Leave</button>
+            <button class="ct" onclick="auFilter('roster',this)">📋 Roster</button>
+            <button class="ct" onclick="auFilter('payroll',this)">💵 Payroll</button>
+            <button class="ct" onclick="auFilter('staff',this)">👤 Staff</button>
+          </div>
+        </div>
+        <div id="auditList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading...</div></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="pnl" id="p-settings">
+        <div class="card">
+          <div class="card-title">Restaurant Information</div>
+          <div class="fg"><label>Restaurant Name</label><input type="text" value="Die Akker Koffiehuis"></div>
+          <div class="fg"><label>Owner</label><input type="text" value="Zavier"></div>
+          <div class="fg"><label>Location</label><input type="text" value="Potchefstroom"></div>
+          <button class="btn bp bsm" onclick="showToast('Settings saved')">Save</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Change Passwords</div>
+          <div class="fg2">
+            <div class="fg"><label>Manager Password</label><input type="password" placeholder="New password"></div>
+            <div class="fg"><label>Staff Password</label><input type="password" placeholder="New password"></div>
+          </div>
+          <button class="btn bp bsm" onclick="showToast('Passwords updated')">Update</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Database Status</div>
+          <div id="dbStatus" style="font-size:0.82rem;color:var(--muted)">Checking connection...</div>
+        </div>
+      </div>
+
+    </div></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="mo" id="moAddStock">
+  <div class="md">
+    <button class="md-close" onclick="closeMo('moAddStock')">✕</button>
+    <div class="md-title">Add Stock Item</div>
+    <div class="fg"><label>Name</label><input type="text" id="nsNm" placeholder="e.g. Chicken Breast"></div>
+    <div class="fg2">
+      <div class="fg"><label>Category</label><select id="nsCat"><option>Meat</option><option>Dairy</option><option>Produce</option><option>Dry Goods</option><option>Bar</option><option>Bakery</option><option>Freezer</option><option>Cleaning</option></select></div>
+      <div class="fg"><label>Unit</label><select id="nsUn"><option>kg</option><option>litre</option><option>unit</option><option>pack</option><option>box</option></select></div>
+    </div>
+    <div class="fg2">
+      <div class="fg"><label>Current Stock</label><input type="number" id="nsQty" placeholder="0" min="0"></div>
+      <div class="fg"><label>Min Level</label><input type="number" id="nsMn" placeholder="0" min="0"></div>
+    </div>
+    <div class="fg"><label>Supplier</label>
+      <select id="nsSup"><option>Chubby Chick</option><option>Vision Meats</option><option>Impala</option><option>Alpha Kafee</option><option>Trucon Foods</option><option>Bidfood</option><option>Golden Valley Cheese</option><option>Spesbona Eggs</option><option>Highveld Mushrooms</option><option>Avolands</option><option>MafBake</option><option>Bakels</option><option>Golden Catering</option><option>SLO-JO</option><option>Instant Gourmet</option><option>Mitch CGC</option><option>Sir Juice</option><option>Other</option></select>
+    </div>
+    <button class="btn bp" onclick="saveNS()" style="width:100%;margin-top:0.3rem">Save Item</button>
+  </div>
+</div>
+
+<div class="mo" id="moOrder">
+  <div class="md">
+    <button class="md-close" onclick="closeMo('moOrder')">✕</button>
+    <div class="md-title" id="ordTitle">Order</div>
+    <div id="ordBody"></div>
+    <div class="brow" style="margin-top:1rem" id="ordBtns">
+      <button class="btn bgn" id="ordSendBtn" onclick="sendOrd()">📱 Send WhatsApp</button>
+      <button class="btn bs" onclick="copyOrd()">📋 Copy</button>
+    </div>
+  </div>
+</div>
+
+<div class="mo" id="moAddStaff">
+  <div class="md">
+    <button class="md-close" onclick="closeMo('moAddStaff')">✕</button>
+    <div class="md-title" id="stfModalTitle">Add New Staff</div>
+    <input type="hidden" id="stfId">
+    <div class="fg"><label>Full Name</label><input type="text" id="stfName" placeholder="e.g. Reanne Bruwer"></div>
+    <div class="fg2">
+      <div class="fg"><label>SA ID Number</label><input type="text" id="stfIdNum" placeholder="e.g. 0503180361084" maxlength="13" inputmode="numeric"></div>
+      <div class="fg"><label>EFT Account</label><input type="text" id="stfEft" placeholder="e.g. FNB 123456789"></div>
+    </div>
+    <div class="fg"><label>Role / Position</label>
+      <select id="stfRole">
+        <option>Waiter</option><option>Bar</option><option>Manager</option>
+        <option>Kitchen — Stock Take</option><option>Kitchen — Baker</option>
+        <option>Kitchen — Griller</option><option>Kitchen — Orders</option>
+        <option>Kitchen — Soft Serve</option>
+        <option>Casual</option><option>Cleaning</option>
+      </select>
+    </div>
+    <div class="fg"><label>Division</label>
+      <select id="stfDiv"><option>Floor</option><option>Kitchen</option><option>Bar</option><option>Management</option></select>
+    </div>
+    <button class="btn bp" onclick="saveStf()" style="width:100%;margin-top:0.3rem">Save</button>
+  </div>
+</div>
+
+<div class="mo" id="moLeave">
+  <div class="md">
+    <button class="md-close" onclick="closeMo('moLeave')">✕</button>
+    <div class="md-title">Record Leave</div>
+    <input type="hidden" id="leaveEditId">
+    <div class="fg"><label>Staff Member</label><select id="leaveStaff" style="width:100%"></select></div>
+    <div class="fg"><label>Leave Type</label>
+      <select id="leaveType">
+        <option value="Annual">🏖️ Annual Leave</option>
+        <option value="Sick">🤒 Sick Leave</option>
+        <option value="Family">👨‍👩‍👧 Family Responsibility</option>
+        <option value="Unpaid">💸 Unpaid Leave</option>
+        <option value="Other">📋 Other</option>
+      </select>
+    </div>
+    <div class="fg2">
+      <div class="fg"><label>Start Date</label><input type="date" id="leaveStart"></div>
+      <div class="fg"><label>End Date</label><input type="date" id="leaveEnd"></div>
+    </div>
+    <div class="fg"><label>Status</label>
+      <select id="leaveStatus">
+        <option value="Approved">✅ Approved</option>
+        <option value="Pending">⏳ Pending</option>
+        <option value="Sick — Unplanned">🤒 Sick — Unplanned</option>
+        <option value="Rejected">❌ Rejected</option>
+      </select>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="leaveNotes" rows="2" placeholder="e.g. Doctor's note received..."></textarea></div>
+    <button class="btn bp" onclick="saveLeave()" style="width:100%;margin-top:0.3rem">Save Leave Record</button>
+  </div>
+</div>
+
+<div class="mo" id="moDocs">
+  <div class="md">
+    <button class="md-close" onclick="closeMo('moDocs')">✕</button>
+    <div class="md-title" id="docModalName">Documents</div>
+    <input type="hidden" id="docStaffName">
+    <div style="margin-bottom:1rem">
+      <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem">Required Documents</div>
+      <div id="docChecklist"></div>
+    </div>
+    <div style="background:var(--surface);border-radius:10px;padding:0.9rem;margin-bottom:1rem">
+      <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.6rem">Add Document</div>
+      <div class="fg"><label>Document Type</label>
+        <select id="newDocType"><option>Employment Contract</option><option>ID Copy</option><option>Proof of Residence</option><option>Bank Details</option><option>Verbal Warning</option><option>Written Warning</option><option>Final Warning</option><option>Sick Note</option><option>Medical Certificate</option><option>Performance Review</option><option>Other</option></select>
+      </div>
+      <div class="fg"><label>Date Received</label><input type="date" id="newDocDate"></div>
+      <div class="fg"><label>Notes</label><input type="text" id="newDocNotes" placeholder="e.g. Original received, filed"></div>
+      <div class="fg"><label>Upload File (optional)</label><input type="file" id="newDocFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.82rem;width:100%"></div>
+      <button class="btn bp bsm" onclick="saveDoc()" style="width:100%;margin-top:0.2rem">Add Document</button>
+    </div>
+    <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem">Logged Documents</div>
+    <div id="docLogList"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// SUPABASE INIT
+// ═══════════════════════════════════════════
+const SUPABASE_URL  = 'https://yvfvcmmycqiqkctkpepz.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2ZnZjbW15Y3FpcWtjdGtwZXB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDc4NzAsImV4cCI6MjA5MDg4Mzg3MH0.oY71GHNoEgxPWFmS8VGujv2Z9V5EyZP9EO-CiPn19vM';
+const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+// All sections available
+const ALL_SECTIONS = ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','staff','leave','docs','auditlog','settings'];
+const SECTION_LABELS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',docs:'Staff Documents',auditlog:'Audit Log',settings:'Settings'};
+
+// Owner always has full access (hardcoded, cannot be removed)
+const ACCESS = {
+  owner:   ALL_SECTIONS,
+  manager: ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','docs'],
+  employee:['dashboard','stocktake'],
+};
+const TTLS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',docs:'Staff Documents',auditlog:'Audit Log',settings:'Settings'};
+const INVESTOR_SECTIONS = ['dashboard','reports','cashup','payroll','roster','leave','docs','auditlog'];
+const ROLE_COLORS = {owner:'#7a1528', investor:'#c8922a', manager:'#152438', employee:'#1a6e40'};
+
+let CU = null, appLogins = [];
+
+async function doLogin(){
+  const u   = document.getElementById('lu').value.trim().toLowerCase();
+  const p   = document.getElementById('lp').value;
+  const err = document.getElementById('lerr');
+
+  // All logins — including owners — come from Supabase
+  const {data, error} = await SB.from('staff_logins')
+    .select('*').eq('username', u).eq('password', p).eq('active', true).single();
+
+  if(error || !data){ err.style.display='block'; return; }
+  err.style.display='none';
+
+  CU = {
+    username: u,
+    name:     data.staff_name,
+    color:    ROLE_COLORS[data.role_level] || '#152438',
+    role:     data.role_level || 'employee',
+    access:   data.role_level === 'owner' ? ALL_SECTIONS : data.role_level === 'investor' ? INVESTOR_SECTIONS : (data.access_sections || ['dashboard','stocktake']),
+    loginId:  data.id,
+  };
+  await logAudit('login','Login',`Signed in as ${CU.role}`);
+  launchApp();
+}
+
+function doLogout(){
+  if(CU) logAudit('login','Logout','Signed out');
+  CU = null;
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('ls').style.display='flex';
+}
+
+async function launchApp(){
+  document.getElementById('ls').style.display='none';
+  document.getElementById('app').classList.add('show');
+  document.getElementById('sbAv').textContent=CU.name[0].toUpperCase();
+  document.getElementById('sbAv').style.background=CU.color;
+  document.getElementById('sbNm').textContent=CU.name;
+  const roleLabel = CU.role==='owner'?'Owner':CU.role==='investor'?'Investor':CU.role==='manager'?'Manager':'Staff';
+  const roleBadge = CU.role==='owner'?'bgo':CU.role==='investor'?'bgo':CU.role==='manager'?'bgb':'bgg';
+  document.getElementById('sbRl').textContent=roleLabel;
+  document.getElementById('tbRole').textContent=roleLabel;
+  document.getElementById('tbRole').className='bdg '+roleBadge;
+  document.getElementById('tbDate').textContent=new Date().toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'long'});
+
+  // Hide nav items not in this user's access list
+  const userAccess = CU.access || [];
+  document.querySelectorAll('[data-r]').forEach(el=>{
+    const req = el.getAttribute('data-r');
+    // data-r="manager" means needs manager+ or owner
+    const rRank={employee:0,manager:1,owner:2};
+    if(rRank[CU.role] < rRank[req]) el.style.display='none';
+  });
+  // Also hide specific nav items not in access
+  ALL_SECTIONS.forEach(s=>{
+    const el=document.getElementById('n-'+s);
+    if(el && !userAccess.includes(s)) el.style.display='none';
+  });
+
+  if(CU.role==='owner'||CU.role==='investor') document.getElementById('ownerSt').style.display='block';
+  setSyncStatus('syncing');
+  await loadAllData();
+  setSyncStatus('ok');
+}
+
+// ═══════════════════════════════════════════
+// SYNC STATUS
+// ═══════════════════════════════════════════
+function setSyncStatus(state){
+  const d=document.getElementById('syncDot');
+  d.className='sync-dot'+(state==='syncing'?' syncing':state==='err'?' err':'');
+  d.title=state==='ok'?'Live — all data synced':state==='syncing'?'Syncing...':'Sync error';
+}
+
+// ═══════════════════════════════════════════
+// DATA STORE
+// ═══════════════════════════════════════════
+let DB=[], stfD=[], pendingS=[], varianceD=[], payD={mgr:[],kit:[]}, leaveData=[], docsData={}, rosterData={};
+let stC={}, dbCat='All', varF='all', rosterGroup='Kitchen', rosterWeekOf=getMonday(new Date());
+
+async function loadAllData(){
+  try {
+    const [stockR, staffR, pendR, varR] = await Promise.all([
+      SB.from('stock').select('*').order('category').order('name'),
+      SB.from('staff').select('*').order('division').order('name'),
+      SB.from('stocktake_submissions').select('*').eq('status','pending').order('submitted_at',{ascending:false}),
+      SB.from('variance_log').select('*').order('recorded_at',{ascending:false}).limit(100),
+    ]);
+    DB       = stockR.data || [];
+    stfD     = staffR.data || [];
+    pendingS = pendR.data  || [];
+    varianceD= varR.data   || [];
+
+    // Load leave
+    const leaveR = await SB.from('leave_records').select('*').order('start_date',{ascending:false});
+    leaveData = leaveR.data || [];
+
+    // Load docs
+    const docsR = await SB.from('staff_documents').select('*').order('added_at',{ascending:false});
+    docsData = {};
+    (docsR.data||[]).forEach(d=>{ if(!docsData[d.staff_name]) docsData[d.staff_name]=[]; docsData[d.staff_name].push(d); });
+
+    // Load payroll for current month
+    const mo = new Date().toISOString().slice(0,7);
+    const payR = await SB.from('payroll').select('*').eq('month',mo);
+    buildPayData(payR.data||[]);
+
+    // Check DB status
+    document.getElementById('dbStatus').innerHTML = `<span style="color:var(--green);font-weight:700">✓ Connected</span> — Supabase live database · ${DB.length} stock items · ${stfD.length} staff`;
+
+    renderDash(); renderST(); renderDB(); renderPend(); renderSups();
+    renderCU(); renderVar(); renderPay(); renderStf(); initRosterPanel();
+    renderLeave(); renderDocs();
+
+    document.getElementById('pendBdg').textContent = pendingS.length || '';
+  } catch(err) {
+    setSyncStatus('err');
+    showToast('Database connection error. Check internet.', true);
+    console.error(err);
+  }
+}
+
+// ═══════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════
+function go(id,el){
+  const userAccess = CU?.access || [];
+  if(!userAccess.includes(id)){showToast('No access to this section.',true);return;}
+  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('act'));
+  document.querySelectorAll('.ni,.nsi').forEach(n=>n.classList.remove('act'));
+  document.getElementById('p-'+id).classList.add('act');
+  if(el)el.classList.add('act');
+  document.getElementById('tbTitle').textContent=TTLS[id]||id;
+  if(id==='roster') initRosterPanel();
+  if(id==='waiterlog') wlToday();
+  if(id==='auditlog') loadAuditLog();
+  if(id==='staff') loadStaffLogins();
+  closeSb();
+}
+function tg(h,g){ h.classList.toggle('op'); document.getElementById(g).classList.toggle('op'); }
+function toggleSb(){ document.getElementById('sb').classList.toggle('open'); document.getElementById('ov').classList.toggle('show'); }
+function closeSb(){ document.getElementById('sb').classList.remove('open'); document.getElementById('ov').classList.remove('show'); }
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+const CEM={Meat:'🥩',Dairy:'🧀',Produce:'🥦','Dry Goods':'🌾',Bar:'☕',Bakery:'🥐',Freezer:'❄️',Cleaning:'🧹'};
+function renderDash(){
+  const low=DB.filter(i=>i.stock<=i.min_level);
+  document.getElementById('ds-tot').textContent=DB.length;
+  document.getElementById('ds-ok').textContent=DB.filter(i=>i.stock>i.min_level).length;
+  document.getElementById('ds-low').textContent=low.filter(i=>i.stock>0).length;
+  document.getElementById('ds-out').textContent=low.filter(i=>i.stock<=0).length;
+  const el=document.getElementById('dashAl');
+  if(!low.length){el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted)">✅ All stock levels healthy</div>';return;}
+  el.innerHTML='<div class="tw"><table class="tbl"><thead><tr><th>Item</th><th>Supplier</th><th>Stock</th><th>Status</th></tr></thead><tbody>'+
+    low.slice(0,8).map(i=>`<tr><td><strong>${i.name}</strong></td><td style="font-size:0.75rem;color:var(--muted)">${i.supplier}</td><td class="r">${i.stock} ${i.unit}</td><td><span class="bdg ${i.stock<=0?'bgr':'bgo'}">${i.stock<=0?'OUT':'Low'}</span></td></tr>`).join('')+'</tbody></table></div>';
+  // Activity
+  const act=document.getElementById('dashActivity');
+  act.innerHTML='<div class="tw"><table class="tbl"><thead><tr><th>Time</th><th>Action</th><th>By</th><th>Status</th></tr></thead><tbody>'+
+    (pendingS.slice(0,3).map(s=>`<tr><td>${new Date(s.submitted_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'})}</td><td>Stocktake submitted</td><td>${s.submitted_by}</td><td><span class="bdg bgo">Pending</span></td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted)">No recent activity</td></tr>')+'</tbody></table></div>';
+}
+
+// ═══════════════════════════════════════════
+// STOCK TAKE
+// ═══════════════════════════════════════════
+function renderST(){
+  const d=document.getElementById('stDiv').value, q=document.getElementById('stSrch').value.toLowerCase();
+  let items=DB;
+  if(d!=='all') items=items.filter(i=>i.category===d);
+  if(q) items=items.filter(i=>i.name.toLowerCase().includes(q));
+  document.getElementById('stList').innerHTML=items.map(i=>`
+    <div class="sti">
+      <div class="sti-inf"><div class="sti-name">${i.name}</div><div class="sti-meta">${CEM[i.category]||''} ${i.category} · Expected: <strong>${i.stock} ${i.unit}</strong></div></div>
+      <div class="sti-ctrl">
+        <input type="number" class="sti-in" min="0" step="0.1" value="${stC[i.id]??''}" placeholder="${i.stock}" oninput="stC[${i.id}]=parseFloat(this.value)||0">
+        <div class="sti-u">${i.unit}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function submitST(){
+  const c=Object.keys(stC).length;
+  if(!c){showToast('Enter at least one count.',true);return;}
+  setSyncStatus('syncing');
+  const items=Object.entries(stC).map(([id,actual])=>{
+    const it=DB.find(i=>i.id===parseInt(id));
+    return it?{id:it.id,name:it.name,unit:it.unit,expected:it.stock,actual}:null;
+  }).filter(Boolean);
+  const sub={submitted_by:CU.name,submitted_role:CU.role,status:CU.role==='employee'?'pending':'approved',items};
+  const {error}=await SB.from('stocktake_submissions').insert(sub);
+  if(error){setSyncStatus('err');showToast('Error saving stocktake.',true);return;}
+  if(CU.role!=='employee'){
+    // Auto-approve: update stock levels
+    for(const s of items){
+      const diff=s.actual-s.expected;
+      await SB.from('stock').update({stock:s.actual,updated_at:new Date().toISOString()}).eq('id',s.id);
+      await SB.from('variance_log').insert({stock_id:s.id,item_name:s.name,unit:s.unit,expected:s.expected,actual:s.actual,diff});
+    }
+    showToast('Stock take approved and applied ✓');
+  } else {
+    showToast('Submitted — awaiting manager approval ✓');
+  }
+  stC={};
+  await loadAllData();
+  setSyncStatus('ok');
+}
+
+// ═══════════════════════════════════════════
+// STOCK DB
+// ═══════════════════════════════════════════
+const CATS=['All','Meat','Dairy','Produce','Dry Goods','Bar','Bakery','Freezer','Cleaning'];
+function renderDB(){
+  const q=document.getElementById('dbSrch').value.toLowerCase();
+  document.getElementById('dbTabs').innerHTML=CATS.map(c=>`<button class="ct ${dbCat===c?'act':''}" onclick="dbCat='${c}';renderDB()">${CEM[c]||'📦'} ${c}</button>`).join('');
+  let items=DB; if(dbCat!=='All')items=items.filter(i=>i.category===dbCat); if(q)items=items.filter(i=>i.name.toLowerCase().includes(q)||i.supplier.toLowerCase().includes(q));
+  const ce=['owner','manager'].includes(CU?.role);
+  document.getElementById('addStBtn').style.display=ce?'inline-flex':'none';
+  document.getElementById('dbList').innerHTML=items.map(i=>{
+    const pct=i.min_level>0?Math.min(100,Math.round(i.stock/i.min_level*100)):100;
+    const col=i.stock<=0?'var(--red)':i.stock<=i.min_level?'var(--orange)':'var(--green)';
+    return `<div style="display:flex;align-items:center;padding:0.7rem 0;border-bottom:1px solid var(--surface);gap:0.7rem;cursor:${ce?'pointer':'default'}" onclick="${ce?`qEd(${i.id})`:''}" >
+      <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:0.88rem">${i.name}</div><div style="font-size:0.7rem;color:var(--muted)">${CEM[i.category]||''} ${i.category} · <span style="background:var(--surface);padding:0.1rem 0.4rem;border-radius:3px;font-size:0.68rem">${i.supplier}</span></div><div class="sbar"><div class="sbf" style="width:${pct}%;background:${col}"></div></div></div>
+      <div style="text-align:right;min-width:55px"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${col}">${i.stock<=0?'OUT':i.stock}</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">${i.unit}</div></div>
+    </div>`;
+  }).join('');
+}
+
+async function qEd(id){
+  if(!['owner','manager'].includes(CU?.role))return;
+  const it=DB.find(i=>i.id===id); if(!it)return;
+  const v=prompt(`Update stock for "${it.name}"\nCurrent: ${it.stock} ${it.unit}\n\nNew quantity:`,it.stock);
+  if(v===null)return; const n=parseFloat(v); if(isNaN(n)||n<0){alert('Invalid.');return;}
+  setSyncStatus('syncing');
+  await SB.from('stock').update({stock:n,updated_at:new Date().toISOString()}).eq('id',id);
+  await loadAllData(); setSyncStatus('ok');
+}
+
+async function saveNS(){
+  const nm=document.getElementById('nsNm').value.trim(); if(!nm){alert('Enter a name.');return;}
+  setSyncStatus('syncing');
+  await SB.from('stock').insert({name:nm,category:document.getElementById('nsCat').value,unit:document.getElementById('nsUn').value,stock:parseFloat(document.getElementById('nsQty').value)||0,min_level:parseFloat(document.getElementById('nsMn').value)||0,supplier:document.getElementById('nsSup').value});
+  closeMo('moAddStock'); await loadAllData(); setSyncStatus('ok'); showToast(`${nm} added ✓`);
+}
+
+// ═══════════════════════════════════════════
+// PENDING STOCKTAKES
+// ═══════════════════════════════════════════
+function renderPend(){
+  document.getElementById('pendBdg').textContent=pendingS.length||'';
+  const el=document.getElementById('pendList');
+  if(!pendingS.length){el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">✅ No pending submissions</div>';return;}
+  el.innerHTML=pendingS.map(s=>`
+    <div class="pc">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem">
+        <div><div style="font-weight:700;font-size:0.92rem">${s.submitted_by} — ${new Date(s.submitted_at).toLocaleDateString('en-ZA')}</div><div style="font-size:0.72rem;color:var(--muted)">${s.items.length} items</div></div>
+        <span class="bdg bgo">Pending</span>
+      </div>
+      <div style="margin-bottom:0.7rem">
+        ${s.items.slice(0,5).map(i=>`<div style="display:flex;justify-content:space-between;font-size:0.82rem;padding:0.3rem 0;border-bottom:1px solid var(--surface)"><span>${i.name}</span><span style="color:var(--muted)">Exp:${i.expected} · <strong>${i.actual}</strong>${i.actual<i.expected?`<span style="color:var(--red)"> ▼${(i.expected-i.actual).toFixed(1)}</span>`:`<span style="color:var(--green)"> ▲${(i.actual-i.expected).toFixed(1)}</span>`}</span></div>`).join('')}
+      </div>
+      <div class="brow">
+        <button class="btn bgn bsm" onclick="appST('${s.id}')">✓ Approve</button>
+        <button class="btn bs bsm" onclick="rejST('${s.id}')">✕ Reject</button>
+      </div>
+    </div>`).join('');
+}
+
+async function appST(id){
+  setSyncStatus('syncing');
+  const s=pendingS.find(p=>p.id===id); if(!s)return;
+  for(const si of s.items){
+    await SB.from('stock').update({stock:si.actual,updated_at:new Date().toISOString()}).eq('id',si.id);
+    await SB.from('variance_log').insert({stock_id:si.id,item_name:si.name,unit:si.unit,expected:si.expected,actual:si.actual,diff:si.actual-si.expected});
+  }
+  await SB.from('stocktake_submissions').update({status:'approved'}).eq('id',id);
+  await logAudit('approval','Stocktake Approved',`Approved ${s.items.length} items from ${s.submitted_by}`);
+  await loadAllData(); setSyncStatus('ok'); showToast('Approved ✓');
+}
+
+async function rejST(id){
+  setSyncStatus('syncing');
+  await SB.from('stocktake_submissions').update({status:'rejected'}).eq('id',id);
+  await loadAllData(); setSyncStatus('ok'); showToast('Rejected.');
+}
+
+// ═══════════════════════════════════════════
+// ORDERS
+// ═══════════════════════════════════════════
+const SUPS={
+  'Chubby Chick':{c:'Ilze 083 414 0677',m:'wa',g:'Goeie môre Tannie',i:'Kan ons asb die volgende bestel:'},
+  'Vision Meats':{c:'Before 08:30',m:'phone',g:'Goeie môre',i:'Kan ons asb die volgende bestel:',urg:true},
+  'Impala':{c:'018 297 1171',m:'phone',g:'Good day',i:'Can we please order:'},
+  'Alpha Kafee':{c:'WA 071 113 5952',m:'wa',g:'Good morning',i:'Can we please order:'},
+  'Trucon Foods':{c:'Trudie 083 297 9607',m:'wa',g:'Goeie more Trudie',i:'Kan ek asb die volgende bestel:'},
+  'Bidfood':{c:'011 824 2014',m:'email',g:'Good morning',i:'Please supply:'},
+  'Golden Valley Cheese':{c:'083 401 4323',m:'wa',g:'Good morning',i:'Can we please order:'},
+  'Spesbona Eggs':{c:'079 224 6855',m:'wa',g:'Good morning',i:'Can we please order:'},
+  'Highveld Mushrooms':{c:'WhatsApp',m:'wa',g:'Good morning',i:'Can we please order:'},
+  'Avolands':{c:'WA Group',m:'wa',g:'Good day',i:'Can we please order:',urg:true},
+  'MafBake':{c:'WhatsApp',m:'wa',g:'Good morning',i:'Can we please order:'},
+  'Bakels':{c:'orders@sbakels.co.za',m:'email',g:'Good morning',i:'Please supply the following:'},
+  'Golden Catering':{c:'011 626 2216',m:'wa',g:'Good morning',i:'Can we please order:'},
+  'SLO-JO':{c:'orders@slo-jo.co.za',m:'email',g:'Good morning',i:'Please supply the following:'},
+  'Instant Gourmet':{c:'Stephen 071 455 8659',m:'wa',g:'Good day Stephen',i:'Can I please order:'},
+  'Mitch CGC':{c:'Mitch 078 099 5147',m:'wa',g:'Good day Mitch',i:'Can I please order:'},
+  'Sir Juice':{c:'OrdersJHB@sirfruit.co.za',m:'email',g:'Good morning',i:'Can we please order the following:'},
+  'Pienk Pilletjies':{c:'Telephone',m:'phone',g:'Good morning',i:'Can we please order:'},
+};
+let ordQ={},actSup=null;
+function renderSups(){
+  const mi={wa:'📱',phone:'📞',email:'📧'};
+  document.getElementById('supList').innerHTML=[...new Set(DB.map(i=>i.supplier))].sort().map(s=>{
+    const its=DB.filter(i=>i.supplier===s),low=its.filter(i=>i.stock<=i.min_level).length,inf=SUPS[s]||{};
+    return `<div class="sc" onclick="openOrd('${s.replace(/'/g,"\\'")}')">
+      <div style="font-size:1.5rem;flex-shrink:0">${mi[inf.m]||'📱'}</div>
+      <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:0.92rem">${s}${inf.urg?'<span class="bdg bgr" style="margin-left:0.5rem;font-size:0.58rem">⚠ Urgent</span>':''}</div><div style="font-size:0.72rem;color:var(--muted)">${inf.c||''} · ${its.length} items${low>0?` · <strong style="color:var(--red)">⚠ ${low} low</strong>`:''}</div></div>
+      <div style="color:var(--muted);font-size:1.1rem">›</div></div>`;
+  }).join('');
+}
+function openOrd(s){
+  actSup=s;ordQ={};const inf=SUPS[s]||{};
+  const its=[...DB.filter(i=>i.supplier===s)].sort((a,b)=>(a.stock<=a.min_level?0:1)-(b.stock<=b.min_level?0:1));
+  document.getElementById('ordTitle').textContent=s;
+  document.getElementById('ordBody').innerHTML=`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.8rem">${inf.c||''}</div>`+
+    its.map(i=>`<div class="sti" id="oi-${i.id}">
+      <div class="sti-inf"><div class="sti-name">${i.name}</div><div class="sti-meta">${i.stock<=i.min_level?'<strong style="color:var(--red)">⚠ LOW</strong> · ':''} Stock: ${i.stock} ${i.unit}</div></div>
+      <div style="display:flex;align-items:center;gap:0.4rem">
+        <button onclick="adjO(${i.id},-1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--surface);cursor:pointer;font-size:1rem">−</button>
+        <div style="text-align:center;min-width:26px"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--muted)" id="oq-${i.id}">0</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">${i.unit}</div></div>
+        <button onclick="adjO(${i.id},1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--burg);color:#fff;cursor:pointer;font-size:1rem">+</button>
+      </div></div>`).join('');
+  // Set correct send button based on method
+  const btn=document.getElementById('ordSendBtn');
+  if(inf.m==='email'){btn.innerHTML='📧 Send Email';btn.className='btn bp';}
+  else if(inf.m==='phone'){btn.innerHTML='📋 Copy (then call)';btn.className='btn bs';}
+  else if(inf.m==='app'){btn.innerHTML='📋 Copy for App';btn.className='btn bs';}
+  else{btn.innerHTML='📱 Send WhatsApp';btn.className='btn bgn';}
+  openMo('moOrder');
+}
+function adjO(id,d){const c=ordQ[id]||0,n=Math.max(0,c+d);if(!n)delete ordQ[id];else ordQ[id]=n;const e=document.getElementById('oq-'+id);if(e){e.textContent=n||'0';e.style.color=n>0?'var(--burg)':'var(--muted)';}const o=document.getElementById('oi-'+id);if(o)o.style.borderColor=n>0?'var(--burg)':'var(--border)';}
+function buildMsg(){const inf=SUPS[actSup]||{};const lines=Object.entries(ordQ).map(([id,q])=>{const it=DB.find(i=>i.id===parseInt(id));return it?`${q}x ${it.name} (${it.unit})`:null;}).filter(Boolean);if(!lines.length)return null;const td=new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'});return `${inf.g||'Good morning'}\n\n${inf.i||'Can we please order:'}\n${lines.join('\n')}${inf.urg?'\n\n⚠️ Required today before 08:30':''}\n\nThank you, Zavier\nDie Akker Koffiehuis\n(${td})`;}
+function sendOrd(){
+  const m=buildMsg();if(!m){showToast('Add items first.',true);return;}
+  const inf=SUPS[actSup]||{};
+  if(inf.m==='email'){
+    const subject=encodeURIComponent('Order — Die Akker Koffiehuis');
+    const body=encodeURIComponent(m);
+    const emailMatch=(inf.c||'').match(/[\w.-]+@[\w.-]+\.\w+/);
+    const to=emailMatch?emailMatch[0]:'';
+    window.open(`mailto:${to}?subject=${subject}&body=${body}`,'_blank');
+    closeMo('moOrder');showToast('Email client opened ✓');
+  } else if(inf.m==='phone'){
+    navigator.clipboard.writeText(m).then(()=>showToast('Order copied — call to place ✓'));
+    closeMo('moOrder');
+  } else if(inf.m==='app'){
+    navigator.clipboard.writeText(m).then(()=>showToast('Order copied — paste into Bidfood app ✓'));
+    closeMo('moOrder');
+  } else {
+    const d=(inf.c||'').replace(/\D/g,'');
+    window.open(d?`https://wa.me/27${d.replace(/^0/,'')}?text=${encodeURIComponent(m)}`:`https://wa.me/?text=${encodeURIComponent(m)}`,'_blank');
+    closeMo('moOrder');showToast('WhatsApp opened ✓');
+  }
+}
+function copyOrd(){const m=buildMsg();if(!m){showToast('Add items first.',true);return;}navigator.clipboard.writeText(m).then(()=>showToast('Copied ✓'));closeMo('moOrder');}
+
+// ═══════════════════════════════════════════
+// CASH UP
+// ═══════════════════════════════════════════
+let cuD={waiters:[{name:'Sipho',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Hes-mari',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Ethan',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Ine',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Daniella',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Tazmin',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Reanne',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0}],denoms:Array(11).fill(0)};
+const DNS=[200,100,50,20,10,5,2,1,0.5,0.2,0.1],DNL=['R 200','R 100','R 50','R 20','R 10','R 5','R 2','R 1','R 0.50','R 0.20','R 0.10'];
+function renderCU(){document.getElementById('cuDate').value=new Date().toISOString().split('T')[0];renderCUCards();renderDenoms();updCUTots();}
+function renderCUCards(){document.getElementById('cuCards').innerHTML=cuD.waiters.map((w,i)=>{const c=cuCalc(w);return `<div class="cu-card"><div class="cu-hdr"><input type="text" value="${w.name}" placeholder="Waiter name" oninput="cuD.waiters[${i}].name=this.value"><div class="cu-pill" id="cup-${i}">${c>=0?'R '+c.toFixed(2):'—'}</div></div><div class="cu-flds"><div class="cf"><label>Sales (Micros)</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.vk||''}" oninput="cuU(${i},'vk',this.value)"></div><div class="cf"><label>Cards</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.kt||''}" oninput="cuU(${i},'kt',this.value)"></div><div class="cf"><label>Cash Received</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.ks||''}" oninput="cuU(${i},'ks',this.value)"></div><div class="cf"><label>Zapper / SnapScan</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.zp||''}" oninput="cuU(${i},'zp',this.value)"></div><div class="cf"><label>Accounts</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.rk||''}" oninput="cuU(${i},'rk',this.value)"></div><div class="cf"><label>Student Card</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.st||''}" oninput="cuU(${i},'st',this.value)"></div><div class="cf"><label>Voids</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.vo||''}" oninput="cuU(${i},'vo',this.value)"></div><div class="cf"><label>Staff 25%</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.s2||''}" oninput="cuU(${i},'s2',this.value)"></div></div><div class="cu-ft"><span>Cash calculated:</span><strong id="cuf-${i}">${c>=0?'R '+c.toFixed(2):'—'}</strong></div></div>`;}).join('');}
+function cuCalc(w){if(!w.vk)return -1;return (w.vk||0)-(w.kt||0)-(w.rk||0)-(w.st||0)-(w.zp||0);}
+function cuU(i,f,v){cuD.waiters[i][f]=parseFloat(v)||0;const c=cuCalc(cuD.waiters[i]),s=c>=0?'R '+c.toFixed(2):'—';['cup-','cuf-'].forEach(p=>{const e=document.getElementById(p+i);if(e)e.textContent=s;});updCUTots();}
+function renderDenoms(){document.getElementById('denomCard').innerHTML=`<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Enter the count of each note/coin</div><div class="dg">${DNS.map((d,i)=>`<div class="di"><div class="di-l">${DNL[i]}</div><input type="number" class="di-i" inputmode="numeric" min="0" value="${cuD.denoms[i]||''}" placeholder="0" oninput="cuD.denoms[${i}]=parseInt(this.value)||0;updDV(${i},${d},this.value)"><div class="di-v" id="dv-${i}">R ${((cuD.denoms[i]||0)*d).toFixed(2)}</div></div>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border)"><span style="font-weight:700;font-size:0.88rem">Total Count:</span><span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--burg)" id="dTot">R 0.00</span></div>`;updDTot();}
+function updDV(i,d,v){const e=document.getElementById('dv-'+i);if(e)e.textContent='R '+((parseInt(v)||0)*d).toFixed(2);updDTot();updCUTots();}
+function updDTot(){const t=DNS.reduce((s,d,i)=>s+(cuD.denoms[i]||0)*d,0);const e=document.getElementById('dTot');if(e)e.textContent='R '+t.toFixed(2);return t;}
+function updCUTots(){const tV=cuD.waiters.reduce((s,w)=>s+(w.vk||0),0),tK=cuD.waiters.reduce((s,w)=>s+(w.kt||0),0),tC=cuD.waiters.reduce((s,w)=>s+(w.ks||0),0),tZ=cuD.waiters.reduce((s,w)=>s+(w.zp||0),0),tVo=cuD.waiters.reduce((s,w)=>s+(w.vo||0),0),tS=cuD.waiters.reduce((s,w)=>s+(w.s2||0),0),dT=updDTot(),diff=dT-tC,dc=Math.abs(diff)<0.01?'var(--green)':'var(--red)',db=Math.abs(diff)<0.01?'var(--green-l)':'var(--red-l)';document.getElementById('cuTots').innerHTML=`<div class="sr"><span>Total Sales (Micros)</span><span class="am nb">R ${tV.toFixed(2)}</span></div><div class="sr"><span>Total Cards</span><span class="am">R ${tK.toFixed(2)}</span></div><div class="sr"><span>Total Cash Received</span><span class="am">R ${tC.toFixed(2)}</span></div><div class="sr"><span>Total Zapper / SnapScan</span><span class="am">R ${tZ.toFixed(2)}</span></div><div class="sr"><span>Total Voids</span><span class="am nr">R ${tVo.toFixed(2)}</span></div><div class="sr"><span>Total Staff 25%</span><span class="am">R ${tS.toFixed(2)}</span></div><div class="sr tot"><span>Count Total</span><span class="am ng">R ${dT.toFixed(2)}</span></div><div style="background:${db};border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin-top:0.4rem"><span style="font-weight:700">Difference</span><span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${dc}">${diff>=0?'+':''}R ${diff.toFixed(2)}</span></div>`;}
+async function saveCU(){
+  setSyncStatus('syncing');
+  const dt=document.getElementById('cuDate').value, sh=document.getElementById('cuShift').value;
+  const {error}=await SB.from('cash_up').upsert({date:dt,shift:sh,waiters:cuD.waiters,denoms:cuD.denoms,saved_at:new Date().toISOString()},{onConflict:'date,shift'});
+  if(!error) await logAudit('cashup','Cash Up Saved',`${sh} shift cash up saved for ${dt}`);
+  setSyncStatus(error?'err':'ok');
+  showToast(error?'Error saving.':'Cash up saved to database ✓', !!error);
+}
+
+// ═══════════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════════
+function renderVar(){
+  let d=[...varianceD];if(varF==='loss')d=d.filter(v=>v.diff<0);if(varF==='over')d=d.filter(v=>v.diff>0);
+  const el=document.getElementById('varList');
+  if(!d.length){el.innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No variance data — submit a stock take first</div>';return;}
+  el.innerHTML=d.slice(0,30).map(v=>`<div class="vc"><div class="vc-i"><div class="vc-nm">${v.item_name}</div><div class="vc-mt">Expected: ${v.expected} · Actual: ${v.actual} ${v.unit}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem"><div class="vc-d ${v.diff<0?'vneg':v.diff>0?'vpos':'vzero'}">${v.diff>0?'+':''}${parseFloat(v.diff).toFixed(1)}</div><span class="bdg ${v.diff<0?'bgr':v.diff>0?'bgg':'bgm'}">${v.diff<0?'Loss':v.diff>0?'Over':'OK'}</span></div></div>`).join('');
+  const lm={};varianceD.filter(v=>v.diff<0).forEach(v=>{lm[v.item_name]=(lm[v.item_name]||0)+Math.abs(v.diff);});
+  const sr=Object.entries(lm).sort((a,b)=>b[1]-a[1]).slice(0,5),mx=sr[0]?.[1]||1;
+  document.getElementById('topLoss').innerHTML=sr.length?sr.map(([n,l])=>`<div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.5rem"><div style="min-width:110px;font-size:0.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n}</div><div style="flex:1;height:14px;background:var(--surface);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.round(l/mx*100)}%;background:var(--red);border-radius:3px"></div></div><div style="font-size:0.78rem;font-weight:700;color:var(--red);min-width:32px;text-align:right">-${l.toFixed(1)}</div></div>`).join(''):'<div style="text-align:center;padding:1.5rem;color:var(--muted)">✅ No losses</div>';
+}
+function fVar(t,b){varF=t;document.querySelectorAll('#p-reports .ct').forEach(x=>x.classList.remove('act'));b.classList.add('act');renderVar();}
+
+// ═══════════════════════════════════════════
+// ROSTER
+// ═══════════════════════════════════════════
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const GROUPS=['Kitchen','Bar / Waiters','Managers'];
+function getMonday(d){const dt=new Date(d);const day=dt.getDay();const diff=day===0?-6:1-day;dt.setDate(dt.getDate()+diff);dt.setHours(0,0,0,0);return dt;}
+function weekKey(m){return m.toISOString().split('T')[0];}
+function weekDates(m){return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(d.getDate()+i);return d;});}
+function staffForGroup(g){if(g==='Kitchen')return stfD.filter(s=>s.division==='Kitchen'||s.role.startsWith('Kitchen'));if(g==='Bar / Waiters')return stfD.filter(s=>s.division==='Floor'||s.role==='Waiter'||s.role==='Bar');if(g==='Managers')return stfD.filter(s=>s.division==='Management'||s.role==='Manager');return[];}
+function calcShiftHours(start,end,brk){if(!start||!end)return 0;const[sh,sm]=start.split(':').map(Number);const[eh,em]=end.split(':').map(Number);if(isNaN(sh)||isNaN(eh))return 0;let mins=(eh*60+em)-(sh*60+sm)-(parseFloat(brk)||0)*60;if(mins<0)mins+=24*60;return Math.max(0,Math.round(mins/60*10)/10);}
+function getShift(wk,nm,di){return(rosterData[wk]?.[nm]?.[di])||{start:'',end:'',brk:''};}
+function setShift(wk,nm,di,f,v){if(!rosterData[wk])rosterData[wk]={};if(!rosterData[wk][nm])rosterData[wk][nm]={};if(!rosterData[wk][nm][di])rosterData[wk][nm][di]={start:'',end:'',brk:''};rosterData[wk][nm][di][f]=v;const sh=rosterData[wk][nm][di];const hrs=calcShiftHours(sh.start,sh.end,sh.brk);const hEl=document.getElementById(`rh-${nm.replace(/\W/g,'_')}-${di}`);if(hEl){hEl.textContent=hrs>0?hrs+'h':'';hEl.className='roster-day-hrs'+(hrs>0?'':' zero');}updRTot(wk,nm);updRSummary();}
+function updRTot(wk,nm){const t=Array.from({length:7},(_,i)=>{const sh=getShift(wk,nm,i);return calcShiftHours(sh.start,sh.end,sh.brk);}).reduce((a,b)=>a+b,0);const e=document.getElementById(`rtot-${nm.replace(/\W/g,'_')}`);if(e)e.textContent=t>0?t.toFixed(1)+'h':'—';}
+
+function initRosterPanel(){
+  const wk=weekKey(rosterWeekOf);
+  const dates=weekDates(rosterWeekOf);
+  const opts={day:'numeric',month:'short'};
+  document.getElementById('rosterWeekLabel').textContent=`Week of ${rosterWeekOf.toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}`;
+  document.getElementById('rosterWeekRange').textContent=`${dates[0].toLocaleDateString('en-ZA',opts)} — ${dates[6].toLocaleDateString('en-ZA',opts)}`;
+  document.getElementById('rosterGroupTabs').innerHTML=GROUPS.map(g=>`<button class="ct ${rosterGroup===g?'act':''}" onclick="switchRG('${g}')">${g}</button>`).join('');
+  renderRGrid(); updRSummary();
+}
+function switchRG(g){rosterGroup=g;initRosterPanel();}
+function rosterWeek(d){rosterWeekOf=new Date(rosterWeekOf);rosterWeekOf.setDate(rosterWeekOf.getDate()+d*7);initRosterPanel();}
+
+function renderRGrid(){
+  const wk=weekKey(rosterWeekOf),dates=weekDates(rosterWeekOf),staff=staffForGroup(rosterGroup).filter(s=>s.active!==false);
+  if(!staff.length){document.getElementById('rosterGrid').innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No active staff in this group.</div>';return;}
+  document.getElementById('rosterGrid').innerHTML=staff.map(s=>{
+    const sk=s.name.replace(/\W/g,'_');
+    const wt=Array.from({length:7},(_,i)=>{const sh=getShift(wk,s.name,i);return calcShiftHours(sh.start,sh.end,sh.brk);}).reduce((a,b)=>a+b,0);
+    return `<div class="roster-card"><div class="roster-staff-hdr"><div class="roster-staff-av">${s.name[0]}</div><div style="flex:1"><div class="roster-staff-name">${s.name}</div><div class="roster-staff-role">${s.role}</div></div><div class="roster-hours-pill" id="rtot-${sk}">${wt>0?wt.toFixed(1)+'h':'—'}</div></div><div>
+      ${dates.map((d,i)=>{const sh=getShift(wk,s.name,i);const hrs=calcShiftHours(sh.start,sh.end,sh.brk);const isWE=i>=5;return `<div class="roster-day ${isWE?'weekend':''}"><div class="roster-day-label">${DAYS[i]}</div><div class="roster-day-date">${d.getDate()}</div><div class="roster-time-group"><div style="display:flex;flex-direction:column;align-items:center"><input type="time" class="rtime" value="${sh.start}" oninput="setShift('${wk}','${s.name}',${i},'start',this.value)"><span class="rt-lbl">START</span></div><div style="color:var(--muted);font-size:0.8rem;padding-top:2px">→</div><div style="display:flex;flex-direction:column;align-items:center"><input type="time" class="rtime" value="${sh.end}" oninput="setShift('${wk}','${s.name}',${i},'end',this.value)"><span class="rt-lbl">END</span></div><div style="display:flex;flex-direction:column;align-items:center"><input type="number" class="rbreak" value="${sh.brk}" placeholder="0" min="0" step="0.5" oninput="setShift('${wk}','${s.name}',${i},'brk',this.value)"><span class="rt-lbl">BRK h</span></div></div><div class="roster-day-hrs${hrs>0?'':' zero'}" id="rh-${sk}-${i}">${hrs>0?hrs+'h':''}</div></div>`;}).join('')}</div></div>`;
+  }).join('');
+}
+
+function updRSummary(){
+  const wk=weekKey(rosterWeekOf),staff=staffForGroup(rosterGroup).filter(s=>s.active!==false);
+  const rows=staff.map(s=>{
+    const hrs=Array.from({length:7},(_,i)=>{const sh=getShift(wk,s.name,i);return calcShiftHours(sh.start,sh.end,sh.brk);}).reduce((a,b)=>a+b,0);
+    let pay=0,note='';
+    if(rosterGroup==='Managers'){const r=payD.mgr?.find(m=>m.name===s.name)?.hourly_rate||35;pay=hrs*r;note=`R${r}/hr`;}
+    else if(rosterGroup==='Kitchen'){const r=payD.kit?.find(m=>m.name===s.name)?.hourly_rate||22;pay=hrs*r;note=`R${r}/hr`;}
+    else{note='Tips + 3% sales';}
+    return{name:s.name,role:s.role,hrs,pay,note};
+  });
+  const th=rows.reduce((a,r)=>a+r.hrs,0),tp=rows.reduce((a,r)=>a+r.pay,0);
+  document.getElementById('rosterSummary').innerHTML=`<table class="sum-table"><thead><tr><th>Staff</th><th>Role</th><th class="r">Hours</th><th>Pay Basis</th><th class="r">Est. Pay</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${r.name}</strong></td><td style="font-size:0.75rem;color:var(--muted)">${r.role}</td><td class="r">${r.hrs>0?r.hrs.toFixed(1):'—'}</td><td style="font-size:0.75rem;color:var(--muted)">${r.note}</td><td class="r earn">${r.pay>0?'R'+r.pay.toFixed(2):'—'}</td></tr>`).join('')}<tr style="background:var(--surface);font-weight:700"><td colspan="2">TOTAL</td><td class="r">${th.toFixed(1)} hrs</td><td></td><td class="r earn">${tp>0?'R'+tp.toFixed(2):'—'}</td></tr></tbody></table>`;
+}
+
+async function saveRoster(){
+  setSyncStatus('syncing');
+  const wk=weekKey(rosterWeekOf);
+  const rows=[];
+  Object.entries(rosterData[wk]||{}).forEach(([staffName,days])=>{
+    Object.entries(days).forEach(([dayIdx,sh])=>{
+      if(sh.start||sh.end) rows.push({staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0});
+    });
+  });
+  if(rows.length){
+    const {error}=await SB.from('roster').upsert(rows,{onConflict:'staff_name,week_start,day_index'});
+    if(error){setSyncStatus('err');showToast('Error saving roster.',true);return;}
+  }
+  setSyncStatus('ok');showToast('Roster saved to database ✓');
+}
+
+async function loadRosterWeek(){
+  const wk=weekKey(rosterWeekOf);
+  const{data}=await SB.from('roster').select('*').eq('week_start',wk);
+  if(!rosterData[wk])rosterData[wk]={};
+  (data||[]).forEach(r=>{if(!rosterData[wk][r.staff_name])rosterData[wk][r.staff_name]={};rosterData[wk][r.staff_name][r.day_index]={start:r.start_time||'',end:r.end_time||'',brk:r.break_hours||''};});
+  renderRGrid();updRSummary();
+}
+
+function printRoster(){
+  const wk=weekKey(rosterWeekOf),dates=weekDates(rosterWeekOf),opts={day:'numeric',month:'short'};
+  const groups=GROUPS.map(g=>({name:g,staff:staffForGroup(g).filter(s=>s.active!==false)}));
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Shift Roster</title><style>@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@400;600;700&display=swap');*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Karla',Arial,sans-serif;color:#1a0d10;}@page{size:A4 landscape;margin:12mm;}.hdr{display:flex;justify-content:space-between;padding-bottom:4mm;border-bottom:2px solid #7a1528;margin-bottom:4mm;}.brand{font-family:'Bebas Neue',sans-serif;font-size:20pt;color:#7a1528;}.wk{font-family:'Bebas Neue',sans-serif;font-size:13pt;text-align:right;}table{width:100%;border-collapse:collapse;margin-bottom:5mm;}.gl{font-family:'Bebas Neue',sans-serif;font-size:10pt;color:#7a1528;margin:3mm 0 2mm;}th{background:#7a1528;color:#fff;font-size:7pt;padding:2mm;text-align:center;border:1px solid #9e1e35;}th.nc{text-align:left;}td{padding:1.5mm 2mm;border:1px solid #e0d5cc;font-size:8pt;text-align:center;}td.nt{text-align:left;font-weight:600;background:#faf7f4;}.we{background:#fef8f0!important;}.tot{color:#1a7a45;font-weight:700;background:#eaf5ee;}.ft{display:flex;justify-content:space-between;font-size:7pt;color:#9a8070;padding-top:3mm;border-top:1px solid #e0d5cc;margin-top:2mm;}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}</style></head><body><div class="hdr"><div><div class="brand">DIE AKKER KOFFIEHUIS</div><div style="font-size:8pt;color:#9a8070">Staff Shift Roster</div></div><div class="wk">Week of ${rosterWeekOf.toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}<br><span style="font-size:9pt">${dates[0].toLocaleDateString('en-ZA',opts)} — ${dates[6].toLocaleDateString('en-ZA',opts)}</span></div></div>${groups.map(g=>{if(!g.staff.length)return'';return`<div class="gl">${g.name}</div><table><thead><tr><th class="nc">Name</th>${dates.map((d,i)=>`<th class="${i>=5?'we':''}">${DAYS[i]}<br>${d.getDate()}</th>`).join('')}<th>TOTAL</th></tr></thead><tbody>${g.staff.map(s=>{const dh=Array.from({length:7},(_,i)=>{const sh=getShift(wk,s.name,i);return{hrs:calcShiftHours(sh.start,sh.end,sh.brk),start:sh.start,end:sh.end};});const tot=dh.reduce((a,b)=>a+b.hrs,0);return`<tr><td class="nt">${s.name}<br><span style="font-size:6.5pt;color:#9a8070;font-weight:400">${s.role}</span></td>${dh.map((d,i)=>`<td class="${i>=5?'we':''}">${d.start&&d.end?`${d.start}<br><span style="font-size:6.5pt">→${d.end}</span>`:''}</td>`).join('')}<td class="tot">${tot>0?tot.toFixed(1)+'h':'—'}</td></tr>`;}).join('')}</tbody></table>`;}).join('')}<div class="ft"><span>Die Akker Koffiehuis — Potchefstroom</span><span>Printed: ${new Date().toLocaleDateString('en-ZA')}</span><span>Manager sign-off: ___________________________</span></div><div style="text-align:center;padding:15px;font-family:sans-serif"><button onclick="window.print()" style="background:#7a1528;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Print</button>&nbsp;<button onclick="window.close()" style="background:#f2ece6;border:1px solid #e0d5cc;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer">Close</button></div></body></html>`;
+  const win=window.open('','_blank','width=1000,height=700');win.document.write(html);win.document.close();
+}
+
+// ═══════════════════════════════════════════
+// PAYROLL
+// ═══════════════════════════════════════════
+const PAC=['#7a1528','#152438','#2d5c1a','#1a4a7a','#5c3d1a','#2d1a5c','#1a5c4a','#5c1a4a','#3d1a5c'];
+const canER=()=>CU?.role==='owner';
+
+function buildPayData(rows){
+  const mo=new Date().toISOString().slice(0,7);
+  const mgrStaff=stfD.filter(s=>s.division==='Management'||s.role==='Manager');
+  const kitStaff=stfD.filter(s=>s.division==='Kitchen'||s.role.startsWith('Kitchen'));
+  payD.mgr=mgrStaff.map(s=>{const r=rows.find(x=>x.staff_name===s.name)||{hourly_rate:35,hours:0};return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||35,hrs:r.hours||0,month:mo};});
+  payD.kit=kitStaff.map(s=>{const r=rows.find(x=>x.staff_name===s.name)||{hourly_rate:22,hours:0};return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||22,hrs:r.hours||0,month:mo};});
+}
+
+function renderPaySec(list,cId,tId){
+  document.getElementById(cId).innerHTML=list.map((s,i)=>{
+    const g=s.hrs*s.hourly_rate,u=Math.round(g*0.01*100)/100,n=g-u;
+    const grp=cId==='mgrPay'?'manager':'kitchen';
+    return `<div class="pr">
+      <div class="prav" style="background:${PAC[i%PAC.length]}">${(s.name[0])||'?'}</div>
+      <div class="pri">
+        <div style="display:flex;align-items:center;gap:0.4rem">
+          <div class="prn">${s.name}</div>
+          <button onclick="editPayName('${cId}',${i},'${tId}')" style="background:none;border:none;cursor:pointer;font-size:0.75rem;color:var(--muted);padding:0.1rem 0.3rem;border-radius:4px" title="Edit name">✏️</button>
+        </div>
+        <div class="prp">${s.pos}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
+        <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Rate/Hr</div>
+        <input type="number" class="ri" value="${s.hourly_rate}" min="0" step="0.5" ${canER()?'':'readonly'} oninput="updR('${cId}',${i},this.value,'${tId}')">
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
+        <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Hours</div>
+        <input type="number" class="hi" value="${s.hrs||''}" placeholder="0" min="0" oninput="updH('${cId}',${i},this.value,'${tId}')">
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem">
+        <div class="pnet">${n>0?'R '+n.toFixed(2):'—'}</div>
+        <button onclick="openPayslip('${s.name.replace(/'/g,"\\'")}','${grp}')" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;cursor:pointer;color:var(--burg);white-space:nowrap">🖨️ Slip</button>
+      </div>
+    </div>`;
+  }).join('');
+  updPTot(list,tId);
+}
+
+function updH(c,i,v,t){const l=c==='mgrPay'?payD.mgr:payD.kit;l[i].hrs=parseFloat(v)||0;updPTot(l,t);}
+function updR(c,i,v,t){if(!canER())return;const l=c==='mgrPay'?payD.mgr:payD.kit;l[i].hourly_rate=parseFloat(v)||0;updPTot(l,t);}
+function updPTot(l,t){const s=l.reduce((sum,x)=>{const g=x.hrs*x.hourly_rate;return sum+(g>0?g-Math.round(g*0.01*100)/100:0);},0);document.getElementById(t).textContent='R '+s.toFixed(2);}
+function editPayName(cId,i,tId){const l=cId==='mgrPay'?payD.mgr:payD.kit;const v=prompt(`Edit name for "${l[i].name}":`,l[i].name);if(!v||!v.trim())return;l[i].name=v.trim();renderPaySec(l,cId,tId);showToast(`Updated to "${v.trim()}" ✓`);}
+
+async function savePay(){
+  setSyncStatus('syncing');
+  const mo=new Date().toISOString().slice(0,7);
+  const rows=[...payD.mgr,...payD.kit].map(s=>({staff_name:s.name,group_type:payD.mgr.includes(s)?'manager':'kitchen',position:s.pos,hourly_rate:s.hourly_rate,hours:s.hrs,month:mo}));
+  const{error}=await SB.from('payroll').upsert(rows,{onConflict:'staff_name,month'});
+  setSyncStatus(error?'err':'ok');
+  showToast(error?'Error saving payroll.':'Payroll saved to database ✓',!!error);
+}
+
+// ═══════════════════════════════════════════
+// WAITER PAYROLL
+// ═══════════════════════════════════════════
+function renderWaiterPay(){
+  const waiters=stfD.filter(s=>s.division==='Floor'||s.role==='Waiter');
+  if(!payD.waiters) payD.waiters=[];
+  // Sync with current staff list
+  waiters.forEach(s=>{if(!payD.waiters.find(w=>w.name===s.name))payD.waiters.push({name:s.name,pos:s.role,sales:0,tips:0,extra:0,breakage:0,borrowed:0});});
+
+  document.getElementById('waiterPay').innerHTML=waiters.map((s,i)=>{
+    const w=payD.waiters.find(x=>x.name===s.name)||{sales:0,tips:0,extra:0,breakage:0,borrowed:0};
+    const comm=Math.round((w.sales||0)*0.03*100)/100;
+    const gross=comm+(w.tips||0)+(w.extra||0);
+    const deduct=(w.breakage||0)+(w.borrowed||0);
+    const net=gross-deduct;
+    return `<div class="pr">
+      <div class="prav" style="background:${PAC[i%PAC.length]}">${s.name[0]}</div>
+      <div class="pri"><div class="prn">${s.name}</div><div class="prp">${s.role} · 3% commission</div></div>
+      <div style="display:flex;flex-direction:column;gap:0.3rem;flex:1;min-width:0;padding-left:0.5rem">
+        <div style="display:flex;gap:0.4rem;align-items:center">
+          <span style="font-size:0.65rem;color:var(--muted);width:38px">Sales</span>
+          <input type="number" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:0.3rem;font-size:0.82rem;background:var(--cream);outline:none;text-align:right" value="${w.sales||''}" placeholder="0.00" oninput="updWaiter('${s.name.replace(/'/g,"\\'")}','sales',this.value)">
+          <span style="font-size:0.7rem;color:var(--green);min-width:65px;text-align:right">→ R${comm.toFixed(2)}</span>
+        </div>
+        <div style="display:flex;gap:0.4rem;align-items:center">
+          <span style="font-size:0.65rem;color:var(--muted);width:38px">Tips</span>
+          <input type="number" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:0.3rem;font-size:0.82rem;background:var(--cream);outline:none;text-align:right" value="${w.tips||''}" placeholder="0.00" oninput="updWaiter('${s.name.replace(/'/g,"\\'")}','tips',this.value)">
+          <span style="font-size:0.7rem;color:var(--muted);min-width:65px;text-align:right"></span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem">
+        <div class="pnet" style="font-size:0.95rem">${net>0?'R '+net.toFixed(2):'—'}</div>
+        <button onclick="openPayslip('${s.name.replace(/'/g,"\\'")}','waiter')" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;cursor:pointer;color:var(--burg);white-space:nowrap">🖨️ Slip</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Update total
+  const tot=waiters.reduce((sum,s)=>{
+    const w=payD.waiters.find(x=>x.name===s.name)||{sales:0,tips:0,extra:0,breakage:0,borrowed:0};
+    const comm=Math.round((w.sales||0)*0.03*100)/100;
+    const net=comm+(w.tips||0)+(w.extra||0)-(w.breakage||0)-(w.borrowed||0);
+    return sum+(net>0?net:0);
+  },0);
+  document.getElementById('waiterTot').textContent='R '+tot.toFixed(2);
+}
+
+function updWaiter(name,field,val){
+  if(!payD.waiters) payD.waiters=[];
+  let w=payD.waiters.find(x=>x.name===name);
+  if(!w){w={name,sales:0,tips:0,extra:0,breakage:0,borrowed:0};payD.waiters.push(w);}
+  w[field]=parseFloat(val)||0;
+  renderWaiterPay();
+}
+
+function renderPay(){
+  renderPaySec(payD.mgr,'mgrPay','mgrTot');
+  renderPaySec(payD.kit,'kitPay','kitTot');
+  renderWaiterPay();
+}
+
+// ═══════════════════════════════════════════
+// PAYSLIP GENERATOR
+// ═══════════════════════════════════════════
+function openPayslip(name, group){
+  document.getElementById('psModalTitle').textContent = name + ' — Payslip';
+  document.getElementById('psStaffName').value = name;
+  document.getElementById('psGroup').value = group;
+  // Auto-fill from staff record
+  const staffRec = stfD.find(s=>s.name===name);
+  document.getElementById('psId').value = staffRec?.id_number || '';
+  document.getElementById('psAcct').value = staffRec?.eft_account || 'EFT ACCOUNT';
+  document.getElementById('psBreakage').value = '';
+  document.getElementById('psBorrowed').value = '';
+  document.getElementById('psProvident').value = '';
+  document.getElementById('psOtherDeduct').value = '';
+  const now=new Date();
+  const firstDay=new Date(now.getFullYear(),now.getMonth(),1);
+  const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0);
+  document.getElementById('psFrom').value=firstDay.toISOString().split('T')[0];
+  document.getElementById('psTo').value=lastDay.toISOString().split('T')[0];
+  document.getElementById('psExtraIncome').innerHTML=`<div class="fg2" style="margin-bottom:0.4rem"><div class="fg"><label>Description</label><input type="text" class="ps-desc" placeholder="e.g. Admin Work"></div><div class="fg"><label>Amount (R)</label><input type="number" class="ps-amt" placeholder="0.00" min="0" step="0.01"></div></div>`;
+  if(group==='waiter'){
+    const w=payD.waiters?.find(x=>x.name===name);
+    if(w){document.getElementById('psBreakage').value=w.breakage||'';document.getElementById('psBorrowed').value=w.borrowed||'';}
+  }
+  openMo('moPayslip');
+}
+
+function addExtraIncome(){
+  const div=document.createElement('div');
+  div.className='fg2';div.style.marginBottom='0.4rem';
+  div.innerHTML='<div class="fg"><label>Description</label><input type="text" class="ps-desc" placeholder="e.g. Admin Work"></div><div class="fg"><label>Amount (R)</label><input type="number" class="ps-amt" placeholder="0.00" min="0" step="0.01"></div>';
+  document.getElementById('psExtraIncome').appendChild(div);
+}
+
+function printPayslip(){
+  const name     = document.getElementById('psStaffName').value;
+  const group    = document.getElementById('psGroup').value;
+  const idNum    = document.getElementById('psId').value.trim();
+  const acct     = document.getElementById('psAcct').value.trim()||'EFT ACCOUNT';
+  const from     = document.getElementById('psFrom').value;
+  const to       = document.getElementById('psTo').value;
+  const breakage = parseFloat(document.getElementById('psBreakage').value)||0;
+  const borrowed = parseFloat(document.getElementById('psBorrowed').value)||0;
+  const provident= parseFloat(document.getElementById('psProvident').value)||0;
+  const otherD   = parseFloat(document.getElementById('psOtherDeduct').value)||0;
+
+  // Format period as "27 Feb - 29 Mar"
+  const fmtDate = d => new Date(d).toLocaleDateString('en-ZA',{day:'numeric',month:'short'});
+  const period  = `${fmtDate(from)} - ${fmtDate(to)}`;
+
+  // Build income lines
+  const incomeLines = [];
+  let staffRec = stfD.find(s=>s.name===name);
+
+  if(group==='waiter'){
+    const w=payD.waiters?.find(x=>x.name===name)||{sales:0,tips:0};
+    const sales=w.sales||0, tips=w.tips||0;
+    const comm=Math.round(sales*0.03*100)/100;
+    if(sales>0) incomeLines.push({desc:'Sales 3%', rate:'0.03', qty:`@ R ${sales.toFixed(2)}`, amt:comm});
+    if(tips>0)  incomeLines.push({desc:'Tips', rate:'1', qty:`@ R ${tips.toFixed(2)}`, amt:tips});
+  } else if(group==='manager'){
+    const s=payD.mgr?.find(x=>x.name===name)||{hrs:0,hourly_rate:35};
+    if(s.hrs>0) incomeLines.push({desc:`Hourly Pay (${s.hrs} hrs @ R${s.hourly_rate}/hr)`, rate:'', qty:'', amt:s.hrs*s.hourly_rate});
+  } else {
+    const s=payD.kit?.find(x=>x.name===name)||{hrs:0,hourly_rate:22};
+    if(s.hrs>0) incomeLines.push({desc:`Hourly Pay (${s.hrs} hrs @ R${s.hourly_rate}/hr)`, rate:'', qty:'', amt:s.hrs*s.hourly_rate});
+  }
+
+  // Extra income lines from modal
+  const descs=document.querySelectorAll('.ps-desc');
+  const amts =document.querySelectorAll('.ps-amt');
+  descs.forEach((d,i)=>{ const a=parseFloat(amts[i]?.value)||0; if(d.value.trim()&&a>0) incomeLines.push({desc:d.value.trim(),rate:'1',qty:`@ R ${a.toFixed(2)}`,amt:a}); });
+
+  const gross = incomeLines.reduce((s,l)=>s+l.amt,0);
+  const totalDeduct = breakage+borrowed+provident+otherD;
+  const netPay = gross-totalDeduct;
+
+  const html=`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Payslip — ${name}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Karla:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Karla',Arial,sans-serif;color:#000;background:#fff;padding:0;}
+@page{size:A4;margin:15mm 20mm;}
+.wrap{max-width:170mm;margin:0 auto;}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6mm;padding-bottom:4mm;border-bottom:1px solid #ccc;}
+.logo-area{display:flex;align-items:center;gap:4mm;}
+.logo-text{font-size:22pt;font-weight:900;letter-spacing:0.05em;line-height:1;}
+.logo-sub{font-size:7pt;letter-spacing:0.15em;text-transform:uppercase;color:#666;}
+.company-info{text-align:right;font-size:8.5pt;line-height:1.7;color:#333;}
+.company-info strong{font-size:9pt;color:#000;}
+.ps-title{text-align:center;font-size:18pt;font-weight:700;letter-spacing:0.08em;margin:4mm 0;text-transform:uppercase;border-top:1.5px solid #000;border-bottom:1.5px solid #000;padding:2.5mm 0;}
+.info-grid{display:grid;grid-template-columns:auto 1fr;gap:0.5mm 3mm;font-size:9pt;margin-bottom:5mm;line-height:1.8;}
+.info-grid .lbl{font-weight:700;white-space:nowrap;}
+.section-title{font-size:9pt;font-weight:700;text-decoration:underline;text-align:center;margin:3mm 0 2mm;letter-spacing:0.06em;}
+table.pay-table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:4mm;}
+table.pay-table td{padding:1.2mm 0;vertical-align:top;}
+table.pay-table td:first-child{font-weight:500;}
+table.pay-table td.num{text-align:right;font-weight:600;padding-left:5mm;}
+table.pay-table td.rate{text-align:center;color:#444;}
+table.pay-table td.qty{text-align:center;color:#444;padding:0 3mm;}
+.gross-row{border-top:1px solid #000;margin-top:1mm;}
+.gross-row td{font-weight:700;padding-top:1.5mm!important;}
+.deduct-section{margin-top:2mm;}
+.net-row td{font-weight:700;font-style:italic;font-size:10pt;}
+.net-row{border-top:1.5px solid #000;margin-top:1mm;}
+.signature-area{margin-top:10mm;display:flex;gap:15mm;}
+.sig-block{flex:1;}
+.sig-line{border-bottom:1px solid #000;margin-bottom:1.5mm;height:8mm;}
+.sig-label{font-size:7.5pt;color:#444;}
+.no-print{text-align:center;padding:15px;font-family:sans-serif;margin-top:10px;}
+@media print{.no-print{display:none;}body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}
+</style></head><body>
+<div class="wrap">
+  <div class="hdr">
+    <div class="logo-area">
+      <div>
+        <div class="logo-text">DIE AKKER</div>
+        <div class="logo-sub">Koffiehuis</div>
+      </div>
+    </div>
+    <div class="company-info">
+      <strong>Die Akker Koffiehuis</strong><br>
+      86 Steve Biko Avenue<br>
+      Potchefstroom<br>
+      Tel : 018 294 5038<br>
+      <em>akkerkoffiehuis@gmail.com</em><br>
+      VAT : 4880198207
+    </div>
+  </div>
+
+  <div class="ps-title">PAYSLIP</div>
+
+  <div class="info-grid">
+    <span class="lbl">NAME :</span><span>${name}</span>
+    ${idNum?`<span class="lbl">ID # :</span><span>${idNum}</span>`:''}
+    <span class="lbl">JOB DESCRIPTION :</span><span>${staffRec?.role||'Staff'}</span>
+    <span class="lbl">MANNER OF PAYMENT :</span><span>Monthly</span>
+    <span class="lbl">PAYMENT PERIOD :</span><span>${period}</span>
+    <span class="lbl">PAYMENT METHOD :</span><span>${acct}</span>
+  </div>
+
+  <div class="section-title">INCOME</div>
+  <table class="pay-table">
+    <tbody>
+      ${incomeLines.map(l=>`<tr>
+        <td>${l.desc}</td>
+        <td class="rate">${l.rate||''}</td>
+        <td class="qty">${l.qty||''}</td>
+        <td class="num">${l.amt>0?'= R '+l.amt.toFixed(2):''}</td>
+      </tr>`).join('')}
+      <tr class="gross-row">
+        <td colspan="3" style="font-weight:700">GROSS PAY :</td>
+        <td class="num">R ${gross.toFixed(2)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title deduct-section">DEDUCTIONS</div>
+  <table class="pay-table">
+    <tbody>
+      <tr><td>UIF:</td><td></td><td></td><td class="num">R 0,00</td></tr>
+      <tr><td>BORROWED :</td><td></td><td></td><td class="num">R ${borrowed.toFixed(2)}</td></tr>
+      <tr><td>BREAKAGE :</td><td></td><td></td><td class="num">R ${breakage.toFixed(2)}</td></tr>
+      ${provident>0?`<tr><td>PROVIDENT FUND :</td><td></td><td></td><td class="num">R ${provident.toFixed(2)}</td></tr>`:''}
+      ${otherD>0?`<tr><td>OTHER :</td><td></td><td></td><td class="num">R ${otherD.toFixed(2)}</td></tr>`:''}
+      <tr class="gross-row">
+        <td colspan="3" style="font-weight:700">TOTAL DEDUCTIONS :</td>
+        <td class="num">R ${totalDeduct.toFixed(2)}</td>
+      </tr>
+      <tr class="net-row">
+        <td colspan="3"><u><em>NET PAY :</em></u></td>
+        <td class="num"><em>R ${Math.round(netPay)}</em></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="signature-area">
+    <div class="sig-block">
+      <div class="sig-line"></div>
+      <div class="sig-label">Employee Signature / Werknemer Handtekening</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line"></div>
+      <div class="sig-label">Employer / Werkgewer (Zavier)</div>
+    </div>
+  </div>
+</div>
+
+<div class="no-print">
+  <button onclick="window.print()" style="background:#7a1528;color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Print / Save as PDF</button>
+  &nbsp;
+  <button onclick="window.close()" style="background:#f2ece6;border:1px solid #e0d5cc;padding:10px 28px;border-radius:8px;font-size:14px;cursor:pointer">Close</button>
+</div>
+</body></html>`;
+
+  closeMo('moPayslip');
+  const win=window.open('','_blank','width=800,height=1000');
+  win.document.write(html);
+  win.document.close();
+}
+
+// ═══════════════════════════════════════════
+// STAFF
+// ═══════════════════════════════════════════
+const DC={Floor:'var(--blue)',Kitchen:'var(--orange)',Management:'var(--burg)',Bar:'var(--navy)'};
+function renderStf(){
+  const ce=CU?.role==='owner';
+  document.getElementById('staffList').innerHTML=stfD.map(s=>`
+    <div style="display:flex;align-items:center;padding:0.7rem 0;border-bottom:1px solid var(--surface);gap:0.7rem">
+      <div style="width:32px;height:32px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:0.88rem">${s.name}</div>
+        <div style="font-size:0.7rem;color:var(--muted)">${s.role} · ${s.division}</div>
+        ${s.id_number?`<div style="font-size:0.65rem;color:var(--muted);font-family:monospace;margin-top:0.1rem">🪪 ${s.id_number}</div>`:'<div style="font-size:0.65rem;color:var(--red);margin-top:0.1rem">⚠ No ID number</div>'}
+      </div>
+      <span class="bdg ${s.active?'bgg':'bgr'}">${s.active?'Active':'Inactive'}</span>
+      ${ce?`<button class="btn bs bsm" onclick="openEditStf('${s.id}')">✏️</button>`:''}
+      ${ce?`<button class="btn bs bsm" onclick="togStf('${s.id}',${s.active})">${s.active?'Deactivate':'Activate'}</button>`:''}
+    </div>`).join('');
+}
+
+function openEditStf(id){
+  const isNew=!id||id==='null';
+  document.getElementById('stfModalTitle').textContent=isNew?'Add New Staff':'Edit Staff';
+  document.getElementById('stfId').value=isNew?'':id;
+  const s=isNew?null:stfD.find(x=>x.id===id);
+  document.getElementById('stfName').value=s?.name||'';
+  document.getElementById('stfIdNum').value=s?.id_number||'';
+  document.getElementById('stfEft').value=s?.eft_account||'EFT ACCOUNT';
+  document.getElementById('stfRole').value=s?.role||'Waiter';
+  document.getElementById('stfDiv').value=s?.division||'Floor';
+  openMo('moAddStaff');
+}
+
+async function saveStf(){
+  const nm=document.getElementById('stfName').value.trim();
+  if(!nm){alert('Enter a name.');return;}
+  const id=document.getElementById('stfId').value;
+  const rec={
+    name:nm,
+    id_number:document.getElementById('stfIdNum').value.trim()||null,
+    eft_account:document.getElementById('stfEft').value.trim()||'EFT ACCOUNT',
+    role:document.getElementById('stfRole').value,
+    division:document.getElementById('stfDiv').value,
+    active:true
+  };
+  setSyncStatus('syncing');
+  if(id){await SB.from('staff').update(rec).eq('id',id);}
+  else{await SB.from('staff').insert(rec);}
+  closeMo('moAddStaff'); await loadAllData(); setSyncStatus('ok'); showToast(`${nm} saved ✓`);
+}
+
+async function togStf(id,active){
+  setSyncStatus('syncing');
+  await SB.from('staff').update({active:!active}).eq('id',id);
+  await loadAllData(); setSyncStatus('ok');
+}
+
+// ═══════════════════════════════════════════
+// LEAVE
+// ═══════════════════════════════════════════
+const LEAVE_CFG={'Annual':{cls:'lp-annual',icon:'🏖️'},'Sick':{cls:'lp-sick',icon:'🤒'},'Family':{cls:'lp-family',icon:'👨‍👩‍👧'},'Unpaid':{cls:'lp-unpaid',icon:'💸'},'Sick — Unplanned':{cls:'lp-sick',icon:'🤒'},'Other':{cls:'lp-unpaid',icon:'📋'}};
+const STATUS_CFG={'Approved':'bgg','Pending':'bgo','Sick — Unplanned':'bgr','Rejected':'bgr'};
+let leaveFilter='all';
+function kitchenStaff(){return stfD.filter(s=>s.division==='Kitchen'||s.role.startsWith('Kitchen'));}
+function leaveDays(l){if(!l.start_date||!l.end_date)return 0;const s=new Date(l.start_date),e=new Date(l.end_date);return Math.max(1,Math.round((e-s)/(1000*60*60*24))+1);}
+
+function renderLeave(){
+  const kit=kitchenStaff();
+  document.getElementById('leaveTabs').innerHTML=`<button class="ct ${leaveFilter==='all'?'act':''}" onclick="filterLeave('all',this)">All Staff</button>`+kit.map(s=>`<button class="ct ${leaveFilter===s.name?'act':''}" onclick="filterLeave('${s.name.replace(/'/g,"\\'")}',this)">${s.name}</button>`).join('');
+  const filt=leaveFilter==='all'?kit:kit.filter(s=>s.name===leaveFilter);
+  document.getElementById('leaveCards').innerHTML=filt.map(s=>{
+    const recs=leaveData.filter(l=>l.staff_name===s.name);
+    const ann=recs.filter(l=>l.leave_type==='Annual').reduce((sum,l)=>sum+leaveDays(l),0);
+    const sick=recs.filter(l=>l.leave_type==='Sick'||l.leave_type==='Sick — Unplanned').reduce((sum,l)=>sum+leaveDays(l),0);
+    const unpaid=recs.filter(l=>l.leave_type==='Unpaid').reduce((sum,l)=>sum+leaveDays(l),0);
+    return `<div class="leave-summary"><div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.6rem"><div style="width:30px;height:30px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div><div style="font-weight:700;font-size:0.92rem;flex:1">${s.name}</div><button class="btn bp bsm" onclick="openLeaveModal('${s.name.replace(/'/g,"\\'")}')">+ Add</button></div><div style="display:flex;gap:0.5rem;flex-wrap:wrap"><span style="font-size:0.72rem;background:#e8f0f8;color:var(--blue);border:1px solid #b8cfe8;padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">🏖️ Annual: ${ann} days</span><span style="font-size:0.72rem;background:var(--red-l);color:var(--red);border:1px solid var(--red-b);padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">🤒 Sick: ${sick} days</span>${unpaid>0?`<span style="font-size:0.72rem;background:var(--surface);color:var(--muted);border:1px solid var(--border);padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">💸 Unpaid: ${unpaid} days</span>`:''}</div></div>`;
+  }).join('');
+  let logs=[...leaveData].reverse();if(leaveFilter!=='all')logs=logs.filter(l=>l.staff_name===leaveFilter);
+  const el=document.getElementById('leaveLog');
+  if(!logs.length){el.innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No leave records yet</div>';return;}
+  el.innerHTML=logs.map(l=>{const cfg=LEAVE_CFG[l.leave_type]||{cls:'lp-unpaid',icon:'📋'};const days=leaveDays(l);return `<div class="leave-row"><div class="leave-row-hdr"><div><span style="font-size:0.72rem;background:var(--surface);padding:0.1rem 0.5rem;border-radius:4px;font-weight:600;margin-right:0.4rem">${l.staff_name}</span><span style="font-size:0.72rem;padding:0.18rem 0.55rem;border-radius:20px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase" class="${cfg.cls}">${cfg.icon} ${l.leave_type}</span></div><div style="display:flex;align-items:center;gap:0.4rem"><span class="bdg ${STATUS_CFG[l.status]||'bgm'}">${l.status}</span><button onclick="printLeaveForm('${l.id}')" style="background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:6px;color:var(--ink)">🖨️ Form</button><button onclick="deleteLeave('${l.id}')" style="background:none;border:none;cursor:pointer;font-size:0.9rem;color:var(--muted)">🗑</button></div></div><div class="leave-row-meta">${l.start_date} → ${l.end_date} · <strong>${days} day${days!==1?'s':''}</strong></div>${l.notes?`<div style="font-size:0.75rem;color:var(--muted);font-style:italic;margin-top:0.3rem;padding-top:0.3rem;border-top:1px solid var(--surface)">${l.notes}</div>`:''}</div>`;}).join('');
+}
+function filterLeave(n,b){leaveFilter=n;renderLeave();}
+function openLeaveModal(nm){
+  const kit=kitchenStaff();document.getElementById('leaveStaff').innerHTML=kit.map(s=>`<option value="${s.name}" ${nm===s.name?'selected':''}>${s.name}</option>`).join('');
+  document.getElementById('leaveEditId').value='';document.getElementById('leaveStart').value=new Date().toISOString().split('T')[0];document.getElementById('leaveEnd').value=new Date().toISOString().split('T')[0];document.getElementById('leaveNotes').value='';document.getElementById('leaveStatus').value='Approved';openMo('moLeave');
+}
+async function saveLeave(){
+  const staff=document.getElementById('leaveStaff').value,type=document.getElementById('leaveType').value,start=document.getElementById('leaveStart').value,end=document.getElementById('leaveEnd').value,status=document.getElementById('leaveStatus').value,notes=document.getElementById('leaveNotes').value.trim();
+  if(!staff||!start||!end){showToast('Fill in all fields.',true);return;}
+  if(new Date(end)<new Date(start)){showToast('End date must be after start date.',true);return;}
+  setSyncStatus('syncing');
+  const{error}=await SB.from('leave_records').insert({staff_name:staff,leave_type:type,start_date:start,end_date:end,status,notes});
+  if(error){setSyncStatus('err');showToast('Error saving leave.',true);return;}
+  closeMo('moLeave');const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});leaveData=leaveR.data||[];renderLeave();setSyncStatus('ok');showToast(`Leave recorded for ${staff} ✓`);
+}
+async function deleteLeave(id){
+  if(!confirm('Delete this leave record?'))return;
+  setSyncStatus('syncing');await SB.from('leave_records').delete().eq('id',id);const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});leaveData=leaveR.data||[];renderLeave();setSyncStatus('ok');showToast('Deleted.');
+}
+
+function printLeaveForm(id){
+  const l=leaveData.find(x=>x.id===id);if(!l)return;
+  const days=leaveDays(l);const recorded=new Date(l.recorded_at||new Date()).toLocaleDateString('en-ZA');
+  const s=stfD.find(x=>x.name===l.staff_name);
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Leave Form</title><style>@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@400;600;700&display=swap');*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Karla',Arial,sans-serif;color:#1a0d10;}@page{size:A4;margin:18mm;}.hdr{display:flex;justify-content:space-between;padding-bottom:6mm;border-bottom:3px solid #7a1528;margin-bottom:6mm;}.brand{font-family:'Bebas Neue',sans-serif;font-size:28pt;color:#7a1528;}.title{font-family:'Bebas Neue',sans-serif;font-size:18pt;text-align:center;margin-bottom:5mm;padding:3mm 0;border-top:1px solid #e0d5cc;border-bottom:1px solid #e0d5cc;}.sec{margin-bottom:5mm;}.sec-t{font-size:7pt;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#7a1528;margin-bottom:2.5mm;padding-bottom:1mm;border-bottom:1px solid #e0d5cc;}.row{display:flex;gap:5mm;margin-bottom:3mm;}.fld{flex:1;}.fld label{font-size:7pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9a8070;display:block;margin-bottom:1.5mm;}.val{border-bottom:1.5px solid #1a0d10;padding:1.5mm 0;font-size:11pt;font-weight:600;min-height:6mm;}.val.burg{color:#7a1528;}.tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2.5mm;}.tbox{border:1.5px solid #e0d5cc;border-radius:4px;padding:2mm 3mm;display:flex;align-items:center;gap:2mm;font-size:8.5pt;}.tbox.sel{border-color:#7a1528;background:#fdf0f3;}.ck{width:14px;height:14px;border-radius:50%;border:1.5px solid #c0b0a8;display:flex;align-items:center;justify-content:center;flex-shrink:0;}.ck.on{background:#7a1528;border-color:#7a1528;color:#fff;font-size:8px;}.rbox{border:1.5px solid #e0d5cc;border-radius:5px;min-height:16mm;padding:2.5mm;font-size:10pt;line-height:1.6;}.stamp{text-align:center;margin:4mm 0;}.st{display:inline-block;border:2.5px solid;border-radius:5px;padding:2mm 8mm;font-family:'Bebas Neue',sans-serif;font-size:15pt;letter-spacing:0.15em;}.st.app{border-color:#1a7a45;color:#1a7a45;}.st.pen{border-color:#c8922a;color:#c8922a;}.st.rej{border-color:#8e1a1a;color:#8e1a1a;}.sig{display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin-top:3mm;}.sl{font-size:7pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#9a8070;margin-bottom:6mm;}.sline{border-bottom:1.5px solid #1a0d10;margin-bottom:2mm;}.sn{font-size:7.5pt;color:#9a8070;}.ft{display:flex;justify-content:space-between;font-size:7pt;color:#9a8070;padding-top:3mm;border-top:1px solid #e0d5cc;margin-top:6mm;}.no-print{text-align:center;padding:15px;font-family:sans-serif;}@media print{.no-print{display:none;}body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}</style></head><body>
+<div class="hdr"><div><div class="brand">DIE AKKER</div><div style="font-size:8pt;color:#9a8070;letter-spacing:0.15em;text-transform:uppercase">Koffiehuis — Potchefstroom</div></div><div style="text-align:right;font-size:8pt;color:#9a8070">Leave Application / Verlofaansoek<br><strong style="font-size:10pt;color:#1a0d10">Ref: LA-${id.slice(-6).toUpperCase()}</strong><br>Recorded: ${recorded}</div></div>
+<div class="title">Leave Application / Verlofaansoek</div>
+<div class="sec"><div class="sec-t">Employee Details</div><div class="row"><div class="fld" style="flex:3"><label>Full Name</label><div class="val burg">${l.staff_name}</div></div><div class="fld"><label>Division</label><div class="val">${s?.division||'Kitchen'}</div></div><div class="fld"><label>Position</label><div class="val">${s?.role||''}</div></div></div></div>
+<div class="sec"><div class="sec-t">Type of Leave</div><div class="tgrid">${['Annual','Sick','Family','Unpaid','Sick — Unplanned','Other'].map(t=>`<div class="tbox ${l.leave_type===t?'sel':''}"><div class="ck ${l.leave_type===t?'on':''}">${l.leave_type===t?'✓':''}</div><span style="font-size:8pt;font-weight:600">${t==='Annual'?'Annual':t==='Sick'?'Sick Leave':t==='Family'?'Family Resp.':t==='Unpaid'?'Unpaid':t}</span></div>`).join('')}</div></div>
+<div class="sec"><div class="sec-t">Leave Dates</div><div class="row"><div class="fld"><label>First Day</label><div class="val burg">${l.start_date}</div></div><div class="fld"><label>Last Day</label><div class="val burg">${l.end_date}</div></div><div class="fld"><label>Total Days</label><div class="val burg">${days} day${days!==1?'s':''}</div></div></div><div class="row" style="margin-top:2mm"><div class="fld" style="flex:2"><label>Return to Work Date</label><div class="val" style="color:#c0b0a8">&nbsp;</div></div><div class="fld" style="flex:2"><label>Acting Person / Replacement</label><div class="val" style="color:#c0b0a8">&nbsp;</div></div></div></div>
+<div class="sec"><div class="sec-t">Reason / Notes</div><div class="rbox">${l.notes||'&nbsp;'}</div></div>
+<div style="background:#fdf6e8;border:1px solid #f0d090;border-radius:4px;padding:2mm 4mm;font-size:7.5pt;color:#7a5010;margin-bottom:4mm">📋 Sick leave exceeding 2 consecutive days requires a valid medical certificate. Annual leave requires 7 days advance notice.</div>
+<div class="stamp"><div class="st ${l.status==='Approved'?'app':l.status==='Rejected'?'rej':'pen'}">${l.status.toUpperCase()}</div></div>
+<div class="sec"><div class="sec-t">Signatures</div><div class="sig"><div><div class="sl">Employee Signature</div><div class="sline"></div><div class="sn">${l.staff_name} &nbsp;&nbsp; Date: ________________</div></div><div><div class="sl">Manager / Owner Approval</div><div class="sline"></div><div class="sn">Name: ________________ &nbsp; Date: ________________</div></div></div></div>
+<div class="ft"><span>Die Akker Koffiehuis — Potchefstroom</span><span>LA-${id.slice(-6).toUpperCase()} · ${recorded}</span><span>Keep original on file</span></div>
+<div class="no-print"><button onclick="window.print()" style="background:#7a1528;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Print / Save as PDF</button>&nbsp;<button onclick="window.close()" style="background:#f2ece6;border:1px solid #e0d5cc;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer">Close</button></div>
+</body></html>`;
+  const win=window.open('','_blank','width=800,height=1000');win.document.write(html);win.document.close();
+}
+
+// ═══════════════════════════════════════════
+// DOCS
+// ═══════════════════════════════════════════
+const DOC_REQ=['Employment Contract','ID Copy','Proof of Residence','Bank Details'];
+const DOC_ICONS={'Employment Contract':'📄','ID Copy':'🪪','Proof of Residence':'🏠','Bank Details':'🏦','Verbal Warning':'⚠️','Written Warning':'⚠️','Final Warning':'🚨','Sick Note':'🏥','Medical Certificate':'🏥','Performance Review':'📊','Other':'📋'};
+
+function renderDocs(){
+  const q=document.getElementById('docSearch').value.toLowerCase();
+  let staff=stfD; if(q)staff=staff.filter(s=>s.name.toLowerCase().includes(q));
+  document.getElementById('docStaffList').innerHTML=staff.map(s=>{
+    const docs=docsData[s.name]||[];const done=DOC_REQ.filter(t=>docs.some(d=>d.doc_type===t)).length;const pct=Math.round(done/DOC_REQ.length*100);const col=pct===100?'var(--green)':pct>=50?'var(--orange)':'var(--red)';
+    return `<div class="doc-staff-row" onclick="openDocModal('${s.name.replace(/'/g,"\\'")}')"><div style="width:32px;height:32px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:0.88rem">${s.name}</div><div style="font-size:0.7rem;color:var(--muted)">${s.role} · ${s.division} · ${docs.length} doc${docs.length!==1?'s':''}</div><div class="sbar"><div class="sbf" style="width:${pct}%;background:${col}"></div></div></div><div style="text-align:right;min-width:50px"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${col}">${pct}%</div><div style="font-size:0.62rem;color:var(--muted)">required</div></div><div style="color:var(--muted)">›</div></div>`;
+  }).join('');
+}
+
+function openDocModal(nm){
+  document.getElementById('docModalName').textContent=nm+' — Documents';document.getElementById('docStaffName').value=nm;document.getElementById('newDocDate').value=new Date().toISOString().split('T')[0];document.getElementById('newDocNotes').value='';document.getElementById('newDocFile').value='';
+  renderDocChecklist(nm);renderDocLog(nm);openMo('moDocs');
+}
+
+function renderDocChecklist(nm){
+  const docs=docsData[nm]||[];
+  document.getElementById('docChecklist').innerHTML=DOC_REQ.map(t=>{const has=docs.some(d=>d.doc_type===t);const last=docs.filter(d=>d.doc_type===t).slice(-1)[0];return `<div class="doc-check-row"><span>${t}</span><div style="display:flex;align-items:center;gap:0.5rem">${has?`<span style="font-size:0.7rem;color:var(--green)">${last?.date_received||''}</span>`:''}<div class="doc-tick ${has?'dt-yes':'dt-no'}">${has?'✓':'—'}</div></div></div>`;}).join('');
+}
+
+function renderDocLog(nm){
+  const docs=(docsData[nm]||[]).slice().reverse();
+  const el=document.getElementById('docLogList');
+  if(!docs.length){el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--muted);font-size:0.82rem">No documents logged yet</div>';return;}
+  el.innerHTML=docs.map(d=>`<div class="doc-log-item"><div style="display:flex;align-items:center;justify-content:space-between"><div class="doc-log-type">${DOC_ICONS[d.doc_type]||'📋'} ${d.doc_type}</div><button onclick="deleteDoc('${d.id}','${nm.replace(/'/g,"\\'")}','${d.doc_type}')" style="background:none;border:none;cursor:pointer;font-size:0.85rem;color:var(--muted)">🗑</button></div><div class="doc-log-meta">📅 ${d.date_received}${d.notes?' · '+d.notes:''}</div>${d.file_name?`<div style="font-size:0.72rem;color:var(--blue);font-weight:600;margin-top:0.3rem">📎 ${d.file_name}${d.file_data?` <a href="${d.file_data}" download="${d.file_name}" style="color:var(--blue);text-decoration:none">↓ Download</a>`:''}</div>`:''}</div>`).join('');
+}
+
+async function saveDoc(){
+  const nm=document.getElementById('docStaffName').value,type=document.getElementById('newDocType').value,date=document.getElementById('newDocDate').value,notes=document.getElementById('newDocNotes').value.trim();
+  if(!date){showToast('Select a date.',true);return;}
+  const fileInput=document.getElementById('newDocFile');
+  const doSave=async(fn,fd)=>{
+    setSyncStatus('syncing');
+    const{error}=await SB.from('staff_documents').insert({staff_name:nm,doc_type:type,date_received:date,notes,file_name:fn||'',file_data:fd||''});
+    if(error){setSyncStatus('err');showToast('Error saving document.',true);return;}
+    const docsR=await SB.from('staff_documents').select('*').order('added_at',{ascending:false});docsData={};(docsR.data||[]).forEach(d=>{if(!docsData[d.staff_name])docsData[d.staff_name]=[];docsData[d.staff_name].push(d);});
+    renderDocChecklist(nm);renderDocLog(nm);renderDocs();setSyncStatus('ok');showToast(`${type} logged ✓`);document.getElementById('newDocNotes').value='';document.getElementById('newDocFile').value='';
+  };
+  if(fileInput.files&&fileInput.files[0]){const f=fileInput.files[0];const r=new FileReader();r.onload=e=>doSave(f.name,e.target.result);r.readAsDataURL(f);}
+  else doSave('','');
+}
+
+async function deleteDoc(id,nm,type){
+  if(!confirm(`Delete ${type} document?`))return;
+  setSyncStatus('syncing');await SB.from('staff_documents').delete().eq('id',id);
+  const docsR=await SB.from('staff_documents').select('*').order('added_at',{ascending:false});docsData={};(docsR.data||[]).forEach(d=>{if(!docsData[d.staff_name])docsData[d.staff_name]=[];docsData[d.staff_name].push(d);});
+  renderDocChecklist(nm);renderDocLog(nm);renderDocs();setSyncStatus('ok');showToast('Deleted.');
+}
+
+// ═══════════════════════════════════════════
+// WAITER ACCOUNTABILITY
+// ═══════════════════════════════════════════
+let wlData    = [];
+let wlFilter  = 'all';
+let wlWaiter  = 'all';
+let wlPins    = JSON.parse(localStorage.getItem('da_pins')||'{}');
+let wlPinEntry = '';
+let wlConfirmedWaiter = null;
+
+const WL_TYPE_CFG = {
+  void:  {label:'Void',       icon:'🚫', cls:'wl-void'},
+  promo: {label:'Promo/Comp', icon:'🎁', cls:'wl-promo'},
+  late:  {label:'Late',       icon:'⏰', cls:'wl-late'},
+  other: {label:'Other',      icon:'📋', cls:'wl-other'},
+};
+const PAC_W=['#7a1528','#152438','#2d5c1a','#1a4a7a','#5c3d1a','#2d1a5c','#1a5c4a','#5c1a4a'];
+
+function waiters(){ return stfD.filter(s=>s.division==='Floor'||s.role==='Waiter'); }
+
+async function loadWLData(){
+  const from = document.getElementById('wlFrom')?.value;
+  const to   = document.getElementById('wlTo')?.value;
+  let q = SB.from('waiter_events').select('*').order('event_time',{ascending:false});
+  if(from) q = q.gte('event_time', from+'T00:00:00');
+  if(to)   q = q.lte('event_time', to+'T23:59:59');
+  const {data,error} = await q;
+  if(!error) wlData = data||[];
+  renderWL();
+}
+
+function renderWL(){
+  const ws = waiters();
+  // Waiter filter tabs
+  document.getElementById('wlWaiterTabs').innerHTML =
+    `<button class="ct ${wlWaiter==='all'?'act':''}" onclick="wlSetWaiter('all',this)">All Waiters</button>` +
+    ws.map((s,i)=>`<button class="ct ${wlWaiter===s.name?'act':''}" onclick="wlSetWaiter('${s.name.replace(/'/g,"\\'")}',this)">${s.name}</button>`).join('');
+
+  // Summary cards
+  document.getElementById('wlSummaryCards').innerHTML = ws.map((s,i)=>{
+    const evts = wlData.filter(e=>e.waiter_name===s.name);
+    const voids  = evts.filter(e=>e.event_type==='void');
+    const promos = evts.filter(e=>e.event_type==='promo');
+    const lates  = evts.filter(e=>e.event_type==='late');
+    const vAmt   = voids.reduce((sum,e)=>sum+(parseFloat(e.amount)||0),0);
+    const pAmt   = promos.reduce((sum,e)=>sum+(parseFloat(e.amount)||0),0);
+    const hasPin = !!wlPins[s.name];
+    return `<div class="wl-summary-card">
+      <div class="wl-summary-hdr">
+        <div class="wl-av" style="background:${PAC_W[i%PAC_W.length]}">${s.name[0]}</div>
+        <div style="flex:1"><div style="font-weight:700;font-size:0.92rem">${s.name}</div><div style="font-size:0.68rem;color:var(--muted)">PIN: ${hasPin?'<span style="color:var(--green);font-weight:700">Set ✓</span>':'<span style="color:var(--red)">Not set</span>'}</div></div>
+        <button onclick="openWLModal('${s.name.replace(/'/g,"\\'")}'); return false" class="btn bp bsm">+ Log</button>
+      </div>
+      <div class="wl-stat-row">
+        <span class="wl-stat wl-void">🚫 ${voids.length} void${voids.length!==1?'s':''} · R${vAmt.toFixed(2)}</span>
+        <span class="wl-stat wl-promo">🎁 ${promos.length} promo${promos.length!==1?'s':''} · R${pAmt.toFixed(2)}</span>
+        <span class="wl-stat wl-late">⏰ ${lates.length} late${lates.length!==1?'s':''}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Event log
+  let evts = [...wlData];
+  if(wlFilter !== 'all') evts = evts.filter(e=>e.event_type===wlFilter);
+  if(wlWaiter !== 'all') evts = evts.filter(e=>e.waiter_name===wlWaiter);
+
+  const el = document.getElementById('wlList');
+  if(!evts.length){
+    el.innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No events logged for this filter</div>';
+    return;
+  }
+
+  el.innerHTML = evts.map((e,i)=>{
+    const cfg = WL_TYPE_CFG[e.event_type]||{label:'Other',icon:'📋',cls:'wl-other'};
+    const dt  = new Date(e.event_time);
+    const dtStr = dt.toLocaleDateString('en-ZA',{day:'numeric',month:'short'}) + ' at ' + dt.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+    const wi  = waiters().findIndex(s=>s.name===e.waiter_name);
+    return `<div class="wl-event-card">
+      <div class="wl-event-hdr">
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div class="wl-av" style="width:26px;height:26px;font-size:0.72rem;background:${PAC_W[wi>=0?wi%PAC_W.length:0]}">${(e.waiter_name||'?')[0]}</div>
+          <span style="font-weight:700;font-size:0.88rem">${e.waiter_name}</span>
+          <span class="wl-stat ${cfg.cls}">${cfg.icon} ${cfg.label}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.4rem">
+          <span style="font-size:0.7rem;color:var(--muted)">${dtStr}</span>
+          <button onclick="deleteWL('${e.id}')" style="background:none;border:none;cursor:pointer;font-size:0.9rem;color:var(--muted)">🗑</button>
+        </div>
+      </div>
+      <div class="wl-event-meta">
+        ${e.table_number?`🪑 Table <strong>${e.table_number}</strong>  `:''} 
+        ${e.amount?`💰 <strong>R${parseFloat(e.amount).toFixed(2)}</strong>  `:''}
+        ${e.scheduled_time&&e.arrival_time?`⏰ Scheduled <strong>${e.scheduled_time}</strong> · Arrived <strong>${e.arrival_time}</strong>  `:''}
+        ${e.items?`<br>📋 ${e.items}`:''}
+        ${e.reason?`<br>💬 <em>${e.reason}</em>`:''}
+        ${e.logged_by?`<br><span style="font-size:0.68rem">Logged by: ${e.logged_by}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterWL(type,btn){
+  wlFilter=type;
+  document.querySelectorAll('#wlTypeTabs .ct').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  renderWL();
+}
+function wlSetWaiter(name,btn){
+  wlWaiter=name;
+  document.querySelectorAll('#wlWaiterTabs .ct').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  renderWL();
+}
+function wlToday(){
+  const t=new Date().toISOString().split('T')[0];
+  document.getElementById('wlFrom').value=t;
+  document.getElementById('wlTo').value=t;
+  loadWLData();
+}
+function wlMonth(){
+  const now=new Date();
+  document.getElementById('wlFrom').value=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+  document.getElementById('wlTo').value=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().split('T')[0];
+  loadWLData();
+}
+
+// PIN SYSTEM
+function openWLModal(prefilledWaiter){
+  document.getElementById('wlEditId').value='';
+  wlPinEntry='';
+  wlConfirmedWaiter=null;
+  updatePinDots();
+  document.getElementById('wlPinName').textContent='';
+  document.getElementById('wlPinStep').style.display='block';
+  document.getElementById('wlFormStep').style.display='none';
+  // Set default datetime to now
+  const now=new Date();
+  now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById('wlDateTime').value=now.toISOString().slice(0,16);
+  document.getElementById('wlType').value='void';
+  document.getElementById('wlTable').value='';
+  document.getElementById('wlAmount').value='';
+  document.getElementById('wlItems').value='';
+  document.getElementById('wlReason').value='';
+  wlToggleFields();
+  // If prefilled waiter, skip to form
+  if(prefilledWaiter){
+    wlConfirmedWaiter=prefilledWaiter;
+    showWLForm(prefilledWaiter);
+  }
+  openMo('moWL');
+}
+
+function wlPinPress(key){
+  if(key==='⌫'){
+    wlPinEntry=wlPinEntry.slice(0,-1);
+    updatePinDots();
+    document.getElementById('wlPinName').textContent='';
+    return;
+  }
+  if(key===''||wlPinEntry.length>=4) return;
+  wlPinEntry+=String(key);
+  updatePinDots();
+  if(wlPinEntry.length===4){
+    // Check against known PINs
+    const match=Object.entries(wlPins).find(([name,pin])=>pin===wlPinEntry);
+    if(match){
+      wlConfirmedWaiter=match[0];
+      document.getElementById('wlPinName').textContent='✓ '+match[0];
+      document.getElementById('wlPinName').style.color='var(--green)';
+      setTimeout(()=>showWLForm(match[0]),400);
+    } else {
+      document.getElementById('wlPinName').textContent='❌ Unknown PIN — try again';
+      document.getElementById('wlPinName').style.color='var(--red)';
+      setTimeout(()=>{wlPinEntry='';updatePinDots();document.getElementById('wlPinName').textContent='';},1200);
+    }
+  }
+}
+
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    const el=document.getElementById('pd'+i);
+    if(el) el.className=i<wlPinEntry.length?'wl-pin-dot-filled':'';
+    if(el) el.style.cssText=i<wlPinEntry.length?'width:14px;height:14px;border-radius:50%;background:var(--burg);border:2px solid var(--burg)':'width:14px;height:14px;border-radius:50%;border:2px solid var(--border)';
+  }
+}
+
+function wlSkipPin(){
+  // Show waiter select instead
+  const ws=waiters();
+  const sel=document.createElement('select');
+  sel.style.cssText='width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:Karla,sans-serif;font-size:0.9rem;margin-bottom:0.8rem';
+  ws.forEach(s=>{const o=document.createElement('option');o.value=s.name;o.textContent=s.name;sel.appendChild(o);});
+  const btn=document.createElement('button');
+  btn.className='btn bp';btn.style.width='100%';btn.textContent='Confirm Waiter';
+  btn.onclick=()=>showWLForm(sel.value);
+  const ps=document.getElementById('wlPinStep');
+  ps.innerHTML='';ps.appendChild(sel);ps.appendChild(btn);
+}
+
+function showWLForm(name){
+  document.getElementById('wlPinStep').style.display='none';
+  document.getElementById('wlFormStep').style.display='block';
+  document.getElementById('wlConfirmedName').textContent=name;
+  const wi=waiters().findIndex(s=>s.name===name);
+  const av=document.getElementById('wlConfirmedAv');
+  av.textContent=name[0];av.style.background=PAC_W[wi>=0?wi%PAC_W.length:0];
+  wlConfirmedWaiter=name;
+}
+
+function wlResetPin(){
+  wlPinEntry='';wlConfirmedWaiter=null;
+  document.getElementById('wlPinStep').style.display='block';
+  document.getElementById('wlFormStep').style.display='none';
+  updatePinDots();
+  document.getElementById('wlPinName').textContent='';
+}
+
+function wlToggleFields(){
+  const type=document.getElementById('wlType').value;
+  document.getElementById('wlTableAmtFields').style.display=type==='late'?'none':'block';
+  document.getElementById('wlLateFields').style.display=type==='late'?'block':'none';
+}
+
+async function saveWL(){
+  if(!wlConfirmedWaiter){showToast('No waiter identified.',true);return;}
+  const type=document.getElementById('wlType').value;
+  const table=document.getElementById('wlTable').value.trim();
+  const amount=parseFloat(document.getElementById('wlAmount').value)||0;
+  const items=document.getElementById('wlItems').value.trim();
+  const reason=document.getElementById('wlReason').value.trim();
+  const dt=document.getElementById('wlDateTime').value;
+  const sched=document.getElementById('wlScheduled').value;
+  const arrival=document.getElementById('wlArrival').value;
+
+  if(type!=='late'&&!reason){showToast('Enter a reason.',true);return;}
+  if(type==='late'&&!arrival){showToast('Enter arrival time.',true);return;}
+
+  setSyncStatus('syncing');
+  const rec={
+    waiter_name:wlConfirmedWaiter,
+    event_type:type,
+    table_number:table||null,
+    amount:amount||null,
+    items:items||null,
+    reason:reason||null,
+    scheduled_time:type==='late'?sched:null,
+    arrival_time:type==='late'?arrival:null,
+    event_time:dt?new Date(dt).toISOString():new Date().toISOString(),
+    logged_by:CU.name,
+  };
+  const {error}=await SB.from('waiter_events').insert(rec);
+  if(error){
+    // Table might not exist yet — show helpful message
+    setSyncStatus('err');
+    showToast('Run the SQL setup first (see Settings → DB Status)',true);
+    return;
+  }
+  closeMo('moWL');
+  await loadWLData();
+  setSyncStatus('ok');
+  showToast(`${WL_TYPE_CFG[type]?.icon||''} Event logged for ${wlConfirmedWaiter} ✓`);
+}
+
+async function deleteWL(id){
+  if(!confirm('Delete this event?'))return;
+  setSyncStatus('syncing');
+  await SB.from('waiter_events').delete().eq('id',id);
+  await loadWLData();setSyncStatus('ok');showToast('Event deleted.');
+}
+
+// PIN MANAGEMENT (in Staff Management)
+function openPinSetup(){
+  const ws=waiters();
+  document.getElementById('pinSetupList').innerHTML=ws.map(s=>`
+    <div style="display:flex;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--surface);gap:0.7rem">
+      <div style="font-weight:600;flex:1">${s.name}</div>
+      <input type="password" maxlength="4" inputmode="numeric" value="${wlPins[s.name]||''}" placeholder="4-digit PIN"
+        style="width:110px;border:1px solid var(--border);border-radius:7px;padding:0.4rem 0.6rem;font-size:0.9rem;text-align:center;background:var(--cream)"
+        oninput="wlPins['${s.name.replace(/'/g,"\\'")}']=(this.value.length===4?this.value:wlPins['${s.name.replace(/'/g,"\\'")}']||'')">
+    </div>`).join('');
+  openMo('moPinSetup');
+}
+
+function savePins(){
+  localStorage.setItem('da_pins',JSON.stringify(wlPins));
+  closeMo('moPinSetup');
+  showToast('PINs saved ✓');
+  renderWL();
+}
+
+// ═══════════════════════════════════════════
+// USER LOGIN MANAGEMENT
+// ═══════════════════════════════════════════
+const ACCESS_OPTIONS = [
+  {id:'dashboard',    label:'Dashboard'},
+  {id:'stocktake',   label:'Stock Take'},
+  {id:'stockdb',     label:'Stock Database'},
+  {id:'pending',     label:'Pending Submissions'},
+  {id:'orders',      label:'Supplier Orders'},
+  {id:'cashup',      label:'Daily Cash Up'},
+  {id:'reports',     label:'Reports & Variance'},
+  {id:'waiterlog',   label:'Waiter Accountability'},
+  {id:'roster',      label:'Shift Roster'},
+  {id:'payroll',     label:'Payroll'},
+  {id:'staff',       label:'Staff Management'},
+  {id:'leave',       label:'Leave Management'},
+  {id:'docs',        label:'Staff Documents'},
+  {id:'auditlog',    label:'Audit Log'},
+  {id:'settings',    label:'Settings'},
+];
+
+const PRESETS = {
+  owner:    ALL_SECTIONS,
+  investor: INVESTOR_SECTIONS,
+  manager:  ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','docs'],
+  staff:    ['dashboard','stocktake'],
+};
+
+async function loadStaffLogins(){
+  const {data} = await SB.from('staff_logins').select('*').order('staff_name');
+  appLogins = data || [];
+  renderLoginsList();
+  // Populate user filter in audit log
+  const sel = document.getElementById('auUser');
+  if(sel){
+    sel.innerHTML='<option value="">All Users</option><option value="Zavier">Zavier (Owner)</option>'+
+      (data||[]).map(l=>`<option value="${l.staff_name}">${l.staff_name}</option>`).join('');
+  }
+}
+
+function renderLoginsList(){
+  const el = document.getElementById('loginsList');
+  if(!appLogins.length){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No staff logins created yet.<br><br>Tap <strong>+ Create Login</strong> to give a staff member their own login.</div>';
+    return;
+  }
+  el.innerHTML = appLogins.map(l=>`
+    <div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem">
+      <div style="display:flex;align-items:center;gap:0.8rem">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--navy2);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:#fff;flex-shrink:0">${l.staff_name[0]}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:0.92rem">${l.staff_name}</div>
+          <div style="font-size:0.72rem;color:var(--muted)">@${l.username} · <span style='color:${l.role_level==="owner"?"var(--burg)":l.role_level==="investor"?"var(--gold)":l.role_level==="manager"?"var(--blue)":"var(--muted)"};font-weight:700;text-transform:capitalize'>${l.role_level||'employee'}</span></div>
+        </div>
+        <span class="bdg ${l.active?'bgg':'bgr'}">${l.active?'Active':'Inactive'}</span>
+        <button onclick="openEditLogin('${l.id}')" class="btn bs bsm">✏️</button>
+        <button onclick="toggleLogin('${l.id}',${l.active})" class="btn bs bsm">${l.active?'Disable':'Enable'}</button>
+      </div>
+      <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--surface)">
+        <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Access:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.3rem">
+          ${(l.access_sections||[]).map(s=>`<span style="font-size:0.65rem;background:var(--surface);padding:0.1rem 0.45rem;border-radius:4px;color:var(--ink)">${TTLS[s]||s}</span>`).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function switchStaffTab(tab, btn){
+  document.getElementById('staffTabList').style.display   = tab==='list'?'block':'none';
+  document.getElementById('staffTabLogins').style.display = tab==='logins'?'block':'none';
+  document.querySelectorAll('#staffTabs .ct').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  if(tab==='logins') loadStaffLogins();
+}
+
+function openAddLogin(){
+  document.getElementById('loginModalTitle').textContent='Create Login';
+  document.getElementById('loginEditId').value='';
+  document.getElementById('loginUsername').value='';
+  document.getElementById('loginPassword').value='';
+  // Populate staff picker
+  const sel=document.getElementById('loginStaffPick');
+  sel.innerHTML='<option value="">— Select staff member —</option>'+
+    stfD.filter(s=>s.active).map(s=>`<option value="${s.name}">${s.name} (${s.role})</option>`).join('');
+  document.getElementById('loginSaveBtn').textContent='Create Login';
+  renderAccessCheckboxes([]);
+  openMo('moLogin');
+}
+
+function openEditLogin(id){
+  const l=appLogins.find(x=>x.id===id); if(!l)return;
+  document.getElementById('loginModalTitle').textContent='Edit Login — '+l.staff_name;
+  document.getElementById('loginEditId').value=id;
+  const sel=document.getElementById('loginStaffPick');
+  sel.innerHTML=`<option value="${l.staff_name}">${l.staff_name}</option>`;
+  sel.disabled=true;
+  document.getElementById('loginUsername').value=l.username;
+  document.getElementById('loginPassword').value=l.password;
+  document.getElementById('loginSaveBtn').textContent='Save Changes';
+  renderAccessCheckboxes(l.access_sections||[]);
+  openMo('moLogin');
+}
+
+function renderAccessCheckboxes(selected){
+  document.getElementById('accessCheckboxes').innerHTML=ACCESS_OPTIONS.map(o=>`
+    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;cursor:pointer;padding:0.25rem 0">
+      <input type="checkbox" id="acc_${o.id}" value="${o.id}" ${selected.includes(o.id)?'checked':''}
+        style="width:16px;height:16px;accent-color:var(--burg);cursor:pointer">
+      ${o.label}
+    </label>`).join('');
+  // Always check dashboard
+  const db=document.getElementById('acc_dashboard');
+  if(db){db.checked=true;db.disabled=true;}
+}
+
+function setPreset(preset){
+  const sections = PRESETS[preset]||[];
+  ACCESS_OPTIONS.forEach(o=>{
+    const cb=document.getElementById('acc_'+o.id);
+    if(cb&&!cb.disabled) cb.checked=sections.includes(o.id);
+  });
+}
+
+function autoFillUsername(){
+  const name=document.getElementById('loginStaffPick').value;
+  if(!name||document.getElementById('loginEditId').value) return;
+  // Generate username from first name, lowercase, no spaces
+  const first=name.split(' ')[0].toLowerCase().replace(/[^a-z]/g,'');
+  document.getElementById('loginUsername').value=first;
+}
+
+async function saveLogin(){
+  const editId=document.getElementById('loginEditId').value;
+  const staffName=document.getElementById('loginStaffPick').value;
+  const username=document.getElementById('loginUsername').value.trim().toLowerCase();
+  const password=document.getElementById('loginPassword').value.trim();
+  if(!staffName){showToast('Select a staff member.',true);return;}
+  if(!username){showToast('Enter a username.',true);return;}
+  if(!password||password.length<4){showToast('Password must be at least 4 characters.',true);return;}
+
+  // Collect selected access
+  const access=ACCESS_OPTIONS.map(o=>o.id).filter(id=>{
+    const cb=document.getElementById('acc_'+id);
+    return cb&&cb.checked;
+  });
+  if(!access.includes('dashboard')) access.unshift('dashboard');
+
+  // Determine role level from access
+  const roleLevel = access.includes('settings') && access.includes('staff')
+    ? 'owner'
+    : access.length <= INVESTOR_SECTIONS.length && !access.includes('stocktake') && access.includes('reports') && access.includes('auditlog')
+    ? 'investor'
+    : access.includes('cashup') || access.includes('payroll')
+    ? 'manager'
+    : 'employee';
+
+  setSyncStatus('syncing');
+  const rec={staff_name:staffName,username,password,access_sections:access,role_level:roleLevel,active:true};
+
+  if(editId){
+    await SB.from('staff_logins').update(rec).eq('id',editId);
+    await logAudit('staff','Login Updated',`Updated login for ${staffName}`);
+    showToast(`Login updated for ${staffName} ✓`);
+  } else {
+    // Check username not taken
+    const {data:existing}=await SB.from('staff_logins').select('id').eq('username',username);
+    if(existing&&existing.length){setSyncStatus('err');showToast('Username already taken.',true);return;}
+    await SB.from('staff_logins').insert(rec);
+    await logAudit('staff','Login Created',`Created login @${username} for ${staffName}`);
+    showToast(`Login created for ${staffName} ✓`);
+  }
+  document.getElementById('loginStaffPick').disabled=false;
+  closeMo('moLogin');
+  await loadStaffLogins();
+  setSyncStatus('ok');
+}
+
+async function toggleLogin(id,active){
+  setSyncStatus('syncing');
+  await SB.from('staff_logins').update({active:!active}).eq('id',id);
+  await loadStaffLogins();
+  setSyncStatus('ok');
+  showToast(active?'Login disabled.':'Login enabled.');
+}
+
+// ═══════════════════════════════════════════
+// AUDIT LOG
+// ═══════════════════════════════════════════
+let auditFilter = 'all';
+
+async function logAudit(category, action, detail){
+  if(!CU) return;
+  try {
+    await SB.from('audit_log').insert({
+      user_name: CU.name,
+      username:  CU.username,
+      category,
+      action,
+      detail,
+      logged_at: new Date().toISOString(),
+    });
+  } catch(e){ /* non-blocking */ }
+}
+
+async function loadAuditLog(){
+  const from = document.getElementById('auFrom')?.value;
+  const to   = document.getElementById('auTo')?.value;
+  const user = document.getElementById('auUser')?.value;
+
+  let q = SB.from('audit_log').select('*').order('logged_at',{ascending:false}).limit(200);
+  if(from) q=q.gte('logged_at',from+'T00:00:00');
+  if(to)   q=q.lte('logged_at',to+'T23:59:59');
+  if(user) q=q.eq('user_name',user);
+  if(auditFilter!=='all') q=q.eq('category',auditFilter);
+
+  const {data}=await q;
+  renderAuditLog(data||[]);
+}
+
+function auFilter(type,btn){
+  auditFilter=type;
+  document.querySelectorAll('#p-auditlog .ct').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  loadAuditLog();
+}
+
+const AU_ICONS={login:'🔐',stock:'📦',cashup:'💰',approval:'✅',leave:'📅',roster:'📋',payroll:'💵',staff:'👤',order:'🛒',other:'📝'};
+
+function renderAuditLog(data){
+  const el=document.getElementById('auditList');
+  if(!data.length){el.innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No audit entries for this filter</div>';return;}
+  el.innerHTML=data.map(e=>{
+    const dt=new Date(e.logged_at);
+    const dtStr=dt.toLocaleDateString('en-ZA',{day:'numeric',month:'short'})+' '+dt.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+    const icon=AU_ICONS[e.category]||'📝';
+    return `<div style="display:flex;align-items:flex-start;padding:0.65rem 0;border-bottom:1px solid var(--surface);gap:0.7rem">
+      <div style="font-size:1.1rem;flex-shrink:0;margin-top:0.1rem">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+          <span style="font-weight:700;font-size:0.88rem">${e.user_name}</span>
+          <span style="font-size:0.72rem;background:var(--surface);padding:0.1rem 0.45rem;border-radius:4px;color:var(--muted)">@${e.username}</span>
+          <span style="font-size:0.78rem;color:var(--ink);font-weight:600">${e.action}</span>
+        </div>
+        ${e.detail?`<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem">${e.detail}</div>`:''}
+      </div>
+      <div style="font-size:0.68rem;color:var(--muted);white-space:nowrap;flex-shrink:0">${dtStr}</div>
+    </div>`;
+  }).join('');
+}
+
+// Initialise audit log date filters
+function initAuditDates(){
+  const t=new Date().toISOString().split('T')[0];
+  const f=new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().split('T')[0];
+  const auFrom=document.getElementById('auFrom');
+  const auTo=document.getElementById('auTo');
+  if(auFrom&&!auFrom.value) auFrom.value=f;
+  if(auTo&&!auTo.value) auTo.value=t;
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function openMo(id){document.getElementById(id).classList.add('open');}
+function closeMo(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+let tT;
+function showToast(m,e=false){const el=document.getElementById('toast');el.textContent=m;el.className='toast'+(e?' err':'');el.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>el.classList.remove('on'),3500);}
+
+// ═══════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async ()=>{
+  try {
+    const {data,error} = await SB.from('stock').select('count',{count:'exact',head:true});
+    if(error) throw error;
+    document.getElementById('loadScreen').style.display='none';
+    document.getElementById('ls').style.display='flex';
+  } catch(err) {
+    document.getElementById('loadScreen').querySelector('p').textContent = 'CONNECTION FAILED — CHECK INTERNET';
+    document.getElementById('loadScreen').querySelector('p').style.color = '#f87171';
+    setTimeout(()=>{
+      document.getElementById('loadScreen').style.display='none';
+      document.getElementById('ls').style.display='flex';
+    }, 3000);
+  }
+});
+</script>
+<!-- MODAL: PAYSLIP -->
+<div class="mo" id="moPayslip">
+  <div class="md">
+    <button class="md-close" onclick="closeMo('moPayslip')">✕</button>
+    <div class="md-title" id="psModalTitle">Generate Payslip</div>
+    <input type="hidden" id="psStaffName">
+    <input type="hidden" id="psGroup">
+    <div class="fg2">
+      <div class="fg"><label>Payment Period From</label><input type="date" id="psFrom"></div>
+      <div class="fg"><label>Payment Period To</label><input type="date" id="psTo"></div>
+    </div>
+    <div class="fg"><label>ID Number (optional)</label><input type="text" id="psId" placeholder="e.g. 0503180361084"></div>
+    <div class="fg"><label>EFT Account (optional)</label><input type="text" id="psAcct" placeholder="e.g. FNB 123456789"></div>
+    <!-- Extra income lines -->
+    <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;margin-top:0.3rem">Extra Income Lines</div>
+    <div id="psExtraIncome">
+      <div class="fg2" style="margin-bottom:0.4rem">
+        <div class="fg"><label>Description</label><input type="text" class="ps-desc" placeholder="e.g. Admin Work"></div>
+        <div class="fg"><label>Amount (R)</label><input type="number" class="ps-amt" placeholder="0.00" min="0" step="0.01"></div>
+      </div>
+    </div>
+    <button class="btn bs bsm" onclick="addExtraIncome()" style="margin-bottom:0.8rem">+ Add Line</button>
+    <!-- Deductions -->
+    <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem">Deductions</div>
+    <div class="fg2">
+      <div class="fg"><label>Breakage (R)</label><input type="number" id="psBreakage" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="fg"><label>Borrowed (R)</label><input type="number" id="psBorrowed" placeholder="0.00" min="0" step="0.01"></div>
+    </div>
+    <div class="fg2">
+      <div class="fg"><label>Provident Fund (R)</label><input type="number" id="psProvident" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="fg"><label>Other Deduction (R)</label><input type="number" id="psOtherDeduct" placeholder="0.00" min="0" step="0.01"></div>
+    </div>
+    <button class="btn bp" onclick="printPayslip()" style="width:100%;margin-top:0.5rem">🖨️ Generate & Print Payslip</button>
+  </div>
+</div>
+
+<!-- MODAL: LOG WAITER EVENT -->
+<div class="mo" id="moWL">
+  <div class="md">
+    <button class="md-close" onclick="closeMo('moWL')">✕</button>
+    <div class="md-title" id="wlModalTitle">Log Event</div>
+    <input type="hidden" id="wlEditId">
+
+    <!-- PIN verification -->
+    <div id="wlPinStep">
+      <div style="text-align:center;margin-bottom:1rem">
+        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">Enter the waiter's 4-digit PIN to identify them</div>
+        <div style="display:flex;gap:0.5rem;justify-content:center;margin-bottom:0.8rem" id="wlPinDots">
+          <div style="width:14px;height:14px;border-radius:50%;border:2px solid var(--border)" id="pd0"></div>
+          <div style="width:14px;height:14px;border-radius:50%;border:2px solid var(--border)" id="pd1"></div>
+          <div style="width:14px;height:14px;border-radius:50%;border:2px solid var(--border)" id="pd2"></div>
+          <div style="width:14px;height:14px;border-radius:50%;border:2px solid var(--border)" id="pd3"></div>
+        </div>
+        <div style="font-size:0.9rem;color:var(--burg);font-weight:700;min-height:1.2rem" id="wlPinName"></div>
+      </div>
+      <!-- PIN Pad -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;max-width:240px;margin:0 auto 1rem">
+        ${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>`<button onclick="wlPinPress('${k}')" style="background:${k===''?'transparent':k==='⌫'?'var(--red-l)':'var(--surface)'};border:${k===''?'none':'1px solid var(--border)'};border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:${k===''?'default':'pointer'};color:${k==='⌫'?'var(--red)':'var(--ink)'};transition:all 0.1s">${k}</button>`).join('')}
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);text-align:center">PIN not set? <span style="color:var(--burg);cursor:pointer;font-weight:700" onclick="wlSkipPin()">Skip & select manually</span></div>
+    </div>
+
+    <!-- Event form (shown after PIN confirmed) -->
+    <div id="wlFormStep" style="display:none">
+      <div style="background:var(--surface);border-radius:10px;padding:0.7rem 0.9rem;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.7rem">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--burg);display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;color:#fff" id="wlConfirmedAv">?</div>
+        <div><div style="font-weight:700" id="wlConfirmedName">—</div><div style="font-size:0.72rem;color:var(--muted)">Waiter identified</div></div>
+        <button onclick="wlResetPin()" style="margin-left:auto;background:none;border:none;font-size:0.75rem;color:var(--muted);cursor:pointer">Change</button>
+      </div>
+      <div class="fg"><label>Event Type</label>
+        <select id="wlType" onchange="wlToggleFields()">
+          <option value="void">🚫 Void</option>
+          <option value="promo">🎁 Promotion / Comp</option>
+          <option value="late">⏰ Late Arrival</option>
+          <option value="other">📋 Other</option>
+        </select>
+      </div>
+      <div id="wlTableAmtFields">
+        <div class="fg2">
+          <div class="fg"><label>Table Number</label><input type="text" id="wlTable" placeholder="e.g. 5 or T12"></div>
+          <div class="fg"><label>Amount (R)</label><input type="number" id="wlAmount" placeholder="0.00" min="0" step="0.01"></div>
+        </div>
+        <div class="fg"><label>Items / Description</label><input type="text" id="wlItems" placeholder="e.g. 1x Rump Steak, 2x Coke"></div>
+      </div>
+      <div id="wlLateFields" style="display:none">
+        <div class="fg2">
+          <div class="fg"><label>Scheduled Start</label><input type="time" id="wlScheduled" value="07:00"></div>
+          <div class="fg"><label>Actual Arrival</label><input type="time" id="wlArrival"></div>
+        </div>
+      </div>
+      <div class="fg"><label>Reason / Notes</label><textarea id="wlReason" rows="2" placeholder="e.g. Customer complained about cold food"></textarea></div>
+      <div class="fg"><label>Date & Time</label><input type="datetime-local" id="wlDateTime"></div>
+      <button class="btn bp" onclick="saveWL()" style="width:100%;margin-top:0.3rem">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: WAITER PIN SETUP -->
+<div class="mo" id="moPinSetup">
+  <div class="md">
+    <button class="md-close" onclick="closeMo('moPinSetup')">✕</button>
+    <div class="md-title">Set Waiter PINs</div>
+    <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Each waiter needs a unique 4-digit PIN for accountability logging.</div>
+    <div id="pinSetupList"></div>
+    <button class="btn bp" onclick="savePins()" style="width:100%;margin-top:0.5rem">Save PINs</button>
+  </div>
+</div>
+
+<!-- MODAL: CREATE/EDIT LOGIN -->
+<div class="mo" id="moLogin">
+  <div class="md">
+    <button class="md-close" onclick="closeMo('moLogin')">✕</button>
+    <div class="md-title" id="loginModalTitle">Create Login</div>
+    <input type="hidden" id="loginEditId">
+
+    <div class="fg"><label>Staff Member</label>
+      <select id="loginStaffPick" style="width:100%" onchange="autoFillUsername()">
+        <option value="">— Select staff member —</option>
+      </select>
+    </div>
+    <div class="fg2">
+      <div class="fg"><label>Username</label><input type="text" id="loginUsername" placeholder="e.g. reanne" autocapitalize="none"></div>
+      <div class="fg"><label>Password</label><input type="text" id="loginPassword" placeholder="Min 6 characters"></div>
+    </div>
+
+    <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;margin-top:0.3rem">Access Permissions</div>
+    <div style="background:var(--surface);border-radius:10px;padding:0.8rem;margin-bottom:0.8rem">
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.6rem">Select which sections this person can access:</div>
+      <div id="accessCheckboxes" style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem"></div>
+      <div style="display:flex;gap:0.5rem;margin-top:0.6rem;flex-wrap:wrap">
+        <button class="btn bs bsm" onclick="setPreset('owner')" style="border-color:var(--burg);color:var(--burg)">🔑 Owner</button>
+        <button class="btn bs bsm" onclick="setPreset('investor')" style="border-color:var(--gold);color:var(--gold)">📊 Investor</button>
+        <button class="btn bs bsm" onclick="setPreset('manager')">👔 Manager</button>
+        <button class="btn bs bsm" onclick="setPreset('staff')">👤 Staff</button>
+      </div>
+    </div>
+    <button class="btn bp" onclick="saveLogin()" style="width:100%;margin-top:0.3rem" id="loginSaveBtn">Create Login</button>
+  </div>
+</div>
+
+</body>
+</html>
