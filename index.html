@@ -294,6 +294,12 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
 .lp-unpaid{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
 .lp-family{background:var(--green-l);color:var(--green);border:1px solid var(--green-b);}
 
+/* KPI */
+.kpi-score-btn{border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.5rem;font-size:0.75rem;font-weight:700;cursor:pointer;min-width:32px;transition:all 0.1s;}
+.kpi-score-btn:hover{transform:scale(1.08);}
+.kpi-detail-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.75rem 0.9rem;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s;}
+.kpi-detail-card:hover{border-color:var(--burg);box-shadow:0 2px 8px rgba(122,21,40,0.1);}
+
 /* DOCS */
 .doc-staff-row{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.8rem 1rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.8rem;cursor:pointer;box-shadow:var(--sh);transition:border-color 0.15s;}
 .doc-staff-row:hover{border-color:var(--burg);}
@@ -463,6 +469,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
         <div class="nsi" onclick="go('payroll',this)" id="n-payroll" data-r="manager"><span class="dot"></span>Payroll</div>
         <div class="nsi" onclick="go('staff',this)"   id="n-staff"   data-r="owner"><span class="dot"></span>Staff Management</div>
         <div class="nsi" onclick="go('leave',this)"   id="n-leave"   data-r="manager"><span class="dot"></span>Leave Management</div>
+        <div class="nsi" onclick="go('kpi',this)"     id="n-kpi"     data-r="manager"><span class="dot"></span>⭐ KPI Reviews</div>
         <div class="nsi" onclick="go('docs',this)"    id="n-docs"    data-r="manager"><span class="dot"></span>Staff Documents</div>
       </div>
       <div class="nlbl" style="margin-top:0.5rem">System</div>
@@ -485,7 +492,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
     </div>
     <div class="sa">
       <!-- Global price alert banner -->
-      <div id="globalPriceAlert" style="display:none;background:var(--red);color:#fff;padding:0.7rem 1.2rem;display:none;align-items:center;justify-content:space-between;gap:0.8rem;flex-wrap:wrap">
+      <div id="globalPriceAlert" style="display:none;background:var(--red);color:#fff;padding:0.7rem 1.2rem;align-items:center;justify-content:space-between;gap:0.8rem;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:0.6rem">
           <span style="font-size:1.1rem">⚠️</span>
           <div>
@@ -1012,14 +1019,92 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
 
       <!-- LEAVE -->
       <div class="pnl" id="p-leave">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem">
-          <div style="font-size:0.82rem;color:var(--muted)">Kitchen staff leave.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem">
+          <div style="font-size:0.82rem;color:var(--muted)">Kitchen staff leave tracking — annual &amp; sick leave balances.</div>
           <button class="btn bp bsm" id="recordLeaveBtn" onclick="openLeaveModal(null)">+ Record Leave</button>
+        </div>
+        <!-- Sick Leave Cycle Banner -->
+        <div id="sickCycleCard" style="background:linear-gradient(135deg,#fff8f0,#fff3e8);border:1px solid #f0c898;border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.9rem">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem">
+            <span style="font-size:1rem">🤒</span>
+            <div style="font-weight:700;font-size:0.88rem;color:var(--burg)">Sick Leave Cycle: 1 Jul 2024 – 30 Jun 2027</div>
+            <span style="font-size:0.7rem;background:var(--gold-l);color:#7a5010;border:1px solid #f0d090;padding:0.15rem 0.55rem;border-radius:20px;font-weight:700;margin-left:auto">30 days / 3 years</span>
+          </div>
+          <div id="sickCycleGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.5rem"></div>
+        </div>
+        <!-- Annual leave year filter -->
+        <div class="card" style="padding:0.65rem 1rem;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.7rem;flex-wrap:wrap">
+          <span style="font-size:0.78rem;font-weight:700;color:var(--muted)">ANNUAL LEAVE YEAR</span>
+          <select id="leaveYearFilter" onchange="renderLeave()" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;flex:1;min-width:100px">
+            <option value="all">All Time</option>
+          </select>
+          <button class="btn bs bsm" onclick="setLeaveYearFilter('all')">All Time</button>
         </div>
         <div class="ctabs" id="leaveTabs"></div>
         <div id="leaveCards"></div>
         <div class="stitle">Leave Log</div>
         <div id="leaveLog"></div>
+      </div>
+
+      <!-- KPI REVIEWS -->
+      <div class="pnl" id="p-kpi">
+        <div class="ctabs" style="margin-bottom:0.9rem" id="kpiMainTabs">
+          <button class="ct act" onclick="switchKpiTab('waiters',this)">👔 Waiters</button>
+          <button class="ct" onclick="switchKpiTab('kitchen',this)">👨‍🍳 Kitchen</button>
+          <button class="ct" onclick="switchKpiTab('managers',this)">🎯 Managers</button>
+          <button class="ct" onclick="switchKpiTab('history',this)">📊 History</button>
+        </div>
+
+        <!-- WAITERS TAB -->
+        <div id="kpiTabWaiters">
+          <div class="card" style="padding:0.8rem 1rem;margin-bottom:0.8rem">
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:flex-end">
+              <div class="fg" style="margin:0;flex:1;min-width:130px"><label>Staff Member</label><select id="kpiWaiterStaff" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('waiters')"></select></div>
+              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>Month</label><input type="month" id="kpiWaiterPeriod" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('waiters')"></div>
+            </div>
+          </div>
+          <div id="kpiWaiterForm"></div>
+        </div>
+
+        <!-- KITCHEN TAB -->
+        <div id="kpiTabKitchen" style="display:none">
+          <div class="card" style="padding:0.8rem 1rem;margin-bottom:0.8rem">
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:flex-end">
+              <div class="fg" style="margin:0;flex:1;min-width:130px"><label>Staff Member</label><select id="kpiKitchenStaff" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('kitchen')"></select></div>
+              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>Month</label><input type="month" id="kpiKitchenPeriod" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('kitchen')"></div>
+            </div>
+          </div>
+          <div id="kpiKitchenForm"></div>
+        </div>
+
+        <!-- MANAGERS TAB -->
+        <div id="kpiTabManagers" style="display:none">
+          <div class="card" style="padding:0.8rem 1rem;margin-bottom:0.8rem">
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:flex-end">
+              <div class="fg" style="margin:0;flex:1;min-width:130px"><label>Manager</label><select id="kpiManagerStaff" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('managers')"></select></div>
+              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>Month</label><input type="month" id="kpiManagerPeriod" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('managers')"></div>
+            </div>
+          </div>
+          <div id="kpiManagerForm"></div>
+        </div>
+
+        <!-- HISTORY TAB -->
+        <div id="kpiTabHistory" style="display:none">
+          <div class="card" style="padding:0.7rem 1rem;margin-bottom:0.8rem">
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center">
+              <select id="kpiHistType" onchange="renderKpiHistory()" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
+                <option value="all">All Types</option><option value="waiters">Waiters</option><option value="kitchen">Kitchen</option><option value="managers">Managers</option>
+              </select>
+              <select id="kpiHistStaff" onchange="renderKpiHistory()" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;flex:1;min-width:100px">
+                <option value="all">All Staff</option>
+              </select>
+              <select id="kpiHistYear" onchange="renderKpiHistory()" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
+                <option value="all">All Years</option>
+              </select>
+            </div>
+          </div>
+          <div id="kpiHistoryList"></div>
+        </div>
       </div>
 
       <!-- DOCS -->
@@ -1198,6 +1283,15 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
   </div>
 </div>
 
+<div class="mo" id="moKpiDetail">
+  <div class="md" style="max-width:460px">
+    <button class="md-close" onclick="closeMo('moKpiDetail')">✕</button>
+    <div class="md-title" id="kpiDetailTitle">KPI Review</div>
+    <div id="kpiDetailBody"></div>
+    <button class="btn bs" onclick="closeMo('moKpiDetail')" style="width:100%;margin-top:0.5rem">Close</button>
+  </div>
+</div>
+
 <div class="mo" id="moDocs">
   <div class="md">
     <button class="md-close" onclick="closeMo('moDocs')">✕</button>
@@ -1253,17 +1347,17 @@ const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // AUTH
 // ═══════════════════════════════════════════
 // All sections available
-const ALL_SECTIONS = ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','analytics','recipes','pricing','waiterlog','roster','payroll','staff','leave','docs','auditlog','settings'];
-const SECTION_LABELS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',docs:'Staff Documents',auditlog:'Audit Log',settings:'Settings'};
+const ALL_SECTIONS = ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','analytics','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','auditlog','settings'];
+const SECTION_LABELS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',auditlog:'Audit Log',settings:'Settings'};
 
 // Owner always has full access (hardcoded, cannot be removed)
 const ACCESS = {
   owner:   ALL_SECTIONS,
-  manager: ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','docs'],
+  manager: ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','kpi','docs'],
   employee:['dashboard','stocktake'],
 };
-const TTLS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',docs:'Staff Documents',auditlog:'Audit Log',settings:'Settings'};
-const INVESTOR_SECTIONS = ['dashboard','stockdb','reports','analytics','recipes','pricing','cashup','payroll','roster','leave','docs','auditlog'];
+const TTLS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',auditlog:'Audit Log',settings:'Settings'};
+const INVESTOR_SECTIONS = ['dashboard','stockdb','reports','analytics','recipes','pricing','cashup','payroll','roster','leave','kpi','docs','auditlog'];
 const ROLE_COLORS = {owner:'#7a1528', investor:'#c8922a', manager:'#152438', employee:'#1a6e40'};
 
 let CU = null, appLogins = [];
@@ -1343,7 +1437,7 @@ function setSyncStatus(state){
 // ═══════════════════════════════════════════
 // DATA STORE
 // ═══════════════════════════════════════════
-let DB=[], stfD=[], pendingS=[], varianceD=[], payD={mgr:[],kit:[]}, leaveData=[], docsData={}, rosterData={}, rosterFlags={};
+let DB=[], stfD=[], pendingS=[], varianceD=[], payD={mgr:[],kit:[]}, leaveData=[], docsData={}, rosterData={}, rosterFlags={}, kpiData=[];
 let stC={}, dbCat='All', varF='all', rosterGroup='Kitchen', rosterWeekOf=getMonday(new Date());
 let yesterdayStock={}; // {item_id: qty} from most recent previous stocktake
 let anPeriodDays=30, anActiveTab='usage', anReorderFilt='all', anHistoryData=[], anVarianceData=[];
@@ -1360,6 +1454,10 @@ async function loadAllData(){
     stfD     = staffR.data || [];
     pendingS = pendR.data  || [];
     varianceD= varR.data   || [];
+
+    // Load waiter PINs from staff table (sync across devices)
+    wlPins = {};
+    stfD.forEach(s => { if(s.waiter_pin) wlPins[s.name] = s.waiter_pin; });
 
     // Load leave
     const leaveR = await SB.from('leave_records').select('*').order('start_date',{ascending:false});
@@ -1384,9 +1482,16 @@ async function loadAllData(){
     // Check DB status
     document.getElementById('dbStatus').innerHTML = `<span style="color:var(--green);font-weight:700">✓ Connected</span> — Supabase live database · ${DB.length} stock items · ${stfD.length} staff`;
 
+    // Load KPI reviews (graceful if table doesn't exist yet)
+    try {
+      const kpiR = await SB.from('kpi_scores').select('*').order('period',{ascending:false}).limit(500);
+      kpiData = kpiR.data || [];
+    } catch(e){ kpiData=[]; }
+
     renderDash(); renderST(); renderDB(); renderPend(); renderSups();
     renderCU(); renderVar(); renderPay(); renderStf(); initRosterPanel();
     renderLeave(); renderDocs();
+    initKpiPanel();
     await loadRecipes();
     await loadPriceChanges();
     initIngredientDB();
@@ -2699,31 +2804,124 @@ async function deleteStf(id,name){
 // ═══════════════════════════════════════════
 const LEAVE_CFG={'Annual':{cls:'lp-annual',icon:'🏖️'},'Sick':{cls:'lp-sick',icon:'🤒'},'Family':{cls:'lp-family',icon:'👨‍👩‍👧'},'Unpaid':{cls:'lp-unpaid',icon:'💸'},'Sick — Unplanned':{cls:'lp-sick',icon:'🤒'},'Other':{cls:'lp-unpaid',icon:'📋'}};
 const STATUS_CFG={'Approved':'bgg','Pending':'bgo','Sick — Unplanned':'bgr','Rejected':'bgr'};
+// Sick leave cycles (30 days per 3-year cycle)
+const SICK_CYCLES=[
+  {label:'Jul 2009 – Jun 2012',start:'2009-07-01',end:'2012-06-30'},
+  {label:'Jul 2012 – Jun 2015',start:'2012-07-01',end:'2015-06-30'},
+  {label:'Jul 2015 – Jun 2018',start:'2015-07-01',end:'2018-06-30'},
+  {label:'Jul 2018 – Jun 2021',start:'2018-07-01',end:'2021-06-30'},
+  {label:'Jul 2021 – Jun 2024',start:'2021-07-01',end:'2024-06-30'},
+  {label:'Jul 2024 – Jun 2027',start:'2024-07-01',end:'2027-06-30'},
+];
+const SICK_ALLOWANCE=30;
 let leaveFilter='all';
-function kitchenStaff(){return stfD.filter(s=>s.division==='Kitchen'||s.role.startsWith('Kitchen'));}
+function kitchenStaff(){return stfD.filter(s=>s.active!==false && (s.division==='Kitchen'||s.role.startsWith('Kitchen')));}
 function leaveDays(l){if(!l.start_date||!l.end_date)return 0;const s=new Date(l.start_date),e=new Date(l.end_date);return Math.max(1,Math.round((e-s)/(1000*60*60*24))+1);}
+
+function getCurrentSickCycle(){
+  const today=new Date().toISOString().split('T')[0];
+  return SICK_CYCLES.find(c=>today>=c.start&&today<=c.end)||SICK_CYCLES[SICK_CYCLES.length-1];
+}
+
+function getSickUsedInCycle(staffName,cycle){
+  return leaveData.filter(l=>
+    l.staff_name===staffName&&
+    (l.leave_type==='Sick'||l.leave_type==='Sick — Unplanned')&&
+    l.start_date>=cycle.start&&l.start_date<=cycle.end
+  ).reduce((sum,l)=>sum+leaveDays(l),0);
+}
+
+function renderSickCycleGrid(){
+  const el=document.getElementById('sickCycleGrid');
+  if(!el)return;
+  const kit=kitchenStaff();
+  const cycle=getCurrentSickCycle();
+  if(!kit.length){el.innerHTML='<div style="font-size:0.78rem;color:var(--muted)">No kitchen staff found.</div>';return;}
+  el.innerHTML=kit.map(s=>{
+    const used=getSickUsedInCycle(s.name,cycle);
+    const remaining=Math.max(0,SICK_ALLOWANCE-used);
+    const pct=Math.min(100,Math.round(used/SICK_ALLOWANCE*100));
+    const col=pct>=80?'var(--red)':pct>=50?'var(--orange)':'var(--green)';
+    return `<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.65rem 0.8rem">
+      <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.35rem">
+        <div style="width:22px;height:22px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
+        <div style="font-weight:700;font-size:0.78rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
+        <div style="font-size:0.7rem;font-weight:700;color:${col}">${used}/${SICK_ALLOWANCE}</div>
+      </div>
+      <div style="background:var(--surface);border-radius:4px;height:5px;overflow:hidden">
+        <div style="background:${col};height:100%;width:${pct}%;border-radius:4px;transition:width 0.3s"></div>
+      </div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:0.25rem">${remaining} day${remaining!==1?'s':''} remaining</div>
+    </div>`;
+  }).join('');
+}
+
+function setLeaveYearFilter(yr){
+  const sel=document.getElementById('leaveYearFilter');
+  if(sel) sel.value=yr;
+  renderLeave();
+}
 
 function renderLeave(){
   const kit=kitchenStaff();
-  // Hide/show top buttons based on role
   const recBtn=document.getElementById('recordLeaveBtn');
   if(recBtn) recBtn.style.display=isReadOnly()?'none':'inline-flex';
 
+  // Populate year filter
+  const yrSel=document.getElementById('leaveYearFilter');
+  if(yrSel&&yrSel.options.length<=1){
+    const years=new Set(leaveData.map(l=>l.start_date?l.start_date.slice(0,4):null).filter(Boolean));
+    const sorted=[...years].sort((a,b)=>b-a);
+    sorted.forEach(y=>{if(![...yrSel.options].some(o=>o.value===y)){const o=document.createElement('option');o.value=y;o.textContent=y;yrSel.appendChild(o);}});
+  }
+  const yearFilter=yrSel?yrSel.value:'all';
+
+  // Sick cycle grid
+  renderSickCycleGrid();
+
   document.getElementById('leaveTabs').innerHTML=`<button class="ct ${leaveFilter==='all'?'act':''}" onclick="filterLeave('all',this)">All Staff</button>`+kit.map(s=>`<button class="ct ${leaveFilter===s.name?'act':''}" onclick="filterLeave('${s.name.replace(/'/g,"\\'")}',this)">${s.name}</button>`).join('');
   const filt=leaveFilter==='all'?kit:kit.filter(s=>s.name===leaveFilter);
+  const cycle=getCurrentSickCycle();
   document.getElementById('leaveCards').innerHTML=filt.map(s=>{
-    const recs=leaveData.filter(l=>l.staff_name===s.name);
-    const ann=recs.filter(l=>l.leave_type==='Annual').reduce((sum,l)=>sum+leaveDays(l),0);
-    const sick=recs.filter(l=>l.leave_type==='Sick'||l.leave_type==='Sick — Unplanned').reduce((sum,l)=>sum+leaveDays(l),0);
-    const unpaid=recs.filter(l=>l.leave_type==='Unpaid').reduce((sum,l)=>sum+leaveDays(l),0);
+    const allRecs=leaveData.filter(l=>l.staff_name===s.name);
+    const yearRecs=yearFilter==='all'?allRecs:allRecs.filter(l=>l.start_date&&l.start_date.startsWith(yearFilter));
+    const ann=yearRecs.filter(l=>l.leave_type==='Annual').reduce((sum,l)=>sum+leaveDays(l),0);
+    const sick=yearRecs.filter(l=>l.leave_type==='Sick'||l.leave_type==='Sick — Unplanned').reduce((sum,l)=>sum+leaveDays(l),0);
+    const unpaid=yearRecs.filter(l=>l.leave_type==='Unpaid').reduce((sum,l)=>sum+leaveDays(l),0);
+    const cycleUsed=getSickUsedInCycle(s.name,cycle);
+    const cycleRem=Math.max(0,SICK_ALLOWANCE-cycleUsed);
+    const cyclePct=Math.min(100,Math.round(cycleUsed/SICK_ALLOWANCE*100));
+    const cycleCol=cyclePct>=80?'var(--red)':cyclePct>=50?'var(--orange)':'var(--green)';
     const addBtn=isReadOnly()?'':'<button class="btn bp bsm" onclick="openLeaveModal(\''+s.name.replace(/'/g,"\\'")+'\')" >+ Add</button>';
-    return `<div class="leave-summary"><div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.6rem"><div style="width:30px;height:30px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div><div style="font-weight:700;font-size:0.92rem;flex:1">${s.name}</div>${addBtn}</div><div style="display:flex;gap:0.5rem;flex-wrap:wrap"><span style="font-size:0.72rem;background:#e8f0f8;color:var(--blue);border:1px solid #b8cfe8;padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">🏖️ Annual: ${ann} days</span><span style="font-size:0.72rem;background:var(--red-l);color:var(--red);border:1px solid var(--red-b);padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">🤒 Sick: ${sick} days</span>${unpaid>0?`<span style="font-size:0.72rem;background:var(--surface);color:var(--muted);border:1px solid var(--border);padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">💸 Unpaid: ${unpaid} days</span>`:''}</div></div>`;
+    return `<div class="leave-summary">
+      <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.6rem">
+        <div style="width:30px;height:30px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
+        <div style="font-weight:700;font-size:0.92rem;flex:1">${s.name}</div>
+        ${addBtn}
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.55rem">
+        <span style="font-size:0.72rem;background:#e8f0f8;color:var(--blue);border:1px solid #b8cfe8;padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">🏖️ Annual${yearFilter!=='all'?' ('+yearFilter+')':''}: ${ann} day${ann!==1?'s':''}</span>
+        <span style="font-size:0.72rem;background:var(--red-l);color:var(--red);border:1px solid var(--red-b);padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">🤒 Sick${yearFilter!=='all'?' ('+yearFilter+')':''}: ${sick} day${sick!==1?'s':''}</span>
+        ${unpaid>0?`<span style="font-size:0.72rem;background:var(--surface);color:var(--muted);border:1px solid var(--border);padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">💸 Unpaid: ${unpaid} day${unpaid!==1?'s':''}</span>`:''}
+      </div>
+      <div style="background:var(--surface);border-radius:8px;padding:0.5rem 0.7rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+          <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)">Sick Cycle Balance (${cycle.label})</span>
+          <span style="font-size:0.72rem;font-weight:700;color:${cycleCol}">${cycleUsed}/${SICK_ALLOWANCE} used · ${cycleRem} left</span>
+        </div>
+        <div style="background:var(--border);border-radius:4px;height:6px;overflow:hidden">
+          <div style="background:${cycleCol};height:100%;width:${cyclePct}%;border-radius:4px;transition:width 0.3s"></div>
+        </div>
+      </div>
+    </div>`;
   }).join('');
 
-  let logs=[...leaveData].reverse();
+  let logs=[...leaveData];
   if(leaveFilter!=='all') logs=logs.filter(l=>l.staff_name===leaveFilter);
+  if(yearFilter!=='all') logs=logs.filter(l=>l.start_date&&l.start_date.startsWith(yearFilter));
+  logs.sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||''));
   const el=document.getElementById('leaveLog');
-  if(!logs.length){el.innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No leave records yet</div>';return;}
+  if(!logs.length){el.innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No leave records for this selection</div>';return;}
   el.innerHTML=logs.map(l=>{
     const cfg=LEAVE_CFG[l.leave_type]||{cls:'lp-unpaid',icon:'📋'};
     const days=leaveDays(l);
@@ -2768,6 +2966,306 @@ function printLeaveForm(id){
 <div class="no-print"><button onclick="window.print()" style="background:#7a1528;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Print / Save as PDF</button>&nbsp;<button onclick="window.close()" style="background:#f2ece6;border:1px solid #e0d5cc;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer">Close</button></div>
 </body></html>`;
   const win=window.open('','_blank','width=800,height=1000');win.document.write(html);win.document.close();
+}
+
+// ═══════════════════════════════════════════
+// KPI REVIEWS
+// ═══════════════════════════════════════════
+const KPI_CRITERIA={
+  waiters:[
+    {key:'discipline_morale',label:'Discipline & Morale',desc:'Attitude, punctuality, following instructions'},
+    {key:'impression_presence',label:'Impression & Presence',desc:'Appearance, grooming, professional presentation'},
+    {key:'duties',label:'Duties & Station',desc:'Completing assigned duties, mise en place'},
+    {key:'breakage',label:'Breakage & Care',desc:'Handling of equipment and stock'},
+    {key:'sos_multitasking',label:'SOS & Multitasking',desc:'Sense of urgency, managing multiple tables'},
+    {key:'people_skills',label:'People Skills',desc:'Communication, upselling, guest interaction'},
+    {key:'teamwork',label:'Teamwork',desc:'Supporting colleagues, kitchen communication'},
+    {key:'cleanliness',label:'Cleanliness',desc:'Personal cleanliness and section hygiene'},
+    {key:'initiative',label:'Initiative',desc:'Problem-solving, going beyond instructions'},
+  ],
+  kitchen:[
+    {key:'discipline_morale',label:'Discipline & Morale',desc:'Attitude, punctuality, following instructions'},
+    {key:'impression_presence',label:'Impression & Presence',desc:'Appearance, uniform, professional conduct'},
+    {key:'hygiene',label:'Food Hygiene',desc:'Personal hygiene, food handling practices'},
+    {key:'sos_multitasking',label:'SOS & Multitasking',desc:'Speed of service, handling rush periods'},
+    {key:'arrives_on_time',label:'Punctuality',desc:'Consistently arrives on time for shifts'},
+    {key:'cleanliness_duties',label:'Cleanliness & Duties',desc:'Station cleanliness, completion of duties'},
+    {key:'teamwork_initiative',label:'Teamwork & Initiative',desc:'Supporting team, showing initiative'},
+    {key:'food_quality',label:'Food Quality',desc:'Consistency, presentation, taste standards'},
+    {key:'communication',label:'Communication',desc:'Communicating with floor staff and management'},
+  ],
+  managers:[
+    {key:'leadership',label:'Leadership',desc:'Leading by example, motivating the team'},
+    {key:'operations',label:'Operations',desc:'Running smooth service, problem resolution'},
+    {key:'staff_management',label:'Staff Management',desc:'Rosters, discipline, training'},
+    {key:'financial',label:'Financial Awareness',desc:'Cost control, cash up accuracy, GP management'},
+    {key:'communication',label:'Communication',desc:'Communication with staff, management and owners'},
+    {key:'waiter_feedback',label:'Waiter Feedback',desc:'Quality of feedback and coaching given to waiters'},
+    {key:'initiative',label:'Initiative',desc:'Taking ownership, improving processes'},
+  ],
+};
+const KPI_MAX={waiters:45,kitchen:45,managers:35};
+const KPI_SCORE_COLORS=['','var(--red)','var(--orange)','var(--gold)','var(--green)','#1a7a45'];
+const KPI_SCORE_LABELS=['','Poor','Below Average','Average','Good','Excellent'];
+
+function kpiWaiters(){return stfD.filter(s=>s.active!==false&&(s.division==='Floor'||s.role==='Waiter'||s.division==='Bar'||s.role.toLowerCase().includes('waiter')));}
+function kpiManagers(){return stfD.filter(s=>s.active!==false&&(s.division==='Management'||s.role.toLowerCase().includes('manager')||s.role.toLowerCase().includes('bestuurder')));}
+
+function initKpiPanel(){
+  const now=new Date();
+  const mo=now.toISOString().slice(0,7);
+  // Waiter staff
+  const ws=kpiWaiters(); const ks=kitchenStaff(); const ms=kpiManagers();
+  const wSel=document.getElementById('kpiWaiterStaff');
+  const kSel=document.getElementById('kpiKitchenStaff');
+  const mSel=document.getElementById('kpiManagerStaff');
+  if(wSel) wSel.innerHTML=ws.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')||'<option value="">No waiters found</option>';
+  if(kSel) kSel.innerHTML=ks.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')||'<option value="">No kitchen staff found</option>';
+  if(mSel) mSel.innerHTML=ms.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')||'<option value="">No managers found</option>';
+  ['kpiWaiterPeriod','kpiKitchenPeriod','kpiManagerPeriod'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=mo;});
+  // History filters
+  const histStaff=document.getElementById('kpiHistStaff');
+  if(histStaff){
+    const all=[...ws,...ks,...ms];
+    const uniq=[...new Map(all.map(s=>[s.name,s])).values()];
+    histStaff.innerHTML='<option value="all">All Staff</option>'+uniq.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  }
+  const histYear=document.getElementById('kpiHistYear');
+  if(histYear){
+    const years=new Set(kpiData.map(r=>r.period?r.period.slice(0,4):null).filter(Boolean));
+    const thisYear=now.getFullYear().toString();
+    if(!years.has(thisYear)) years.add(thisYear);
+    histYear.innerHTML='<option value="all">All Years</option>'+[...years].sort((a,b)=>b-a).map(y=>`<option value="${y}">${y}</option>`).join('');
+  }
+  loadKpiForm('waiters');
+  loadKpiForm('kitchen');
+  loadKpiForm('managers');
+  renderKpiHistory();
+}
+
+function loadKpiForm(type){
+  const staffSel=document.getElementById('kpiWaiterStaff');
+  const kitSel=document.getElementById('kpiKitchenStaff');
+  const mgrSel=document.getElementById('kpiManagerStaff');
+  const sel=type==='waiters'?staffSel:type==='kitchen'?kitSel:mgrSel;
+  const periodEl=document.getElementById(type==='waiters'?'kpiWaiterPeriod':type==='kitchen'?'kpiKitchenPeriod':'kpiManagerPeriod');
+  const formEl=document.getElementById(type==='waiters'?'kpiWaiterForm':type==='kitchen'?'kpiKitchenForm':'kpiManagerForm');
+  if(!sel||!periodEl||!formEl)return;
+  const staffName=sel.value;
+  const period=periodEl.value;
+  if(!staffName||!period){formEl.innerHTML='';return;}
+  // Find existing record
+  const existing=kpiData.find(r=>r.staff_name===staffName&&r.staff_type===type&&r.period===period);
+  const scores=existing?.scores||{};
+  const criteria=KPI_CRITERIA[type]||[];
+  const maxScore=KPI_MAX[type]||45;
+  const totalScore=existing?.total_score||criteria.reduce((s,c)=>s+(scores[c.key]||0),0);
+  const avgScore=criteria.length?Math.round((totalScore/criteria.length)*10)/10:0;
+  const pct=Math.round(totalScore/maxScore*100);
+  const col=pct>=80?'#1a7a45':pct>=60?'var(--green)':pct>=40?'var(--gold)':pct>=20?'var(--orange)':'var(--red)';
+  const salesVal=existing?.sales_figure||'';
+  const shiftsVal=existing?.shifts_count||'';
+  const notesVal=existing?.notes||'';
+  const readOnly=isReadOnly();
+  const scoreRow=(c)=>{
+    const cur=scores[c.key]||0;
+    const stars=[1,2,3,4,5].map(n=>`<button onclick="${readOnly?'':'setKpiScore(\''+type+'\',\''+c.key+'\','+n+')'}" style="background:${cur>=n?(KPI_SCORE_COLORS[n]||'var(--muted)'):'var(--surface)'};border:1px solid ${cur>=n?(KPI_SCORE_COLORS[n]||'var(--border)'):'var(--border)'};border-radius:6px;padding:0.35rem 0.5rem;font-size:0.75rem;font-weight:700;cursor:${readOnly?'default':'pointer'};color:${cur>=n?'#fff':'var(--muted)'};transition:all 0.1s;min-width:32px">${n}</button>`).join('');
+    return `<div style="display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0;border-bottom:1px solid var(--surface)">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:0.83rem">${c.label}</div>
+        <div style="font-size:0.7rem;color:var(--muted)">${c.desc}</div>
+      </div>
+      <div style="display:flex;gap:0.25rem;flex-shrink:0">${stars}</div>
+      <div style="font-size:0.72rem;font-weight:700;color:${KPI_SCORE_COLORS[cur]||'var(--muted)'};min-width:60px;text-align:right">${cur?KPI_SCORE_LABELS[cur]:'—'}</div>
+    </div>`;
+  };
+  const extraFields=(type==='waiters')?`<div style="display:flex;gap:0.6rem;margin-bottom:0.8rem;flex-wrap:wrap">
+    <div class="fg" style="margin:0;flex:1;min-width:100px"><label>Sales (R)</label><input type="number" id="kpiSales_${type}" value="${salesVal}" placeholder="e.g. 18500" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" ${readOnly?'readonly':''}></div>
+    <div class="fg" style="margin:0;flex:1;min-width:80px"><label>Shifts Worked</label><input type="number" id="kpiShifts_${type}" value="${shiftsVal}" placeholder="e.g. 12" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" ${readOnly?'readonly':''}></div>
+  </div>`:'';
+  formEl.innerHTML=`<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.8rem">
+    <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.7rem">
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:0.9rem">${staffName}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${period} · ${criteria.length} criteria · Max ${maxScore} pts</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:${col};line-height:1">${totalScore}<span style="font-size:0.9rem;color:var(--muted)">/${maxScore}</span></div>
+        <div style="font-size:0.7rem;color:var(--muted)">avg ${avgScore}/5</div>
+      </div>
+    </div>
+    <div style="background:var(--surface);border-radius:6px;height:8px;overflow:hidden">
+      <div style="background:${col};height:100%;width:${pct}%;border-radius:6px;transition:width 0.4s"></div>
+    </div>
+    ${existing?`<div style="font-size:0.68rem;color:var(--muted);margin-top:0.4rem;text-align:right">Last reviewed${existing.reviewed_by?' by '+existing.reviewed_by:''}</div>`:'<div style="font-size:0.68rem;color:var(--orange);margin-top:0.4rem;text-align:right">⚠ No review for this period yet</div>'}
+  </div>
+  ${extraFields}
+  <div style="margin-bottom:0.8rem">${criteria.map(scoreRow).join('')}</div>
+  <div class="fg" style="margin-bottom:0.8rem"><label>Notes & Comments</label><textarea id="kpiNotes_${type}" rows="3" placeholder="General feedback, areas for improvement, commendations..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;resize:vertical" ${readOnly?'readonly':''}>${notesVal}</textarea></div>
+  ${readOnly?'':`<div style="display:flex;gap:0.6rem"><button class="btn bp" onclick="saveKpiReview('${type}')" style="flex:1">💾 Save Review</button>${existing?`<button class="btn bs" onclick="deleteKpiReview('${existing.id}')" style="color:var(--red);border-color:var(--red-b)">🗑</button>`:''}</div>`}`;
+  // Store current scores on window for live update
+  window._kpiScores=window._kpiScores||{};
+  window._kpiScores[type]=scores;
+}
+
+function setKpiScore(type,key,val){
+  window._kpiScores=window._kpiScores||{};
+  window._kpiScores[type]=window._kpiScores[type]||{};
+  const cur=window._kpiScores[type][key]||0;
+  window._kpiScores[type][key]=(cur===val)?0:val; // toggle off if same
+  // Refresh form without losing other inputs
+  const staffSel=document.getElementById(type==='waiters'?'kpiWaiterStaff':type==='kitchen'?'kpiKitchenStaff':'kpiManagerStaff');
+  const periodEl=document.getElementById(type==='waiters'?'kpiWaiterPeriod':type==='kitchen'?'kpiKitchenPeriod':'kpiManagerPeriod');
+  const staffName=staffSel?staffSel.value:'';
+  const period=periodEl?periodEl.value:'';
+  if(!staffName||!period)return;
+  const existing=kpiData.find(r=>r.staff_name===staffName&&r.staff_type===type&&r.period===period);
+  // Temporarily apply scores so form re-renders with new value
+  const tempRecord={...(existing||{staff_name:staffName,staff_type:type,period}),scores:{...(existing?.scores||{}),...window._kpiScores[type]}};
+  const idx=kpiData.findIndex(r=>r.staff_name===staffName&&r.staff_type===type&&r.period===period);
+  const notesEl=document.getElementById(`kpiNotes_${type}`);
+  const salesEl=document.getElementById(`kpiSales_${type}`);
+  const shiftsEl=document.getElementById(`kpiShifts_${type}`);
+  const savedNotes=notesEl?notesEl.value:'';
+  const savedSales=salesEl?salesEl.value:'';
+  const savedShifts=shiftsEl?shiftsEl.value:'';
+  if(idx>=0) kpiData[idx]=tempRecord; else kpiData.push(tempRecord);
+  loadKpiForm(type);
+  // Restore input values
+  const notesEl2=document.getElementById(`kpiNotes_${type}`);
+  const salesEl2=document.getElementById(`kpiSales_${type}`);
+  const shiftsEl2=document.getElementById(`kpiShifts_${type}`);
+  if(notesEl2) notesEl2.value=savedNotes;
+  if(salesEl2) salesEl2.value=savedSales;
+  if(shiftsEl2) shiftsEl2.value=savedShifts;
+  if(idx<0) kpiData.pop(); // remove temp if it wasn't there
+}
+
+async function saveKpiReview(type){
+  const staffSel=document.getElementById(type==='waiters'?'kpiWaiterStaff':type==='kitchen'?'kpiKitchenStaff':'kpiManagerStaff');
+  const periodEl=document.getElementById(type==='waiters'?'kpiWaiterPeriod':type==='kitchen'?'kpiKitchenPeriod':'kpiManagerPeriod');
+  const notesEl=document.getElementById(`kpiNotes_${type}`);
+  const salesEl=document.getElementById(`kpiSales_${type}`);
+  const shiftsEl=document.getElementById(`kpiShifts_${type}`);
+  const staffName=staffSel?staffSel.value:'';
+  const period=periodEl?periodEl.value:'';
+  if(!staffName||!period){showToast('Select staff and period.',true);return;}
+  const criteria=KPI_CRITERIA[type]||[];
+  const scores={...(window._kpiScores?.[type]||{})};
+  // Also read from existing record if present
+  const existing=kpiData.find(r=>r.staff_name===staffName&&r.staff_type===type&&r.period===period);
+  if(existing?.scores) Object.assign(scores,existing.scores,...[window._kpiScores?.[type]||{}]);
+  const total=criteria.reduce((s,c)=>s+(scores[c.key]||0),0);
+  const avg=criteria.length?Math.round((total/criteria.length)*100)/100:0;
+  const rec={
+    staff_name:staffName,staff_type:type,period,scores,
+    total_score:total,avg_score:avg,
+    notes:notesEl?notesEl.value.trim():'',
+    sales_figure:salesEl&&salesEl.value?parseFloat(salesEl.value):null,
+    shifts_count:shiftsEl&&shiftsEl.value?parseInt(shiftsEl.value):null,
+    reviewed_by:CU?.name||null,
+    updated_at:new Date().toISOString()
+  };
+  setSyncStatus('syncing');
+  let error;
+  if(existing?.id){
+    const r=await SB.from('kpi_scores').update(rec).eq('id',existing.id);error=r.error;
+  } else {
+    const r=await SB.from('kpi_scores').insert(rec);error=r.error;
+  }
+  if(error){
+    setSyncStatus('err');
+    showToast('Error saving KPI. Make sure the kpi_scores table exists in Supabase.',true);
+    console.error(error);
+    return;
+  }
+  const {data}=await SB.from('kpi_scores').select('*').order('period',{ascending:false});
+  kpiData=data||[];
+  loadKpiForm(type);
+  renderKpiHistory();
+  setSyncStatus('ok');
+  showToast(`KPI review saved for ${staffName} (${period}) ✓`);
+}
+
+async function deleteKpiReview(id){
+  if(!confirm('Delete this KPI review?'))return;
+  setSyncStatus('syncing');
+  await SB.from('kpi_scores').delete().eq('id',id);
+  const {data}=await SB.from('kpi_scores').select('*').order('period',{ascending:false});
+  kpiData=data||[];
+  renderKpiHistory();
+  setSyncStatus('ok');
+  showToast('KPI review deleted.');
+  // Refresh active forms
+  ['waiters','kitchen','managers'].forEach(t=>loadKpiForm(t));
+}
+
+function renderKpiHistory(){
+  const el=document.getElementById('kpiHistoryList');
+  if(!el)return;
+  const typeFilter=document.getElementById('kpiHistType')?.value||'all';
+  const staffFilter=document.getElementById('kpiHistStaff')?.value||'all';
+  const yearFilter=document.getElementById('kpiHistYear')?.value||'all';
+  let records=[...kpiData];
+  if(typeFilter!=='all') records=records.filter(r=>r.staff_type===typeFilter);
+  if(staffFilter!=='all') records=records.filter(r=>r.staff_name===staffFilter);
+  if(yearFilter!=='all') records=records.filter(r=>r.period&&r.period.startsWith(yearFilter));
+  records.sort((a,b)=>(b.period||'').localeCompare(a.period||''));
+  if(!records.length){el.innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No KPI reviews recorded yet.<br><span style="font-size:0.78rem">Select a staff member and submit a review to get started.</span></div>';return;}
+  // Group by period
+  const byPeriod={};
+  records.forEach(r=>{if(!byPeriod[r.period])byPeriod[r.period]=[];byPeriod[r.period].push(r);});
+  el.innerHTML=Object.entries(byPeriod).sort((a,b)=>b[0].localeCompare(a[0])).map(([period,recs])=>{
+    const cards=recs.map(r=>{
+      const max=KPI_MAX[r.staff_type]||45;
+      const total=r.total_score||0;
+      const pct=Math.round(total/max*100);
+      const col=pct>=80?'#1a7a45':pct>=60?'var(--green)':pct>=40?'var(--gold)':pct>=20?'var(--orange)':'var(--red)';
+      const typeLabel=r.staff_type==='waiters'?'👔 Waiter':r.staff_type==='kitchen'?'👨‍🍳 Kitchen':'🎯 Manager';
+      const delBtn=isReadOnly()?'':'<button onclick="deleteKpiReview(\''+r.id+'\')" style="background:none;border:none;cursor:pointer;font-size:0.82rem;color:var(--muted);padding:0.2rem">🗑</button>';
+      return `<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.75rem 0.9rem;cursor:pointer" onclick="showKpiDetail('${r.id}')">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--burg);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff;flex-shrink:0">${r.staff_name[0]}</div>
+          <div style="flex:1"><div style="font-weight:700;font-size:0.83rem">${r.staff_name}</div><div style="font-size:0.65rem;color:var(--muted)">${typeLabel}</div></div>
+          <div style="text-align:right;margin-right:0.3rem"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:${col};line-height:1">${total}<span style="font-size:0.7rem;color:var(--muted)">/${max}</span></div><div style="font-size:0.6rem;color:var(--muted)">${pct}%</div></div>
+          ${delBtn}
+        </div>
+        <div style="background:var(--surface);border-radius:4px;height:5px;overflow:hidden"><div style="background:${col};height:100%;width:${pct}%;border-radius:4px"></div></div>
+        ${r.notes?`<div style="font-size:0.7rem;color:var(--muted);margin-top:0.4rem;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.notes}</div>`:''}
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:1rem"><div class="stitle" style="margin-bottom:0.5rem">${period}</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem">${cards}</div></div>`;
+  }).join('');
+}
+
+function showKpiDetail(id){
+  const r=kpiData.find(x=>x.id===id);if(!r)return;
+  const criteria=KPI_CRITERIA[r.staff_type]||[];
+  const max=KPI_MAX[r.staff_type]||45;
+  const total=r.total_score||0;
+  const pct=Math.round(total/max*100);
+  const col=pct>=80?'#1a7a45':pct>=60?'var(--green)':pct>=40?'var(--gold)':pct>=20?'var(--orange)':'var(--red)';
+  document.getElementById('kpiDetailTitle').textContent=`${r.staff_name} — ${r.period}`;
+  document.getElementById('kpiDetailBody').innerHTML=`
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.8rem;background:var(--surface);border-radius:10px;padding:0.7rem 0.9rem">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:${col};line-height:1">${total}<span style="font-size:1rem;color:var(--muted)">/${max}</span></div>
+      <div><div style="font-size:0.82rem;font-weight:700">${pct}% — ${pct>=80?'Excellent':pct>=60?'Good':pct>=40?'Average':pct>=20?'Below Average':'Needs Improvement'}</div><div style="font-size:0.7rem;color:var(--muted)">avg ${r.avg_score||0}/5 per criterion</div>${r.sales_figure?`<div style="font-size:0.7rem;color:var(--muted)">Sales: R${r.sales_figure.toLocaleString()}</div>`:''}${r.shifts_count?`<div style="font-size:0.7rem;color:var(--muted)">Shifts: ${r.shifts_count}</div>`:''}</div>
+    </div>
+    <div style="background:var(--surface);border-radius:6px;height:8px;overflow:hidden;margin-bottom:0.8rem"><div style="background:${col};height:100%;width:${pct}%;border-radius:6px"></div></div>
+    ${criteria.map(c=>{const s=r.scores?.[c.key]||0;const sc=KPI_SCORE_COLORS[s]||'var(--muted)';return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--surface)"><div style="flex:1"><div style="font-weight:600;font-size:0.82rem">${c.label}</div></div><div style="display:flex;gap:0.2rem">${[1,2,3,4,5].map(n=>`<div style="width:22px;height:22px;border-radius:4px;background:${s>=n?sc:'var(--surface)'};border:1px solid ${s>=n?sc:'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:${s>=n?'#fff':'var(--muted)'}">${n}</div>`).join('')}</div><div style="font-size:0.7rem;font-weight:700;color:${sc};min-width:50px;text-align:right">${s?KPI_SCORE_LABELS[s]:'—'}</div></div>`;}).join('')}
+    ${r.notes?`<div style="background:var(--surface);border-radius:8px;padding:0.7rem 0.9rem;margin-top:0.7rem"><div style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Notes</div><div style="font-size:0.82rem;line-height:1.5">${r.notes}</div></div>`:''}
+    ${r.reviewed_by?`<div style="font-size:0.7rem;color:var(--muted);margin-top:0.6rem;text-align:right">Reviewed by ${r.reviewed_by}</div>`:''}`;
+  openMo('moKpiDetail');
+}
+
+function switchKpiTab(tab,btn){
+  ['waiters','kitchen','managers','history'].forEach(t=>{
+    const el=document.getElementById('kpiTab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(el) el.style.display=t===tab?'':'none';
+  });
+  document.querySelectorAll('#kpiMainTabs .ct').forEach(b=>b.classList.remove('act'));
+  if(btn) btn.classList.add('act');
+  if(tab==='history') renderKpiHistory();
 }
 
 // ═══════════════════════════════════════════
@@ -2889,7 +3387,7 @@ async function deleteDoc(id,nm,type){
 let wlData    = [];
 let wlFilter  = 'all';
 let wlWaiter  = 'all';
-let wlPins    = JSON.parse(localStorage.getItem('da_pins')||'{}');
+let wlPins    = {}; // populated from Supabase staff.waiter_pin on load
 let wlPinEntry = '';
 let wlConfirmedWaiter = null;
 
@@ -3167,8 +3665,21 @@ function openPinSetup(){
   openMo('moPinSetup');
 }
 
-function savePins(){
-  localStorage.setItem('da_pins',JSON.stringify(wlPins));
+async function savePins(){
+  setSyncStatus('syncing');
+  try {
+    // Save each waiter's PIN to the staff table in Supabase
+    const ws = waiters();
+    for(const s of ws){
+      await SB.from('staff').update({waiter_pin: wlPins[s.name] || null}).eq('name', s.name);
+    }
+    setSyncStatus('ok');
+  } catch(e){
+    setSyncStatus('err');
+    showToast('Error saving PINs to database.', true);
+    console.error(e);
+    return;
+  }
   closeMo('moPinSetup');
   showToast('PINs saved ✓');
   renderWL();
@@ -3193,6 +3704,7 @@ const ACCESS_OPTIONS = [
   {id:'payroll',     label:'Payroll'},
   {id:'staff',       label:'Staff Management'},
   {id:'leave',       label:'Leave Management'},
+  {id:'kpi',         label:'⭐ KPI Reviews'},
   {id:'docs',        label:'Staff Documents'},
   {id:'auditlog',    label:'Audit Log'},
   {id:'settings',    label:'Settings'},
@@ -3201,7 +3713,7 @@ const ACCESS_OPTIONS = [
 const PRESETS = {
   owner:    ALL_SECTIONS,
   investor: INVESTOR_SECTIONS,
-  manager:  ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','docs'],
+  manager:  ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','kpi','docs'],
   staff:    ['dashboard','stocktake'],
 };
 
@@ -5897,8 +6409,19 @@ window.addEventListener('DOMContentLoaded', async ()=>{
         <div style="font-size:0.9rem;color:var(--burg);font-weight:700;min-height:1.2rem" id="wlPinName"></div>
       </div>
       <!-- PIN Pad -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;max-width:240px;margin:0 auto 1rem">
-        ${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>`<button onclick="wlPinPress('${k}')" style="background:${k===''?'transparent':k==='⌫'?'var(--red-l)':'var(--surface)'};border:${k===''?'none':'1px solid var(--border)'};border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:${k===''?'default':'pointer'};color:${k==='⌫'?'var(--red)':'var(--ink)'};transition:all 0.1s">${k}</button>`).join('')}
+      <div id="wlPinPad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;max-width:240px;margin:0 auto 1rem">
+        <button onclick="wlPinPress(1)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">1</button>
+        <button onclick="wlPinPress(2)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">2</button>
+        <button onclick="wlPinPress(3)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">3</button>
+        <button onclick="wlPinPress(4)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">4</button>
+        <button onclick="wlPinPress(5)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">5</button>
+        <button onclick="wlPinPress(6)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">6</button>
+        <button onclick="wlPinPress(7)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">7</button>
+        <button onclick="wlPinPress(8)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">8</button>
+        <button onclick="wlPinPress(9)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">9</button>
+        <div style="background:transparent;border:none;padding:0.9rem"></div>
+        <button onclick="wlPinPress(0)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">0</button>
+        <button onclick="wlPinPress('⌫')" style="background:var(--red-l);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--red);transition:all 0.1s">⌫</button>
       </div>
       <div style="font-size:0.72rem;color:var(--muted);text-align:center">PIN not set? <span style="color:var(--burg);cursor:pointer;font-weight:700" onclick="wlSkipPin()">Skip & select manually</span></div>
     </div>
