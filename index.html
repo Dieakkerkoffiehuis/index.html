@@ -5868,9 +5868,10 @@ const MGR_SHIFTS = [
 ];
 
 function getWaiters(){
-  const fromDB=stfD.filter(s=>s.active!==false&&s.division==='Bar / Waiters');
+  const EXTRA_IN_WAITER_SCHED=['Marleigh','Juan','Jabu'];
+  const fromDB=stfD.filter(s=>s.active!==false&&(s.division==='Bar / Waiters'||EXTRA_IN_WAITER_SCHED.includes(s.name)));
   if(fromDB.length) return fromDB.map(s=>s.name);
-  return ['Tazmin','Sipho','Ethan','Reanne','Daniella','Amber','Ine','Jonathan','Neels','Hes-Mari','Joshua'];
+  return ['Tazmin','Sipho','Ethan','Reanne','Daniella','Amber','Ine','Jonathan','Neels','Hes-Mari','Joshua','Marleigh','Juan','Jabu'];
 }
 
 function getManagement(){
