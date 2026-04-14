@@ -2122,6 +2122,16 @@ function renderCUCards(){
     const c=cuCalc(w);
     const cTxt=c===null?'—':(c<0?'−R '+Math.abs(c).toFixed(2):'R '+c.toFixed(2));
     const bkPaid=!!w.bk;
+    const ct=w.ct||0; // cash tips already taken
+    const balance=c===null?null:c-ct;
+    const balTxt=balance===null?'—':(balance<0?'−R '+Math.abs(balance).toFixed(2):'R '+balance.toFixed(2));
+    const balCol=balance===null?'var(--muted)':balance<0?'var(--red)':balance===0?'var(--muted)':'var(--green)';
+    // Breakage button: red/warning when NOT paid (deducted), green when paid
+    const bkBorderCol=bkPaid?'var(--green)':'#c0392b';
+    const bkBgCol=bkPaid?'var(--green-l)':'#fff0f0';
+    const bkTxtCol=bkPaid?'var(--green)':'#c0392b';
+    const bkIcon=bkPaid?'✅':'⚠️';
+    const bkLabel=bkPaid?'Breakage R10 — Paid':'Breakage R10 — Not Paid (deducted)';
     return `<div class="cu-card">
       <div class="cu-hdr">
         <div style="font-weight:700;font-size:0.95rem;color:#fff">${w.name||'Waiter '+(i+1)}</div>
@@ -2140,13 +2150,24 @@ function renderCUCards(){
         <div class="cf"><label>Voids</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.vo||''}" oninput="cuU(${i},'vo',this.value)"></div>
         <div class="cf"><label>Staff 25%</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.s2||''}" oninput="cuU(${i},'s2',this.value)"></div>
       </div>
+      <!-- Cash Tips Taken row -->
+      <div style="padding:0.5rem 0.8rem;border-top:1px solid var(--surface);background:#fffbf0">
+        <div style="display:flex;align-items:center;gap:0.7rem">
+          <span style="font-size:0.8rem;font-weight:700;color:#b85c10;white-space:nowrap">💵 Cash Tips Taken</span>
+          <input type="number" inputmode="decimal" placeholder="0.00" value="${ct||''}"
+            oninput="cuU(${i},'ct',this.value)"
+            style="flex:1;border:1px solid #e8c87a;border-radius:6px;padding:0.4rem 0.6rem;font-size:0.88rem;background:#fff;font-family:'Karla',sans-serif;text-align:right;max-width:140px">
+          ${ct>0?`<span style="font-size:0.75rem;color:var(--muted)">Balance: <strong style="color:${balCol}">${balTxt}</strong></span>`:'<span style="font-size:0.72rem;color:var(--muted)">Amount waiter already took in cash</span>'}
+        </div>
+      </div>
+      <!-- Breakage + Tips footer -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.8rem;border-top:1px solid var(--surface);gap:0.8rem">
         <button id="bkBtn-${i}" onclick="cuToggleBreakage(${i})"
-          style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.9rem;border-radius:8px;border:2px solid ${bkPaid?'var(--green)':'var(--border)'};background:${bkPaid?'var(--green-l)':'var(--surface)'};cursor:pointer;font-family:'Karla',sans-serif;font-size:0.82rem;font-weight:700;color:${bkPaid?'var(--green)':'var(--muted)'};transition:all 0.2s;flex:1">
-          <span style="font-size:1rem">${bkPaid?'✅':'🔲'}</span>
-          <span>Breakage R10 ${bkPaid?'— Paid':'— Not Paid'}</span>
+          style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.9rem;border-radius:8px;border:2px solid ${bkBorderCol};background:${bkBgCol};cursor:pointer;font-family:'Karla',sans-serif;font-size:0.82rem;font-weight:700;color:${bkTxtCol};transition:all 0.2s;flex:1">
+          <span style="font-size:1rem">${bkIcon}</span>
+          <span>${bkLabel}</span>
         </button>
-        <div style="text-align:right">
+        <div style="text-align:right;min-width:70px">
           <div style="font-size:0.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.06em">Tips</div>
           <strong id="cuf-${i}" style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${c===null?'var(--muted)':c<0?'var(--red)':'var(--green)'}">${cTxt}</strong>
         </div>
@@ -2160,10 +2181,11 @@ function cuToggleBreakage(i){
   const bkPaid=cuD.waiters[i].bk;
   const btn=document.getElementById('bkBtn-'+i);
   if(btn){
-    btn.style.borderColor=bkPaid?'var(--green)':'var(--border)';
-    btn.style.background=bkPaid?'var(--green-l)':'var(--surface)';
-    btn.style.color=bkPaid?'var(--green)':'var(--muted)';
-    btn.innerHTML=`<span style="font-size:1rem">${bkPaid?'✅':'🔲'}</span><span>Breakage R10 ${bkPaid?'— Paid':'— Not Paid'}</span>`;
+    // Paid = green, Not Paid = red warning
+    btn.style.borderColor=bkPaid?'var(--green)':'#c0392b';
+    btn.style.background=bkPaid?'var(--green-l)':'#fff0f0';
+    btn.style.color=bkPaid?'var(--green)':'#c0392b';
+    btn.innerHTML=`<span style="font-size:1rem">${bkPaid?'✅':'⚠️'}</span><span>Breakage R10 ${bkPaid?'— Paid':'— Not Paid (deducted)'}</span>`;
   }
   // Refresh tips displays on this card
   const c=cuCalc(cuD.waiters[i]);
@@ -2178,7 +2200,9 @@ function cuRemoveWaiter(i){
   cuD.waiters.splice(i,1);
   renderCUCards(); updCUTots(); cuLoadScheduledWaiters();
 }
-function cuCalc(w){if(!w.vk&&w.vk!==0)return null;return ((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0)-(w.bk?10:0);}
+// bk=true means breakage was paid in cash to manager → no deduction
+// bk=false/undefined means not paid → deduct R10 from tips
+function cuCalc(w){if(!w.vk&&w.vk!==0)return null;return ((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0)-(w.bk?0:10);}
 function cuU(i,f,v){cuD.waiters[i][f]=parseFloat(v)||0;const c=cuCalc(cuD.waiters[i]);const s=c===null?'—':(c<0?'−R '+Math.abs(c).toFixed(2):'R '+c.toFixed(2));const col=c===null?'var(--muted)':c<0?'var(--red)':'var(--green)';const cup=document.getElementById('cup-'+i);if(cup)cup.textContent=s;const cuf=document.getElementById('cuf-'+i);if(cuf){cuf.textContent=s;cuf.style.color=col;}updCUTots();}
 function renderDenoms(){document.getElementById('denomCard').innerHTML=`<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Enter the count of each note/coin</div><div class="dg">${DNS.map((d,i)=>`<div class="di"><div class="di-l">${DNL[i]}</div><input type="number" class="di-i" inputmode="numeric" min="0" value="${cuD.denoms[i]||''}" placeholder="0" oninput="cuD.denoms[${i}]=parseInt(this.value)||0;updDV(${i},${d},this.value)"><div class="di-v" id="dv-${i}">R ${((cuD.denoms[i]||0)*d).toFixed(2)}</div></div>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border)"><span style="font-weight:700;font-size:0.88rem">Total Count:</span><span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--burg)" id="dTot">R 0.00</span></div>`;updDTot();}
 function updDV(i,d,v){const e=document.getElementById('dv-'+i);if(e)e.textContent='R '+((parseInt(v)||0)*d).toFixed(2);updDTot();updCUTots();}
@@ -2192,8 +2216,10 @@ function updCUTots(){
   const tSt=cuD.waiters.reduce((s,w)=>s+(w.st||0),0);
   const tVo=cuD.waiters.reduce((s,w)=>s+(w.vo||0),0);
   const tS=cuD.waiters.reduce((s,w)=>s+(w.s2||0),0);
-  const tBk=cuD.waiters.filter(w=>w.bk).length*10;// R10 per waiter who paid breakage
-  const totalTips=(tC+tK+tZ+tR+tSt)-tV-tBk;
+  const tBkUnpaid=cuD.waiters.filter(w=>!w.bk).length*10;// R10 deducted per waiter who hasn't paid
+  const tBkPaid=cuD.waiters.filter(w=>w.bk).length*10;  // R10 collected from those who paid cash
+  const tCT=cuD.waiters.reduce((s,w)=>s+(w.ct||0),0);   // total cash tips already taken by waiters
+  const totalTips=(tC+tK+tZ+tR+tSt)-tV-tBkUnpaid;
   const dT=updDTot();
   const diff=dT-tC;
   const dc=Math.abs(diff)<0.01?'var(--green)':'var(--red)';
@@ -2207,11 +2233,17 @@ function updCUTots(){
     <div class="sr"><span>Total Accounts</span><span class="am">R ${tR.toFixed(2)}</span></div>
     <div class="sr"><span>Total Voids</span><span class="am nr">R ${tVo.toFixed(2)}</span></div>
     <div class="sr"><span>Total Staff 25%</span><span class="am">R ${tS.toFixed(2)}</span></div>
-    ${tBk>0?`<div class="sr"><span>Breakage Collected (${cuD.waiters.filter(w=>w.bk).length} × R10)</span><span class="am nr">−R ${tBk.toFixed(2)}</span></div>`:''}
+    ${tBkUnpaid>0?`<div class="sr"><span>⚠️ Breakage Deducted from Tips (${cuD.waiters.filter(w=>!w.bk).length} × R10 not paid)</span><span class="am nr">−R ${tBkUnpaid.toFixed(2)}</span></div>`:''}
+    ${tBkPaid>0?`<div class="sr"><span>✅ Breakage Collected in Cash (${cuD.waiters.filter(w=>w.bk).length} × R10 paid)</span><span class="am" style="color:var(--green)">R ${tBkPaid.toFixed(2)}</span></div>`:''}
     <div style="background:${totalTips>=0?'#f0faf4':'var(--red-l)'};border:1px solid ${totalTips>=0?'var(--green-b)':'var(--red-b)'};border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin:0.4rem 0">
       <span style="font-weight:700">Total Tips</span>
       <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${tc}">${totalTips>=0?'R ':'−R '}${Math.abs(totalTips).toFixed(2)}</span>
     </div>
+    ${tCT>0?`<div class="sr"><span>💵 Cash Tips Already Taken</span><span class="am" style="color:#b85c10;font-weight:700">−R ${tCT.toFixed(2)}</span></div>`:''}
+    ${tCT>0?`<div style="background:#fffbf0;border:1px solid #e8c87a;border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin:0.2rem 0 0.4rem">
+      <span style="font-weight:700">Tips Still to Pay Out</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#b85c10">R ${Math.max(0,totalTips-tCT).toFixed(2)}</span>
+    </div>`:''}
     <div class="sr tot"><span>Denomination Count Total</span><span class="am ng">R ${dT.toFixed(2)}</span></div>
     <div style="background:${db};border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin-top:0.4rem">
       <span style="font-weight:700">Cash Difference (Count vs Received)</span>
@@ -2319,10 +2351,20 @@ function renderCUHistoryCard(r){
   const totalTips=(tC+tK+tZ+tR+tSt)-tV-tBk;
   const tc=totalTips>=0?'var(--green)':'var(--red)';
 
+  const canOwnerEdit=CU?.role==='owner';
+  const editBtn=canOwnerEdit
+    ?`<button onclick="cuLoadForEdit(${JSON.stringify(JSON.stringify(r))})"
+        style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:0.25rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.3rem;white-space:nowrap">
+        ✏️ Edit
+      </button>`
+    :'';
   return `<div class="card" style="padding:0;overflow:hidden;margin-bottom:1rem">
-    <div style="background:${sc};color:#fff;padding:0.6rem 1rem;display:flex;justify-content:space-between;align-items:center">
+    <div style="background:${sc};color:#fff;padding:0.6rem 1rem;display:flex;justify-content:space-between;align-items:center;gap:0.5rem">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.05em">${dateStr} — ${r.shift} Shift</div>
-      <div style="font-size:0.72rem;opacity:0.8">${savedAt?'Saved '+savedAt:''}</div>
+      <div style="display:flex;align-items:center;gap:0.6rem">
+        <div style="font-size:0.72rem;opacity:0.8">${savedAt?'Saved '+savedAt:''}</div>
+        ${editBtn}
+      </div>
     </div>
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:0.82rem">
@@ -2355,6 +2397,30 @@ function renderCUHistoryCard(r){
     </div>
     ${denomTot!==null?`<div style="padding:0.5rem 1rem;font-size:0.72rem;color:var(--muted);border-top:1px solid var(--surface)">Denomination count total: <strong>R ${denomTot.toFixed(2)}</strong></div>`:''}
   </div>`;
+}
+
+function cuLoadForEdit(jsonStr){
+  if(CU?.role!=='owner'){showToast('Only owners can edit cash ups.',true);return;}
+  const r=JSON.parse(jsonStr);
+  // Load record into the entry form
+  cuD.waiters=(r.waiters||[]).map(w=>Object.assign({},w));
+  cuD.denoms=r.denoms||Array(12).fill(0);
+  // Switch to Enter tab
+  const enterBtn=document.getElementById('cuTabEnter');
+  cuSwitchTab('enter',enterBtn);
+  // Set date & shift
+  document.getElementById('cuDate').value=r.date||'';
+  const shiftSel=document.getElementById('cuShift');
+  if(shiftSel){
+    for(let i=0;i<shiftSel.options.length;i++){
+      if(shiftSel.options[i].text===r.shift){shiftSel.selectedIndex=i;break;}
+    }
+  }
+  renderCUCards();
+  renderDenoms();
+  updCUTots();
+  showToast('Cash up loaded for editing — make changes and Save.');
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 async function syncWaiterSalesFromCashUp(date, waiters){
