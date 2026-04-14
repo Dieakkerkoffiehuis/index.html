@@ -572,6 +572,16 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
 
       <!-- ORDERS -->
       <div class="pnl" id="p-orders">
+        <!-- Today's schedule banner -->
+        <div id="todayOrdersBanner" style="margin-bottom:1rem"></div>
+        <!-- Pending approvals (owner only) -->
+        <div id="pendingOrdersSection" style="display:none;margin-bottom:1.2rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.05em;color:var(--burg)">⏳ PENDING APPROVALS <span id="pendingOrdersBadge" style="font-size:0.7rem;background:var(--red);color:#fff;border-radius:50%;padding:0.1rem 0.4rem;vertical-align:middle"></span></div>
+            <button class="btn bs bsm" onclick="loadPendingOrders()" style="font-size:0.7rem">↻ Refresh</button>
+          </div>
+          <div id="pendingOrdersList"><div style="text-align:center;padding:1rem;color:var(--muted);font-size:0.82rem">Loading...</div></div>
+        </div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
           <div style="font-size:0.82rem;color:var(--muted)">Select a supplier to build and send an order.</div>
           <button class="btn bs bsm" onclick="openSupplierManager()" id="editSuppliersBtn">⚙️ Edit Suppliers</button>
@@ -1227,6 +1237,23 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
           <div class="card-title">Database Status</div>
           <div id="dbStatus" style="font-size:0.82rem;color:var(--muted)">Checking connection...</div>
         </div>
+        <div class="card" id="pendingOrdersSQL" style="display:none">
+          <div class="card-title">Pending Orders Table Setup</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL in your Supabase SQL editor to enable the order approval workflow:</div>
+          <pre style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">CREATE TABLE IF NOT EXISTS pending_orders (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  order_date date NOT NULL,
+  supplier text NOT NULL,
+  message text,
+  items jsonb,
+  submitted_by text,
+  status text DEFAULT 'pending',
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE pending_orders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON pending_orders FOR ALL USING (true) WITH CHECK (true);</pre>
+          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.querySelector('#pendingOrdersSQL pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
       </div>
 
     </div></div>
@@ -1588,6 +1615,11 @@ function go(id,el){
   if(id==='analytics'){ initAnalytics(); loadAnalytics(); }
   if(id==='recipes') renderRecipes();
   if(id==='pricing'){ renderPricingPanel(); }
+  if(id==='orders'){ renderSups(); }
+  if(id==='settings'){
+    const sqlCard=document.getElementById('pendingOrdersSQL');
+    if(sqlCard) sqlCard.style.display=CU?.role==='owner'?'block':'none';
+  }
   closeSb();
 }
 function tg(h,g){ h.classList.toggle('op'); document.getElementById(g).classList.toggle('op'); }
@@ -1875,6 +1907,59 @@ let SUPS={
   'Pienk Pilletjies':{c:'Telephone',m:'phone',g:'Good morning',i:'Can we please order:'},
 };
 
+// ── ORDER SCHEDULE: which suppliers to order on which day ─────────────────
+// Key = JS day name (as returned by toLocaleDateString weekday:'long')
+// s = supplier name (must match SUPS key), d = delivery day, e2 = every 2nd week
+const ORDER_SCHEDULE = {
+  Monday:[
+    {s:'Alpha Kafee',d:'Mon'},{s:'Chubby Chick',d:'Mon'},{s:'Golden Valley Cheese',d:'Wed'},
+    {s:'Blue Bottle',d:'Mon'},{s:'Golden Catering',d:'Tue'},{s:'SLO-JO',d:'Tue'},
+    {s:'Instant Gourmet',d:'Mon'},{s:'Pienk Pilletjies',d:'Mon'},{s:'Trucon Foods',d:'Mon'},
+    {s:'Sir Juice',d:'Tue'},{s:'Vision Meats',d:'Mon'},{s:'MafBake',d:'Tue'},
+    {s:'Mr Sauce',d:'Wed',e2:true},{s:'Highveld Mushrooms',d:'Tue'},{s:'Spill-it Coffee',d:'Tue'},
+    {s:'Econo Foods',d:'Tue'},{s:'Benmar Eggs',d:'Tue'},
+  ],
+  Tuesday:[
+    {s:'Alpha Kafee',d:'Tue'},{s:'Bakels',d:'Thu'},{s:'Bidfood',d:'Wed'},{s:'Avolands',d:'Wed'},
+  ],
+  Wednesday:[
+    {s:'Alpha Kafee',d:'Wed'},{s:'Golden Catering',d:'Thu'},{s:'Chubby Chick',d:'Wed'},
+    {s:'MafBake',d:'Thu'},{s:'New Fly',d:'Thu'},{s:'Highveld Mushrooms',d:'Thu'},{s:'Benmar Eggs',d:'Fri'},
+  ],
+  Thursday:[
+    {s:'Alpha Kafee',d:'Thu'},{s:'Econo Foods',d:'Fri'},{s:'Bidfood',d:'Fri'},
+    {s:'Trucon Foods',d:'Thu'},{s:'IJ Oil',d:'Fri'},
+  ],
+  Friday:[
+    {s:'Alpha Kafee',d:'Fri'},{s:'Pienk Pilletjies',d:'Fri'},{s:'Chubby Chick',d:'Fri'},
+    {s:'Anchor',d:'Fri'},{s:'Blue Bottle',d:'Fri'},{s:'Vision Meats',d:'Fri'},{s:'Bidfood',d:'Mon'},
+  ],
+};
+
+// ── ORDER TEMPLATES: default quantities per supplier from Bestellyste ─────
+const ORDER_TEMPLATES = {
+  'Vision Meats':[{n:'Biltong 500g',q:7},{n:'Skilpad 80g',q:5},{n:'Beef Stirfry',q:5},{n:'Patties 150g',q:50},{n:'300g Rump Steak *',q:15},{n:'200g Rump Steak *',q:25},{n:'350g T-Bene',q:25},{n:'Maalvleis 1kg',q:8},{n:'Boerewors 10x40g',q:20},{n:'Varknek 180g',q:5},{n:'Minute Steak 100g',q:5}],
+  'Benmar Eggs':[{n:'Eiers',q:5}],
+  'Highveld Mushrooms':[{n:'Mushrooms 5kg',q:3}],
+  'Anchor':[{n:'Karringmelk',q:2}],
+  'Trucon Foods':[{n:'Bone',q:6},{n:'Patats',q:6},{n:'Spinasie',q:8},{n:'Pampoen',q:10}],
+  'Alpha Kafee':[{n:'Pears (each)',q:4},{n:'Apples (each)',q:4},{n:'Paw Paw (each)',q:2},{n:'Banana (pack)',q:2},{n:'Cherry Tomato (pack)',q:5},{n:'Parsley (pack)',q:7},{n:'Spring Onion (pack)',q:3},{n:'Green Pepper (each)',q:5},{n:'Red Pepper (each)',q:5},{n:'Red Onion (each)',q:8},{n:'Pineapple (each)',q:2},{n:'Red Cabbage (each)',q:1},{n:'White Cabbage (each)',q:1},{n:'Carrots (pack)',q:2},{n:'Cucumber (each)',q:6},{n:'Mixed Lettuce (each)',q:3},{n:'Lettuce (each)',q:8},{n:'Tomato (Box)',q:2},{n:'Beetroot (box)',q:1},{n:'Onions (Bag)',q:1},{n:'Potatoes (Bag)',q:4},{n:'Lemons (Box)',q:1}],
+  'Avolands':[{n:'Avocados green',q:3},{n:'Avocados orange',q:5}],
+  'Econo Foods':[{n:'Panko Crumbs',q:18},{n:'Cheesy Russian',q:6},{n:'Sliced Cheese',q:4},{n:'Soft Serve',q:24},{n:'Battered Hake',q:1},{n:'Hash Browns',q:1},{n:'Mini Butter',q:5}],
+  'Bakels':[{n:'Waffle Mix',q:10},{n:'Bakels Delight',q:24}],
+  'Golden Valley Cheese':[{n:'Feta',q:4},{n:'Halloumi',q:5},{n:'Mozzarella',q:15},{n:'Cheddar',q:25}],
+  'IJ Oil':[{n:'Palm Oil',q:4},{n:'Sunflower Oil',q:2}],
+  'SLO-JO':[{n:'Salted Caramel Stroop',q:2},{n:'Caramel Stroop',q:1},{n:'Vanilla Stroop',q:1},{n:'Hazelnut Stroop',q:1},{n:'Strawberry Stroop',q:2},{n:'Pineapple Stroop',q:1},{n:'Pina Colada Stroop',q:2},{n:'Banana Stroop',q:1},{n:'Ginger & Peach Stroop',q:2},{n:'Strawberry/Orange Stroop',q:2},{n:'Pear Elderflower Stroop',q:2},{n:'Smoothie Stroop Strawberry',q:1},{n:'Smoothie Stroop Mixed Berry',q:3},{n:'Smoothie Stroop Mango Madness',q:3}],
+  'Instant Gourmet':[{n:'Brazillian Hazelnut',q:3},{n:'Chai Tea',q:3},{n:'Vanilla Mocha',q:2},{n:'Aero Peppermint',q:1},{n:'Hot Chocolate',q:4},{n:'White Chocolate',q:3},{n:'Toffee Caramel',q:1},{n:'Rooibos Chai',q:1},{n:'Coffee Freezo',q:2},{n:'Milky Bar',q:2}],
+  'Sir Juice':[{n:'Orange 5L',q:5},{n:'Guava 1.5L',q:3},{n:'Strawberry 5L',q:3},{n:'Cocktail 5L',q:3},{n:'Smoothie Berries',q:12},{n:'Smoothie Mango & Passion',q:18}],
+  'Mr Sauce':[{n:'French Dressing 5Lt',q:3},{n:'Buffalo Wings Sauce 5Lt',q:2},{n:'Garlic & Lemon Sauce 5Lt',q:2}],
+  'Chubby Chick':[{n:'Chicken Breast Fillet',q:null},{n:'Chicken Wings',q:null},{n:'Chicken Liver',q:null}],
+  'Spill-it Coffee':[{n:'Espresso Beans',q:12},{n:'Filter Coffee',q:5}],
+  'Bidfood':[{n:'Tramezinni',q:3},{n:'Ribs MEA5919',q:2},{n:'English Muffins',q:1},{n:'Panini 150g',q:2},{n:'Ciabatta',q:2},{n:'Smoked Salmon',q:1},{n:'Hickory Ham',q:2},{n:'Sandwich Ham',q:1},{n:'Pork Sausage',q:1},{n:'Viennas',q:1},{n:'Meadowland',q:2},{n:'Romi',q:1},{n:'Rye Bread',q:1},{n:'Wraps',q:1},{n:'Cordon Bleu',q:1},{n:'Cream Cheese 2.5kg',q:2}],
+  'Blue Bottle':[{n:'Amstel',q:null},{n:'Heineken',q:null},{n:'Windhoek Draught',q:null},{n:'Windhoek Lager',q:null},{n:'Castle Lite',q:null},{n:'Flying Fish Lemon',q:null},{n:'Savanna Dry',q:null},{n:'Savanna Light',q:null},{n:'Hunters Dry',q:null},{n:'Hunters Gold',q:null},{n:'Corona',q:null},{n:'Bavaria Non Alc.',q:null},{n:'Amarula',q:null},{n:'Kahlua',q:null},{n:'Jack Daniels',q:null},{n:'J&B',q:null},{n:'Jameson',q:null},{n:'Pushkin Vodka',q:null},{n:'Tequila',q:null},{n:'Richelieu',q:null},{n:'Klipdrift Premium',q:null},{n:'Bacardi Rum',q:null},{n:'Gordons Gin',q:null},{n:'Bombay Sapphire Gin',q:null}],
+  'Golden Catering':[{n:'Sauce Soya',q:1},{n:'Ginger',q:1},{n:'Coconut',q:3},{n:'Salt - table',q:4},{n:'Salt - Sea coarse',q:4},{n:'Calamata Olywe',q:1},{n:'Muesli',q:2},{n:'Balsamic Vinegar',q:1},{n:'Olive Oil',q:1},{n:'Stroop',q:6},{n:'Sugar Brown 1kg',q:4},{n:'Chip White',q:2},{n:'Rys 2.5kg',q:2},{n:'Macaroni',q:5},{n:'Lasagne',q:5},{n:'Chip Spice',q:2},{n:'Cinnamon',q:1},{n:'Baked Beans',q:2},{n:'Cocoa 250g',q:2},{n:'Cream Bombs',q:10},{n:'Heuning',q:6},{n:'Chicken Spice',q:2},{n:'Chocolate Mousse',q:4},{n:'Icing Sugar',q:1},{n:'Cake Flour 12.5kg',q:2},{n:'Maizina',q:6},{n:'Baking Powder',q:1},{n:'Tobasco Green',q:6},{n:'Tobasco Red',q:6},{n:'Paprika',q:1},{n:'Garlic',q:1},{n:'Sprinkle Nuts',q:2},{n:'100s & 1000s',q:1},{n:'Hollandaise',q:6},{n:'Peanut Butter',q:2},{n:'B-Well Mayo 20L',q:1},{n:'Sweet Chilli',q:3},{n:'Chutney 6.25kg',q:1},{n:'Basil Pesto',q:2},{n:'Capers',q:1},{n:'Jalapeno',q:2},{n:'Peppadews',q:1},{n:'Tomato Puree 410g',q:8},{n:'Sundried Tomato',q:1},{n:'Jam Strawberry',q:1},{n:'Jam Apricot',q:1},{n:'Condensed Milk',q:18},{n:'Caramel Treat',q:12}],
+};
+
 async function loadSuppliers(){
   try {
     const {data,error} = await SB.from('suppliers').select('*').order('name');
@@ -1989,6 +2074,27 @@ function updateSupplierDropdowns(){
   const el=document.getElementById('nsSup');
   if(el){ const cur=el.value; el.innerHTML=supOptions+'<option>Other</option>'; el.value=cur||el.options[0]?.value; }
 }
+function renderTodayOrdersBanner(){
+  const dayName=new Date().toLocaleDateString('en-ZA',{weekday:'long'});
+  const todayList=ORDER_SCHEDULE[dayName]||[];
+  const banner=document.getElementById('todayOrdersBanner');
+  if(!banner) return;
+  if(!todayList.length){banner.innerHTML='';return;}
+  const chips=todayList.map(x=>{
+    const hasTemplate=!!(ORDER_TEMPLATES[x.s]);
+    const inf=SUPS[x.s]||{};
+    const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
+    return `<div onclick="openOrd('${x.s.replace(/'/g,"\\'")}','today')" style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.7rem;cursor:pointer;flex-shrink:0;transition:all 0.15s;box-shadow:var(--sh)" class="today-sup-chip">
+      <div style="font-size:0.75rem;font-weight:700">${mi[inf.m]||'📱'} ${x.s}${x.e2?'<span style="font-size:0.58rem;color:var(--muted)"> (2nd wk)</span>':''}</div>
+      <div style="font-size:0.63rem;color:var(--muted)">Delivers: ${x.d}${hasTemplate?' · 📋 template':''}
+      </div></div>`;
+  }).join('');
+  banner.innerHTML=`<div style="background:linear-gradient(135deg,#1a3a2a 0%,#1e5c36 100%);border-radius:10px;padding:0.75rem 1rem;margin-bottom:0">
+    <div style="color:rgba(255,255,255,0.8);font-size:0.68rem;font-weight:700;letter-spacing:0.08em;margin-bottom:0.5rem">📅 TODAY'S ORDERS — ${dayName.toUpperCase()}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.4rem">${chips}</div>
+  </div>`;
+}
+
 function renderSups(){
   const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
   const ce=canEdit();
@@ -1998,45 +2104,135 @@ function renderSups(){
   const editBtn=document.getElementById('editSuppliersBtn');
   if(editBtn) editBtn.style.display=ce?'inline-flex':'none';
 
+  // Show pending section for owners
+  const pendSec=document.getElementById('pendingOrdersSection');
+  if(pendSec) pendSec.style.display=CU?.role==='owner'?'block':'none';
+  if(CU?.role==='owner') loadPendingOrders();
+
+  renderTodayOrdersBanner();
+
   document.getElementById('supList').innerHTML=allSups.map(s=>{
     const its=DB.filter(i=>i.supplier===s);
     const low=its.filter(i=>i.stock<=i.min_level).length;
     const inf=SUPS[s]||{};
-    const noProducts=its.length===0;
-    return `<div class="sc" onclick="${noProducts?`showToast('No products assigned to ${s} yet. Add products in Stock Database.',true)`:`openOrd('${s.replace(/'/g,"\\'")}')` }" style="${noProducts?'opacity:0.55':''}">
+    const hasTemplate=!!(ORDER_TEMPLATES[s]);
+    const noProducts=its.length===0&&!hasTemplate;
+    return `<div class="sc" onclick="${noProducts?`showToast('No products assigned to ${s} yet.',true)`:`openOrd('${s.replace(/'/g,"\\'")}')` }" style="${noProducts?'opacity:0.55':''}">
       <div style="font-size:1.5rem;flex-shrink:0">${mi[inf.m]||'📱'}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:0.92rem">${s}${inf.urg?'<span class="bdg bgr" style="margin-left:0.5rem;font-size:0.58rem">⚠ Urgent</span>':''}</div>
-        <div style="font-size:0.72rem;color:var(--muted)">${inf.c||''}${its.length>0?` · ${its.length} product${its.length!==1?'s':''}${low>0?` · <strong style="color:var(--red)">⚠ ${low} low</strong>`:''}`:' · <em>No products yet</em>'}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${inf.c||''}${its.length>0?` · ${its.length} product${its.length!==1?'s':''}${low>0?` · <strong style="color:var(--red)">⚠ ${low} low</strong>`:''}`:hasTemplate?' · <em>📋 Template available</em>':' · <em>No products yet</em>'}</div>
       </div>
       <div style="color:var(--muted);font-size:1.1rem">›</div>
     </div>`;
   }).join('');
 }
-function openOrd(s){
-  actSup=s;ordQ={};const inf=SUPS[s]||{};
-  const its=[...DB.filter(i=>i.supplier===s)].sort((a,b)=>(a.stock<=a.min_level?0:1)-(b.stock<=b.min_level?0:1));
+function openOrd(s, mode){
+  actSup=s; ordQ={}; ordIsTemplate=(mode==='today');
+  const inf=SUPS[s]||{};
+  const dbItems=[...DB.filter(i=>i.supplier===s)].sort((a,b)=>(a.stock<=a.min_level?0:1)-(b.stock<=b.min_level?0:1));
+  const tplItems=ORDER_TEMPLATES[s]||[];
+  const isOwner=CU?.role==='owner';
+
   document.getElementById('ordTitle').textContent=s;
-  document.getElementById('ordBody').innerHTML=`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.8rem">${inf.c||''}</div>`+
-    its.map(i=>`<div class="sti" id="oi-${i.id}">
-      <div class="sti-inf"><div class="sti-name">${i.name}</div><div class="sti-meta">${i.stock<=i.min_level?'<strong style="color:var(--red)">⚠ LOW</strong> · ':''} Stock: ${i.stock} ${i.unit}</div></div>
-      <div style="display:flex;align-items:center;gap:0.4rem">
-        <button onclick="adjO(${i.id},-1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--surface);cursor:pointer;font-size:1rem">−</button>
-        <div style="text-align:center;min-width:26px"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--muted)" id="oq-${i.id}">0</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">${i.unit}</div></div>
-        <button onclick="adjO(${i.id},1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--burg);color:#fff;cursor:pointer;font-size:1rem">+</button>
-      </div></div>`).join('');
-  // Set correct send button based on method
+
+  let bodyHtml=`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.8rem">${inf.c||''}</div>`;
+
+  // If we have a template, show template items (freeform qty input, not tied to DB)
+  if(tplItems.length>0){
+    bodyHtml+=`<div style="font-size:0.7rem;color:var(--muted);font-weight:700;letter-spacing:0.05em;margin-bottom:0.5rem">📋 ORDER LIST</div>`;
+    bodyHtml+=tplItems.map((it,idx)=>{
+      const defQ=it.q||0;
+      if(defQ>0) ordQ['t'+idx]=defQ; // pre-fill defaults
+      return `<div class="sti" id="oti-${idx}" style="${defQ>0?'border-color:var(--burg)':''}">
+        <div class="sti-inf"><div class="sti-name">${it.n}</div><div class="sti-meta" style="color:var(--muted)">Default: ${it.q!=null?it.q:'—'}</div></div>
+        <div style="display:flex;align-items:center;gap:0.4rem">
+          <button onclick="adjOT(${idx},-1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--surface);cursor:pointer;font-size:1rem">−</button>
+          <div style="text-align:center;min-width:26px"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;${defQ>0?'color:var(--burg)':'color:var(--muted)'}" id="oqt-${idx}">${defQ||0}</div></div>
+          <button onclick="adjOT(${idx},1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--burg);color:#fff;cursor:pointer;font-size:1rem">+</button>
+        </div></div>`;
+    }).join('');
+    if(dbItems.length>0){
+      bodyHtml+=`<div style="font-size:0.7rem;color:var(--muted);font-weight:700;letter-spacing:0.05em;margin:0.8rem 0 0.5rem">📦 STOCK ITEMS</div>`;
+    }
+  }
+
+  // DB items (if any)
+  bodyHtml+=dbItems.map(i=>`<div class="sti" id="oi-${i.id}">
+    <div class="sti-inf"><div class="sti-name">${i.name}</div><div class="sti-meta">${i.stock<=i.min_level?'<strong style="color:var(--red)">⚠ LOW</strong> · ':''} Stock: ${i.stock} ${i.unit}</div></div>
+    <div style="display:flex;align-items:center;gap:0.4rem">
+      <button onclick="adjO(${i.id},-1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--surface);cursor:pointer;font-size:1rem">−</button>
+      <div style="text-align:center;min-width:26px"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--muted)" id="oq-${i.id}">0</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">${i.unit}</div></div>
+      <button onclick="adjO(${i.id},1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--burg);color:#fff;cursor:pointer;font-size:1rem">+</button>
+    </div></div>`).join('');
+
+  if(tplItems.length===0&&dbItems.length===0){
+    bodyHtml+=`<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.82rem">No products set up for this supplier yet.</div>`;
+  }
+
+  document.getElementById('ordBody').innerHTML=bodyHtml;
+
+  // Send/submit button
   const btn=document.getElementById('ordSendBtn');
-  if(inf.m==='email'){btn.innerHTML='📧 Send Email';btn.className='btn bp';}
-  else if(inf.m==='phone'){btn.innerHTML='📋 Copy (then call)';btn.className='btn bs';}
-  else if(inf.m==='app'){btn.innerHTML='📋 Copy for App';btn.className='btn bs';}
-  else{btn.innerHTML='📱 Send WhatsApp';btn.className='btn bgn';}
+  if(isOwner){
+    if(inf.m==='email'){btn.innerHTML='📧 Send Email';btn.className='btn bp';}
+    else if(inf.m==='phone'){btn.innerHTML='📋 Copy (then call)';btn.className='btn bs';}
+    else if(inf.m==='app'){btn.innerHTML='📋 Copy for App';btn.className='btn bs';}
+    else{btn.innerHTML='📱 Send WhatsApp';btn.className='btn bgn';}
+  } else {
+    btn.innerHTML='📤 Submit for Approval';
+    btn.className='btn bp';
+  }
   openMo('moOrder');
 }
+// Template qty adjuster (freeform items not tied to DB)
+function adjOT(idx,d){
+  const k='t'+idx;
+  const c=ordQ[k]||0, n=Math.max(0,c+d);
+  if(!n) delete ordQ[k]; else ordQ[k]=n;
+  const e=document.getElementById('oqt-'+idx);
+  if(e){e.textContent=n||0;e.style.color=n>0?'var(--burg)':'var(--muted)';}
+  const row=document.getElementById('oti-'+idx);
+  if(row) row.style.borderColor=n>0?'var(--burg)':'var(--border)';
+}
+let ordIsTemplate=false;
 function adjO(id,d){const c=ordQ[id]||0,n=Math.max(0,c+d);if(!n)delete ordQ[id];else ordQ[id]=n;const e=document.getElementById('oq-'+id);if(e){e.textContent=n||'0';e.style.color=n>0?'var(--burg)':'var(--muted)';}const o=document.getElementById('oi-'+id);if(o)o.style.borderColor=n>0?'var(--burg)':'var(--border)';}
-function buildMsg(){const inf=SUPS[actSup]||{};const lines=Object.entries(ordQ).map(([id,q])=>{const it=DB.find(i=>i.id===parseInt(id));return it?`${q}x ${it.name} (${it.unit})`:null;}).filter(Boolean);if(!lines.length)return null;const td=new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'});return `${inf.g||'Good morning'}\n\n${inf.i||'Can we please order:'}\n${lines.join('\n')}${inf.urg?'\n\n⚠️ Required today before 08:30':''}\n\nThank you, Zavier\nDie Akker Koffiehuis\n(${td})`;}
-function sendOrd(){
+function buildMsg(){
+  const inf=SUPS[actSup]||{};
+  const tpl=ORDER_TEMPLATES[actSup]||[];
+  const lines=[];
+  // Template items
+  Object.entries(ordQ).forEach(([k,q])=>{
+    if(k.startsWith('t')){
+      const idx=parseInt(k.slice(1));
+      const it=tpl[idx];
+      if(it&&q>0) lines.push(`${q}x ${it.n}`);
+    } else {
+      const it=DB.find(i=>i.id===parseInt(k));
+      if(it&&q>0) lines.push(`${q}x ${it.name} (${it.unit})`);
+    }
+  });
+  if(!lines.length) return null;
+  const td=new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'});
+  return `${inf.g||'Good morning'}\n\n${inf.i||'Can we please order:'}\n${lines.join('\n')}${inf.urg?'\n\n⚠️ Required today before 08:30':''}\n\nThank you, ${CU?.name||'Zavier'}\nDie Akker Koffiehuis\n(${td})`;
+}
+function buildOrderItems(){
+  const tpl=ORDER_TEMPLATES[actSup]||[];
+  const items=[];
+  Object.entries(ordQ).forEach(([k,q])=>{
+    if(k.startsWith('t')){const idx=parseInt(k.slice(1));const it=tpl[idx];if(it&&q>0)items.push({n:it.n,q});}
+    else{const it=DB.find(i=>i.id===parseInt(k));if(it&&q>0)items.push({n:it.name,u:it.unit,q});}
+  });
+  return items;
+}
+async function sendOrd(){
   const m=buildMsg();if(!m){showToast('Add items first.',true);return;}
+  const isOwner=CU?.role==='owner';
+  if(!isOwner){
+    // Submit for approval
+    await submitOrderForApproval(actSup,m,buildOrderItems());
+    return;
+  }
   const inf=SUPS[actSup]||{};
   if(inf.m==='email'){
     const subject=encodeURIComponent('Order — Die Akker Koffiehuis');
@@ -2056,6 +2252,88 @@ function sendOrd(){
     window.open(d?`https://wa.me/27${d.replace(/^0/,'')}?text=${encodeURIComponent(m)}`:`https://wa.me/?text=${encodeURIComponent(m)}`,'_blank');
     closeMo('moOrder');showToast('WhatsApp opened ✓');
   }
+}
+// ── APPROVAL WORKFLOW ────────────────────────────────────────────────────
+async function submitOrderForApproval(sup,msg,items){
+  try{
+    await SB.from('pending_orders').insert({
+      supplier:sup, message:msg, items:items,
+      submitted_by:CU?.name||CU?.username||'staff',
+      order_date:new Date().toISOString().slice(0,10),
+      status:'pending'
+    });
+    closeMo('moOrder');
+    showToast('Order submitted for owner approval ✓');
+  }catch(e){
+    // Table may not exist yet — show setup notice
+    closeMo('moOrder');
+    showToast('Could not submit — ask owner to run the SQL setup in Settings.',true);
+  }
+}
+async function loadPendingOrders(){
+  const el=document.getElementById('pendingOrdersList');
+  const badge=document.getElementById('pendingOrdersBadge');
+  if(!el) return;
+  try{
+    const {data,error}=await SB.from('pending_orders').select('*').eq('status','pending').order('created_at',{ascending:false});
+    if(error||!data){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">No pending orders.</div>';if(badge)badge.textContent='';return;}
+    if(!data.length){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">No pending orders.</div>';if(badge)badge.textContent='';return;}
+    if(badge) badge.textContent=data.length;
+    el.innerHTML=data.map(o=>{
+      const inf=SUPS[o.supplier]||{};
+      const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
+      const dt=new Date(o.created_at||o.order_date).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      const itemsHtml=(o.items||[]).map(i=>`<div style="font-size:0.75rem;padding:0.1rem 0">${i.q}x ${i.n}</div>`).join('');
+      return `<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem">
+          <div>
+            <div style="font-weight:700;font-size:0.9rem">${mi[inf.m]||'📱'} ${o.supplier}</div>
+            <div style="font-size:0.7rem;color:var(--muted)">By ${o.submitted_by} · ${dt}</div>
+          </div>
+          <div style="display:flex;gap:0.4rem;flex-shrink:0">
+            <button onclick="approvePendingOrder('${o.id}')" class="btn bgn bsm" style="font-size:0.72rem">✅ Approve & Send</button>
+            <button onclick="rejectPendingOrder('${o.id}')" class="btn bs bsm" style="font-size:0.72rem;color:var(--red)">✗ Reject</button>
+          </div>
+        </div>
+        <div style="background:var(--surface);border-radius:6px;padding:0.5rem 0.7rem">${itemsHtml}</div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">Run SQL setup to enable pending orders.</div>';if(badge)badge.textContent='';}
+}
+async function approvePendingOrder(id){
+  try{
+    const {data}=await SB.from('pending_orders').select('*').eq('id',id).single();
+    if(!data){showToast('Order not found.',true);return;}
+    const inf=SUPS[data.supplier]||{};
+    const m=data.message;
+    // Mark as approved in DB
+    await SB.from('pending_orders').update({status:'approved'}).eq('id',id);
+    // Send the order
+    if(inf.m==='email'){
+      const emailMatch=(inf.c||'').match(/[\w.-]+@[\w.-]+\.\w+/);
+      const to=emailMatch?emailMatch[0]:'';
+      window.open(`mailto:${to}?subject=${encodeURIComponent('Order — Die Akker Koffiehuis')}&body=${encodeURIComponent(m)}`,'_blank');
+      showToast('Email client opened ✓');
+    } else if(inf.m==='phone'){
+      navigator.clipboard.writeText(m).then(()=>showToast('Order copied — call to place ✓'));
+    } else if(inf.m==='app'){
+      navigator.clipboard.writeText(m).then(()=>showToast('Order copied — paste into Bidfood app ✓'));
+    } else {
+      const d=(inf.c||'').replace(/\D/g,'');
+      window.open(d?`https://wa.me/27${d.replace(/^0/,'')}?text=${encodeURIComponent(m)}`:`https://wa.me/?text=${encodeURIComponent(m)}`,'_blank');
+      showToast('WhatsApp opened ✓');
+    }
+    await loadPendingOrders();
+    await logAudit('orders','Order Approved',`Approved & sent order to ${data.supplier}`);
+  }catch(e){showToast('Error approving order.',true);}
+}
+async function rejectPendingOrder(id){
+  if(!confirm('Reject this order?')) return;
+  try{
+    await SB.from('pending_orders').update({status:'rejected'}).eq('id',id);
+    showToast('Order rejected.');
+    await loadPendingOrders();
+  }catch(e){showToast('Error rejecting order.',true);}
 }
 function copyOrd(){const m=buildMsg();if(!m){showToast('Add items first.',true);return;}navigator.clipboard.writeText(m).then(()=>showToast('Copied ✓'));closeMo('moOrder');}
 
