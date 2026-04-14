@@ -2057,6 +2057,7 @@ function renderCUCards(){
   document.getElementById('cuCards').innerHTML=cuD.waiters.map((w,i)=>{
     const c=cuCalc(w);
     const cTxt=c===null?'—':(c<0?'−R '+Math.abs(c).toFixed(2):'R '+c.toFixed(2));
+    const bkPaid=!!w.bk;
     return `<div class="cu-card">
       <div class="cu-hdr">
         <div style="font-weight:700;font-size:0.95rem;color:#fff">${w.name||'Waiter '+(i+1)}</div>
@@ -2075,9 +2076,32 @@ function renderCUCards(){
         <div class="cf"><label>Voids</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.vo||''}" oninput="cuU(${i},'vo',this.value)"></div>
         <div class="cf"><label>Staff 25%</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.s2||''}" oninput="cuU(${i},'s2',this.value)"></div>
       </div>
-      <div class="cu-ft"><span>Tips:</span><strong id="cuf-${i}" style="color:${c===null?'var(--muted)':c<0?'var(--red)':'var(--green)'}">${cTxt}</strong></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.8rem;border-top:1px solid var(--surface);gap:0.8rem">
+        <button id="bkBtn-${i}" onclick="cuToggleBreakage(${i})"
+          style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.9rem;border-radius:8px;border:2px solid ${bkPaid?'var(--green)':'var(--border)'};background:${bkPaid?'var(--green-l)':'var(--surface)'};cursor:pointer;font-family:'Karla',sans-serif;font-size:0.82rem;font-weight:700;color:${bkPaid?'var(--green)':'var(--muted)'};transition:all 0.2s;flex:1">
+          <span style="font-size:1rem">${bkPaid?'✅':'🔲'}</span>
+          <span>Breakage R10 ${bkPaid?'— Paid':'— Not Paid'}</span>
+        </button>
+        <div style="text-align:right">
+          <div style="font-size:0.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.06em">Tips</div>
+          <strong id="cuf-${i}" style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${c===null?'var(--muted)':c<0?'var(--red)':'var(--green)'}">${cTxt}</strong>
+        </div>
+      </div>
     </div>`;
   }).join('');
+}
+
+function cuToggleBreakage(i){
+  cuD.waiters[i].bk=!cuD.waiters[i].bk;
+  const bkPaid=cuD.waiters[i].bk;
+  const btn=document.getElementById('bkBtn-'+i);
+  if(btn){
+    btn.style.borderColor=bkPaid?'var(--green)':'var(--border)';
+    btn.style.background=bkPaid?'var(--green-l)':'var(--surface)';
+    btn.style.color=bkPaid?'var(--green)':'var(--muted)';
+    btn.innerHTML=`<span style="font-size:1rem">${bkPaid?'✅':'🔲'}</span><span>Breakage R10 ${bkPaid?'— Paid':'— Not Paid'}</span>`;
+  }
+  updCUTots();
 }
 
 function cuRemoveWaiter(i){
