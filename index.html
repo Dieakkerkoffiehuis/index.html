@@ -656,6 +656,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
           <button class="ct" onclick="switchReport('trends',this)">📈 Trends</button>
           <button class="ct" onclick="switchReport('value',this)">💰 Stock Value</button>
           <button class="ct" onclick="switchReport('losses',this)">🔴 Losses</button>
+          <button class="ct" onclick="switchReport('waiters',this)">👥 Waiter Performance</button>
         </div>
 
         <!-- VARIANCE TAB -->
@@ -697,6 +698,45 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
         <div id="rp-losses" style="display:none">
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">Items with the most variance losses in the selected period.</div>
           <div id="lossRanking"></div>
+        </div>
+
+        <!-- WAITER PERFORMANCE TAB -->
+        <div id="rp-waiters" style="display:none">
+          <!-- Period quick buttons -->
+          <div class="card" style="padding:0.6rem 0.9rem;margin-bottom:0.8rem">
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+              <button class="btn bp bsm" id="wpPdToday" onclick="wpSetPeriod('today',this)">Today</button>
+              <button class="btn bs bsm" id="wpPdWeek"  onclick="wpSetPeriod('week',this)">This Week</button>
+              <button class="btn bs bsm" id="wpPdMonth" onclick="wpSetPeriod('month',this)">This Month</button>
+              <button class="btn bs bsm" id="wpPdLast"  onclick="wpSetPeriod('last',this)">Last Month</button>
+              <div style="display:flex;align-items:center;gap:0.4rem;margin-left:auto;flex-wrap:wrap">
+                <input type="date" id="wpFrom" style="border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.6rem;font-size:0.8rem;background:var(--cream);font-family:'Karla',sans-serif">
+                <span style="font-size:0.75rem;color:var(--muted)">–</span>
+                <input type="date" id="wpTo"   style="border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.6rem;font-size:0.8rem;background:var(--cream);font-family:'Karla',sans-serif">
+                <button class="btn bp bsm" onclick="loadWaiterPerf()">Apply</button>
+              </div>
+            </div>
+          </div>
+          <!-- Summary stat cards -->
+          <div class="sgrid" style="margin-bottom:0.8rem" id="wpStats">
+            <div class="stat cb"><div class="snum nb" id="wp-tips">—</div><div class="slbl">Total Tips</div></div>
+            <div class="stat cg"><div class="snum ng" id="wp-top">—</div><div class="slbl">Top Earner</div></div>
+            <div class="stat co"><div class="snum no" id="wp-sales">—</div><div class="slbl">Total Sales</div></div>
+            <div class="stat cr"><div class="snum nr" id="wp-bk">—</div><div class="slbl">Breakage Collected</div></div>
+          </div>
+          <!-- Waiter filter -->
+          <div class="ctabs" id="wpWaiterTabs" style="margin-bottom:0.8rem;flex-wrap:wrap"></div>
+          <!-- Charts -->
+          <div class="stitle">Tips per Waiter</div>
+          <div class="card" style="padding:1rem" id="wpTipsChart"></div>
+          <div class="stitle">Sales (Micros) per Waiter</div>
+          <div class="card" style="padding:1rem" id="wpSalesChart"></div>
+          <div class="stitle">Daily Tips Trend</div>
+          <div class="card" style="padding:1rem;overflow-x:auto" id="wpTrendChart"></div>
+          <div class="stitle">Shifts per Waiter</div>
+          <div class="card" style="padding:1rem" id="wpShiftsChart"></div>
+          <div class="stitle">KPI Correlation</div>
+          <div class="card" style="padding:0" id="wpKpiTable"></div>
         </div>
       </div>
 
@@ -4358,7 +4398,7 @@ let rpHistoryData=[];
 
 function switchReport(tab,btn){
   activeReport=tab;
-  ['variance','trends','value','losses'].forEach(t=>{
+  ['variance','trends','value','losses','waiters'].forEach(t=>{
     const el=document.getElementById('rp-'+t);
     if(el) el.style.display=t===tab?'block':'none';
   });
@@ -4367,6 +4407,7 @@ function switchReport(tab,btn){
   if(tab==='trends') renderTrend();
   if(tab==='value') renderValueReport();
   if(tab==='losses') renderLossRanking();
+  if(tab==='waiters'){ if(!document.getElementById('wpFrom').value) wpSetPeriod('week',document.getElementById('wpPdWeek')); loadWaiterPerf(); }
 }
 
 function rpSetPeriod(p){
@@ -4551,6 +4592,270 @@ function renderLossRanking(){
       </div>
       <div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem">${l.count} variance event${l.count!==1?'s':''}</div>
     </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// WAITER PERFORMANCE REPORTS
+// ═══════════════════════════════════════════
+let wpRawData=[];     // cash_up records for period
+let wpKpiRaw=[];      // kpi_scores records
+let wpSelWaiter='all';// currently selected waiter filter
+const WP_COLORS=['#7a1528','#1a4a7a','#c8922a','#1a7a45','#6b3a7a','#7a4a1a','#1a6a7a','#4a7a1a','#7a1a5a','#2a5a7a','#7a5a1a','#1a7a5a','#5a1a7a','#7a2a1a'];
+
+function wpSetPeriod(p,btn){
+  document.querySelectorAll('[id^="wpPd"]').forEach(b=>{ if(b) b.className='btn bs bsm'; });
+  if(btn){ btn.className='btn bp bsm'; }
+  const now=new Date(), fmt=d=>d.toISOString().split('T')[0];
+  if(p==='today'){
+    document.getElementById('wpFrom').value=document.getElementById('wpTo').value=fmt(now);
+  } else if(p==='week'){
+    const wed=getWednesday(now);
+    document.getElementById('wpFrom').value=fmt(wed);
+    const tue=new Date(wed); tue.setDate(tue.getDate()+6);
+    document.getElementById('wpTo').value=fmt(tue);
+  } else if(p==='month'){
+    document.getElementById('wpFrom').value=fmt(new Date(now.getFullYear(),now.getMonth(),1));
+    document.getElementById('wpTo').value=fmt(new Date(now.getFullYear(),now.getMonth()+1,0));
+  } else if(p==='last'){
+    document.getElementById('wpFrom').value=fmt(new Date(now.getFullYear(),now.getMonth()-1,1));
+    document.getElementById('wpTo').value=fmt(new Date(now.getFullYear(),now.getMonth(),0));
+  }
+}
+
+async function loadWaiterPerf(){
+  const from=document.getElementById('wpFrom').value;
+  const to  =document.getElementById('wpTo').value;
+  const el  =document.getElementById('wpTipsChart');
+  if(el) el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">Loading…</div>';
+  try {
+    let q=SB.from('cash_up').select('*').order('date',{ascending:true});
+    if(from) q=q.gte('date',from);
+    if(to)   q=q.lte('date',to);
+    const {data:cuD2}=await q;
+    wpRawData=cuD2||[];
+    // Also load KPI scores — get last few months
+    const kpiFrom=from?new Date(from):new Date(); kpiFrom.setMonth(kpiFrom.getMonth()-3);
+    const {data:kD}=await SB.from('kpi_scores').select('*').order('created_at',{ascending:false});
+    wpKpiRaw=kD||[];
+  } catch(e){ wpRawData=[]; wpKpiRaw=[]; }
+  wpSelWaiter='all';
+  renderWaiterPerf();
+}
+
+function wpAggregateStats(){
+  // Build per-waiter and per-day aggregates from wpRawData
+  const byWaiter={};
+  const byDay={};   // {date:{waiterName:{tips,sales,shifts}}}
+  wpRawData.forEach(rec=>{
+    const date=rec.date;
+    if(!byDay[date]) byDay[date]={};
+    (rec.waiters||[]).forEach(w=>{
+      if(!w.name) return;
+      const tips=((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0)-(w.bk?10:0);
+      if(!byWaiter[w.name]) byWaiter[w.name]={name:w.name,tips:0,sales:0,cash:0,cards:0,zapper:0,accounts:0,bk:0,shifts:0};
+      byWaiter[w.name].tips   +=tips;
+      byWaiter[w.name].sales  +=(w.vk||0);
+      byWaiter[w.name].cash   +=(w.ks||0);
+      byWaiter[w.name].cards  +=(w.kt||0);
+      byWaiter[w.name].zapper +=(w.zp||0);
+      byWaiter[w.name].accounts+=(w.rk||0);
+      byWaiter[w.name].bk     +=(w.bk?1:0);
+      byWaiter[w.name].shifts ++;
+      if(!byDay[date][w.name]) byDay[date][w.name]={tips:0,sales:0,shifts:0};
+      byDay[date][w.name].tips  +=tips;
+      byDay[date][w.name].sales +=(w.vk||0);
+      byDay[date][w.name].shifts++;
+    });
+  });
+  const stats=Object.values(byWaiter).sort((a,b)=>b.tips-a.tips);
+  return {stats, byDay};
+}
+
+function renderWaiterPerf(){
+  const {stats, byDay}=wpAggregateStats();
+  if(!stats.length){
+    ['wpTipsChart','wpSalesChart','wpTrendChart','wpShiftsChart','wpKpiTable'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted)">No cash up records for this period.</div>';
+    });
+    document.getElementById('wp-tips').textContent='R 0';
+    document.getElementById('wp-top').textContent='—';
+    document.getElementById('wp-sales').textContent='R 0';
+    document.getElementById('wp-bk').textContent='R 0';
+    return;
+  }
+
+  // Filter by selected waiter
+  const filtered=wpSelWaiter==='all'?stats:stats.filter(s=>s.name===wpSelWaiter);
+  const filteredDays=wpSelWaiter==='all'?byDay:Object.fromEntries(Object.entries(byDay).map(([d,wmap])=>[d,Object.fromEntries(Object.entries(wmap).filter(([n])=>n===wpSelWaiter))]));
+
+  // Summary cards
+  const totalTips=stats.reduce((s,w)=>s+w.tips,0);
+  const totalSales=stats.reduce((s,w)=>s+w.sales,0);
+  const totalBk=stats.reduce((s,w)=>s+w.bk,0)*10;
+  const topW=stats[0];
+  document.getElementById('wp-tips').textContent =(totalTips>=0?'R ':'−R ')+Math.abs(totalTips).toFixed(2);
+  document.getElementById('wp-top').textContent  =topW?`${topW.name} (R ${topW.tips.toFixed(2)})`:'-';
+  document.getElementById('wp-sales').textContent='R '+totalSales.toFixed(2);
+  document.getElementById('wp-bk').textContent   ='R '+totalBk.toFixed(2);
+
+  // Waiter filter tabs
+  const allNames=stats.map(s=>s.name);
+  document.getElementById('wpWaiterTabs').innerHTML=
+    `<button class="ct ${wpSelWaiter==='all'?'act':''}" onclick="wpFilterWaiter('all',this)">All Waiters</button>`+
+    allNames.map(n=>`<button class="ct ${wpSelWaiter===n?'act':''}" onclick="wpFilterWaiter('${n.replace(/'/g,"\\'")}',this)">${n}</button>`).join('');
+
+  // Charts
+  wpRenderHBar('wpTipsChart', filtered.map(w=>({label:w.name,value:w.tips,avg:w.shifts>0?w.tips/w.shifts:0})), 'Tips', 'R', WP_COLORS);
+  wpRenderHBar('wpSalesChart', filtered.map(w=>({label:w.name,value:w.sales,avg:w.shifts>0?w.sales/w.shifts:0})), 'Sales (Micros)', 'R', WP_COLORS.map((_,i)=>WP_COLORS[(i+5)%WP_COLORS.length]));
+  wpRenderHBar('wpShiftsChart', filtered.map(w=>({label:w.name,value:w.shifts,avg:null})), 'Shifts Worked', '', WP_COLORS.map((_,i)=>WP_COLORS[(i+3)%WP_COLORS.length]));
+  wpRenderTrend('wpTrendChart', filteredDays, filtered.map(s=>s.name));
+  wpRenderKpi('wpKpiTable', filtered);
+}
+
+function wpFilterWaiter(name,btn){
+  wpSelWaiter=name;
+  document.querySelectorAll('#wpWaiterTabs .ct').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  renderWaiterPerf();
+}
+
+function wpRenderHBar(elId, data, label, prefix, colors){
+  const el=document.getElementById(elId); if(!el) return;
+  if(!data.length){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem">No data</div>';return;}
+  const maxVal=Math.max(...data.map(d=>Math.abs(d.value)),1);
+  const rows=data.map((d,i)=>{
+    const pct=Math.round(Math.abs(d.value)/maxVal*100);
+    const neg=d.value<0;
+    const col=neg?'var(--red)':colors[i%colors.length];
+    const valTxt=(neg?'−':'')+prefix+(prefix?'':' ')+Math.abs(d.value).toFixed(prefix?2:0);
+    const avgTxt=d.avg!==null?`<span style="font-size:0.68rem;color:var(--muted);margin-left:0.5rem">avg ${prefix}${Math.abs(d.avg).toFixed(prefix?2:0)}/shift</span>`:'';
+    return `<div style="margin-bottom:0.7rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem">
+        <span style="font-weight:700;font-size:0.84rem">${d.label}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:${col}">${valTxt}${avgTxt}</span>
+      </div>
+      <div style="height:18px;background:var(--surface);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${col};border-radius:4px;transition:width 0.4s"></div>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">${label}</div>${rows}`;
+}
+
+function wpRenderTrend(elId, byDay, names){
+  const el=document.getElementById(elId); if(!el) return;
+  const dates=Object.keys(byDay).sort();
+  if(!dates.length||!names.length){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem">No data for trend</div>';return;}
+  const PW=Math.max(700, dates.length*50);
+  const PH=200; const PAD={l:55,r:20,t:20,b:30};
+  const cW=PW-PAD.l-PAD.r, cH=PH-PAD.t-PAD.b;
+  // Collect all per-day per-waiter tips
+  const series=names.map((n,ni)=>{
+    const pts=dates.map(d=>(byDay[d]&&byDay[d][n]?byDay[d][n].tips:null));
+    return {name:n,pts,color:WP_COLORS[ni%WP_COLORS.length]};
+  });
+  const allVals=series.flatMap(s=>s.pts.filter(v=>v!==null));
+  const maxV=Math.max(...allVals.map(Math.abs),1);
+  const minV=Math.min(0,...allVals);
+  const range=maxV-minV||1;
+  const xStep=cW/Math.max(dates.length-1,1);
+  const toY=v=>PAD.t+cH-(((v-minV)/range)*cH);
+  const toX=i=>PAD.l+i*xStep;
+  // Draw grid lines
+  const gridLines=[0,0.25,0.5,0.75,1].map(f=>{
+    const v=minV+range*f;
+    const y=toY(v);
+    return `<line x1="${PAD.l}" y1="${y}" x2="${PW-PAD.r}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>
+      <text x="${PAD.l-4}" y="${y+3}" text-anchor="end" font-size="9" fill="var(--muted)">R${v>=0?'':'-'}${Math.abs(v).toFixed(0)}</text>`;
+  }).join('');
+  // Zero line
+  const zeroY=toY(0);
+  const zeroLine=`<line x1="${PAD.l}" y1="${zeroY}" x2="${PW-PAD.r}" y2="${zeroY}" stroke="var(--border)" stroke-width="1" stroke-dasharray="4,3"/>`;
+  // Date labels (show max 10 to avoid clutter)
+  const labelStep=Math.ceil(dates.length/10);
+  const dateLabels=dates.map((d,i)=>{
+    if(i%labelStep!==0) return '';
+    const lbl=new Date(d+'T12:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'short'});
+    return `<text x="${toX(i)}" y="${PH-PAD.b+14}" text-anchor="middle" font-size="8" fill="var(--muted)">${lbl}</text>`;
+  }).join('');
+  // Polylines + dots per series
+  const polylines=series.map(s=>{
+    const ptsDefined=s.pts.map((v,i)=>v!==null?{x:toX(i),y:toY(v),v}:null).filter(Boolean);
+    if(!ptsDefined.length) return '';
+    // Group consecutive points into segments
+    let segs=[],cur=[];
+    s.pts.forEach((v,i)=>{ if(v!==null) cur.push(`${toX(i)},${toY(v)}`); else if(cur.length){segs.push(cur);cur=[];} });
+    if(cur.length) segs.push(cur);
+    const lines=segs.map(seg=>`<polyline points="${seg.join(' ')}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join('');
+    const dots=ptsDefined.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="3" fill="${s.color}"><title>${s.name}: R ${p.v.toFixed(2)}</title></circle>`).join('');
+    return lines+dots;
+  }).join('');
+  // Legend
+  const legend=series.map(s=>`<span style="display:inline-flex;align-items:center;gap:0.3rem;margin-right:0.8rem;font-size:0.72rem"><span style="width:14px;height:3px;background:${s.color};display:inline-block;border-radius:2px"></span>${s.name}</span>`).join('');
+  el.innerHTML=`<div style="margin-bottom:0.5rem;flex-wrap:wrap;display:flex">${legend}</div>
+    <svg width="${PW}" height="${PH}" style="display:block;min-width:${PW}px">
+      ${gridLines}${zeroLine}${polylines}${dateLabels}
+    </svg>`;
+}
+
+function wpRenderKpi(elId, stats){
+  const el=document.getElementById(elId); if(!el) return;
+  if(!stats.length){el.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--muted)">No data</div>';return;}
+  // Get latest KPI per waiter from wpKpiRaw
+  const latestKpi={};
+  wpKpiRaw.forEach(k=>{
+    if(!latestKpi[k.staff_name]||k.created_at>latestKpi[k.staff_name].created_at)
+      latestKpi[k.staff_name]=k;
+  });
+  const maxTips=Math.max(...stats.map(s=>Math.abs(s.tips)),1);
+  const rows=stats.map((w,i)=>{
+    const kpi=latestKpi[w.name];
+    const kpiPct=kpi&&kpi.max_score?Math.round((kpi.total/kpi.max_score)*100):null;
+    const kpiCol=kpiPct===null?'var(--muted)':kpiPct>=80?'var(--green)':kpiPct>=60?'var(--gold)':'var(--red)';
+    const tipsPct=Math.round(Math.abs(w.tips)/maxTips*100);
+    const tipsCol=w.tips<0?'var(--red)':w.tips>0?'var(--green)':'var(--muted)';
+    const avgTips=w.shifts>0?w.tips/w.shifts:0;
+    return `<tr style="border-bottom:1px solid var(--surface)">
+      <td style="padding:0.55rem 0.8rem">
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <div style="width:24px;height:24px;border-radius:50%;background:${WP_COLORS[i%WP_COLORS.length]};color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">${w.name[0]}</div>
+          <span style="font-weight:700;font-size:0.86rem">${w.name}</span>
+        </div>
+      </td>
+      <td style="padding:0.55rem 0.5rem;text-align:right;font-weight:700;font-size:0.86rem;color:${tipsCol}">${w.tips>=0?'R ':'−R '}${Math.abs(w.tips).toFixed(2)}</td>
+      <td style="padding:0.55rem 0.5rem;text-align:right;font-size:0.8rem;color:var(--muted)">${w.tips>=0?'R ':'−R '}${Math.abs(avgTips).toFixed(2)}</td>
+      <td style="padding:0.55rem 0.5rem;text-align:right;font-size:0.82rem">R ${w.sales.toFixed(2)}</td>
+      <td style="padding:0.55rem 0.5rem;text-align:center;font-size:0.82rem">${w.shifts}</td>
+      <td style="padding:0.55rem 0.5rem;text-align:center">
+        ${kpiPct!==null
+          ?`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px">
+              <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:${kpiCol}">${kpiPct}%</span>
+              <div style="width:60px;height:5px;background:var(--surface);border-radius:3px;overflow:hidden">
+                <div style="width:${kpiPct}%;height:100%;background:${kpiCol};border-radius:3px"></div>
+              </div>
+              <span style="font-size:0.65rem;color:var(--muted)">${kpi.period}</span>
+            </div>`
+          :'<span style="font-size:0.72rem;color:var(--muted)">No KPI</span>'}
+      </td>
+      <td style="padding:0.55rem 0.7rem">
+        <div style="width:80px;height:8px;background:var(--surface);border-radius:4px;overflow:hidden">
+          <div style="width:${tipsPct}%;height:100%;background:${tipsCol};border-radius:4px"></div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+  el.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:0.82rem">
+    <thead><tr style="background:var(--surface)">
+      <th style="padding:0.45rem 0.8rem;text-align:left;font-size:0.7rem;color:var(--muted);font-weight:700">WAITER</th>
+      <th style="padding:0.45rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">TOTAL TIPS</th>
+      <th style="padding:0.45rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">AVG/SHIFT</th>
+      <th style="padding:0.45rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">TOTAL SALES</th>
+      <th style="padding:0.45rem 0.5rem;text-align:center;font-size:0.7rem;color:var(--muted);font-weight:700">SHIFTS</th>
+      <th style="padding:0.45rem 0.5rem;text-align:center;font-size:0.7rem;color:var(--muted);font-weight:700">LATEST KPI</th>
+      <th style="padding:0.45rem 0.7rem;text-align:left;font-size:0.7rem;color:var(--muted);font-weight:700">TIPS RANK</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
 }
 
 // Save stock history snapshot when stocktake is approved
