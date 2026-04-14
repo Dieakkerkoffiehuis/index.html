@@ -581,34 +581,58 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
 
       <!-- CASH UP -->
       <div class="pnl" id="p-cashup">
-        <div class="card">
-          <div class="fg2">
-            <div class="fg"><label>Date</label><input type="date" id="cuDate" onchange="cuLoadScheduledWaiters()"></div>
-            <div class="fg"><label>Shift</label>
-              <select id="cuShift" onchange="cuLoadScheduledWaiters()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
-                <option>Morning</option><option>Afternoon</option><option>Evening</option>
-              </select>
+        <!-- Tab switcher -->
+        <div class="ctabs" style="margin-bottom:0.8rem" id="cuTabBar">
+          <button class="ct act" id="cuTabEnter" onclick="cuSwitchTab('enter',this)">📝 Enter Cash Up</button>
+          <button class="ct" id="cuTabHistory" onclick="cuSwitchTab('history',this)">📋 View Submissions</button>
+        </div>
+
+        <!-- ENTER pane -->
+        <div id="cuEnterPane">
+          <div class="card">
+            <div class="fg2">
+              <div class="fg"><label>Date</label><input type="date" id="cuDate" onchange="cuLoadScheduledWaiters()"></div>
+              <div class="fg"><label>Shift</label>
+                <select id="cuShift" onchange="cuLoadScheduledWaiters()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+                  <option>Morning</option><option>Afternoon</option><option>Evening</option>
+                </select>
+              </div>
+            </div>
+            <!-- Add waiter row -->
+            <div style="display:flex;gap:0.5rem;align-items:flex-end;flex-wrap:wrap">
+              <div class="fg" style="flex:1;margin:0">
+                <label>Add Waiter</label>
+                <select id="cuAddWaiterSel" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+                  <option value="">— Select waiter —</option>
+                </select>
+              </div>
+              <button class="btn bs bsm" onclick="cuAddWaiter()" style="margin-bottom:0.1rem">+ Add</button>
             </div>
           </div>
-          <!-- Add waiter row -->
-          <div style="display:flex;gap:0.5rem;align-items:flex-end;flex-wrap:wrap">
-            <div class="fg" style="flex:1;margin:0">
-              <label>Add Waiter</label>
-              <select id="cuAddWaiterSel" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
-                <option value="">— Select waiter —</option>
-              </select>
-            </div>
-            <button class="btn bs bsm" onclick="cuAddWaiter()" style="margin-bottom:0.1rem">+ Add</button>
+          <div id="cuCards"></div>
+          <div class="stitle">Denomination Count</div>
+          <div class="card" id="denomCard"></div>
+          <div class="stitle">Summary</div>
+          <div class="card" id="cuTots"></div>
+          <div class="brow" style="margin-top:0.8rem">
+            <button class="btn bp" onclick="saveCU()">Save Cash Up</button>
+            <button class="btn bs" onclick="window.print()">🖨️ Print</button>
           </div>
         </div>
-        <div id="cuCards"></div>
-        <div class="stitle">Denomination Count</div>
-        <div class="card" id="denomCard"></div>
-        <div class="stitle">Summary</div>
-        <div class="card" id="cuTots"></div>
-        <div class="brow" style="margin-top:0.8rem">
-          <button class="btn bp" onclick="saveCU()">Save Cash Up</button>
-          <button class="btn bs" onclick="window.print()">🖨️ Print</button>
+
+        <!-- HISTORY pane -->
+        <div id="cuHistoryPane" style="display:none">
+          <div class="card" style="padding:0.7rem 1rem;margin-bottom:0.8rem">
+            <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap">
+              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>From</label><input type="date" id="cuHFrom"></div>
+              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>To</label><input type="date" id="cuHTo"></div>
+              <button class="btn bs bsm" onclick="cuHSetPeriod('today')">Today</button>
+              <button class="btn bs bsm" onclick="cuHSetPeriod('week')">This Week</button>
+              <button class="btn bs bsm" onclick="cuHSetPeriod('month')">This Month</button>
+              <button class="btn bp bsm" onclick="loadCUHistory()">🔍 Load</button>
+            </div>
+          </div>
+          <div id="cuHistoryList"><div class="card" style="text-align:center;padding:2rem;color:var(--muted)">Select a period and click Load</div></div>
         </div>
       </div>
 
@@ -2015,9 +2039,9 @@ function cuLoadScheduledWaiters(){
   // Find which waiters are scheduled for this date+shift from waiter_schedule
   const d=new Date(date);
   const monday=getMonday(d);
-  const wk=weekKey(monday);
+  const wk=weekKey(getWednesday(d));// schedule weeks start on Wednesday
   const dayIdx=(d.getDay()+6)%7; // Mon=0..Sun=6
-  const dayName=SCHED_DAYS[dayIdx];
+  const dayName=MON_DAYS[dayIdx];// use fixed Mon-indexed array for day name lookup
   const shiftKey=shift==='Morning'?'morning':shift==='Afternoon'?'afternoon':'evening';
   const scheduled=(schedData[wk]?.[dayName]?.[shiftKey])||[];
 
@@ -2101,6 +2125,12 @@ function cuToggleBreakage(i){
     btn.style.color=bkPaid?'var(--green)':'var(--muted)';
     btn.innerHTML=`<span style="font-size:1rem">${bkPaid?'✅':'🔲'}</span><span>Breakage R10 ${bkPaid?'— Paid':'— Not Paid'}</span>`;
   }
+  // Refresh tips displays on this card
+  const c=cuCalc(cuD.waiters[i]);
+  const s=c===null?'—':(c<0?'−R '+Math.abs(c).toFixed(2):'R '+c.toFixed(2));
+  const col=c===null?'var(--muted)':c<0?'var(--red)':'var(--green)';
+  const cup=document.getElementById('cup-'+i);if(cup)cup.textContent=s;
+  const cuf=document.getElementById('cuf-'+i);if(cuf){cuf.textContent=s;cuf.style.color=col;}
   updCUTots();
 }
 
@@ -2108,7 +2138,7 @@ function cuRemoveWaiter(i){
   cuD.waiters.splice(i,1);
   renderCUCards(); updCUTots(); cuLoadScheduledWaiters();
 }
-function cuCalc(w){if(!w.vk&&w.vk!==0)return null;return ((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0);}
+function cuCalc(w){if(!w.vk&&w.vk!==0)return null;return ((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0)-(w.bk?10:0);}
 function cuU(i,f,v){cuD.waiters[i][f]=parseFloat(v)||0;const c=cuCalc(cuD.waiters[i]);const s=c===null?'—':(c<0?'−R '+Math.abs(c).toFixed(2):'R '+c.toFixed(2));const col=c===null?'var(--muted)':c<0?'var(--red)':'var(--green)';const cup=document.getElementById('cup-'+i);if(cup)cup.textContent=s;const cuf=document.getElementById('cuf-'+i);if(cuf){cuf.textContent=s;cuf.style.color=col;}updCUTots();}
 function renderDenoms(){document.getElementById('denomCard').innerHTML=`<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Enter the count of each note/coin</div><div class="dg">${DNS.map((d,i)=>`<div class="di"><div class="di-l">${DNL[i]}</div><input type="number" class="di-i" inputmode="numeric" min="0" value="${cuD.denoms[i]||''}" placeholder="0" oninput="cuD.denoms[${i}]=parseInt(this.value)||0;updDV(${i},${d},this.value)"><div class="di-v" id="dv-${i}">R ${((cuD.denoms[i]||0)*d).toFixed(2)}</div></div>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border)"><span style="font-weight:700;font-size:0.88rem">Total Count:</span><span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--burg)" id="dTot">R 0.00</span></div>`;updDTot();}
 function updDV(i,d,v){const e=document.getElementById('dv-'+i);if(e)e.textContent='R '+((parseInt(v)||0)*d).toFixed(2);updDTot();updCUTots();}
@@ -2122,7 +2152,8 @@ function updCUTots(){
   const tSt=cuD.waiters.reduce((s,w)=>s+(w.st||0),0);
   const tVo=cuD.waiters.reduce((s,w)=>s+(w.vo||0),0);
   const tS=cuD.waiters.reduce((s,w)=>s+(w.s2||0),0);
-  const totalTips=(tC+tK+tZ+tR+tSt)-tV;
+  const tBk=cuD.waiters.filter(w=>w.bk).length*10;// R10 per waiter who paid breakage
+  const totalTips=(tC+tK+tZ+tR+tSt)-tV-tBk;
   const dT=updDTot();
   const diff=dT-tC;
   const dc=Math.abs(diff)<0.01?'var(--green)':'var(--red)';
@@ -2136,6 +2167,7 @@ function updCUTots(){
     <div class="sr"><span>Total Accounts</span><span class="am">R ${tR.toFixed(2)}</span></div>
     <div class="sr"><span>Total Voids</span><span class="am nr">R ${tVo.toFixed(2)}</span></div>
     <div class="sr"><span>Total Staff 25%</span><span class="am">R ${tS.toFixed(2)}</span></div>
+    ${tBk>0?`<div class="sr"><span>Breakage Collected (${cuD.waiters.filter(w=>w.bk).length} × R10)</span><span class="am nr">−R ${tBk.toFixed(2)}</span></div>`:''}
     <div style="background:${totalTips>=0?'#f0faf4':'var(--red-l)'};border:1px solid ${totalTips>=0?'var(--green-b)':'var(--red-b)'};border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin:0.4rem 0">
       <span style="font-weight:700">Total Tips</span>
       <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${tc}">${totalTips>=0?'R ':'−R '}${Math.abs(totalTips).toFixed(2)}</span>
@@ -2156,6 +2188,127 @@ function updCUTots(){
   }
   setSyncStatus(error?'err':'ok');
   showToast(error?'Error saving.':'Cash up saved ✓ Waiter sales updated', !!error);
+}
+
+function cuSwitchTab(tab, btn){
+  document.querySelectorAll('#cuTabBar .ct').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  document.getElementById('cuEnterPane').style.display  = tab==='enter'  ? '' : 'none';
+  document.getElementById('cuHistoryPane').style.display= tab==='history'? '' : 'none';
+  if(tab==='history'){
+    // Default to current week if no dates set
+    if(!document.getElementById('cuHFrom').value) cuHSetPeriod('week');
+    loadCUHistory();
+  }
+}
+
+function cuHSetPeriod(p){
+  const now=new Date(), fmt=d=>d.toISOString().split('T')[0];
+  if(p==='today'){
+    document.getElementById('cuHFrom').value=document.getElementById('cuHTo').value=fmt(now);
+  } else if(p==='week'){
+    const wed=getWednesday(now);
+    document.getElementById('cuHFrom').value=fmt(wed);
+    const tue=new Date(wed); tue.setDate(tue.getDate()+6);
+    document.getElementById('cuHTo').value=fmt(tue);
+  } else if(p==='month'){
+    document.getElementById('cuHFrom').value=fmt(new Date(now.getFullYear(),now.getMonth(),1));
+    document.getElementById('cuHTo').value=fmt(new Date(now.getFullYear(),now.getMonth()+1,0));
+  }
+}
+
+async function loadCUHistory(){
+  const from=document.getElementById('cuHFrom').value;
+  const to  =document.getElementById('cuHTo').value;
+  const el  =document.getElementById('cuHistoryList');
+  el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">Loading…</div>';
+  try {
+    let q=SB.from('cash_up').select('*').order('date',{ascending:false}).order('shift',{ascending:true});
+    if(from) q=q.gte('date',from);
+    if(to)   q=q.lte('date',to);
+    const {data,error}=await q;
+    if(error||!data?.length){
+      el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No cash up records found for this period.</div>';
+      return;
+    }
+    el.innerHTML=data.map(r=>renderCUHistoryCard(r)).join('');
+  } catch(e){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--red)">Error loading records.</div>';
+  }
+}
+
+function renderCUHistoryCard(r){
+  const waiters=r.waiters||[];
+  const dateStr=new Date(r.date+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const savedAt=r.saved_at?new Date(r.saved_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'}):'';
+  const shiftColors={Morning:'#1a4a7a',Afternoon:'#b85c10',Evening:'#7a1528'};
+  const sc=shiftColors[r.shift]||'var(--burg)';
+
+  // Per-waiter rows
+  const waiterRows=waiters.map((w,i)=>{
+    const c=((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0)-(w.bk?10:0);
+    const hasData=w.vk||w.vk===0;
+    const tipsCol=c<0?'var(--red)':c>0?'var(--green)':'var(--muted)';
+    const tipsTxt=!hasData?'—':(c<0?'−R '+Math.abs(c).toFixed(2):'R '+c.toFixed(2));
+    return `<tr style="border-bottom:1px solid var(--surface)">
+      <td style="padding:0.45rem 0.7rem;font-weight:600;font-size:0.85rem">${w.name||'?'}</td>
+      <td style="padding:0.45rem 0.5rem;font-size:0.82rem;text-align:right">R ${(w.vk||0).toFixed(2)}</td>
+      <td style="padding:0.45rem 0.5rem;font-size:0.82rem;text-align:right">R ${(w.ks||0).toFixed(2)}</td>
+      <td style="padding:0.45rem 0.5rem;font-size:0.82rem;text-align:right">R ${(w.kt||0).toFixed(2)}</td>
+      <td style="padding:0.45rem 0.5rem;font-size:0.82rem;text-align:right">R ${(w.zp||0).toFixed(2)}</td>
+      <td style="padding:0.45rem 0.5rem;font-size:0.82rem;text-align:right">R ${(w.rk||0).toFixed(2)}</td>
+      <td style="padding:0.45rem 0.5rem;font-size:0.82rem;text-align:right">${w.bk?'<span style="color:var(--green);font-weight:700">✅ Paid</span>':'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="padding:0.45rem 0.7rem;text-align:right;font-family:\'Bebas Neue\',sans-serif;font-size:1rem;color:${tipsCol}">${tipsTxt}</td>
+    </tr>`;
+  }).join('');
+
+  // Totals
+  const tV=waiters.reduce((s,w)=>s+(w.vk||0),0);
+  const tC=waiters.reduce((s,w)=>s+(w.ks||0),0);
+  const tK=waiters.reduce((s,w)=>s+(w.kt||0),0);
+  const tZ=waiters.reduce((s,w)=>s+(w.zp||0),0);
+  const tR=waiters.reduce((s,w)=>s+(w.rk||0),0);
+  const tSt=waiters.reduce((s,w)=>s+(w.st||0),0);
+  const tBk=waiters.filter(w=>w.bk).length*10;
+  const totalTips=(tC+tK+tZ+tR+tSt)-tV-tBk;
+  const tc=totalTips>=0?'var(--green)':'var(--red)';
+
+  return `<div class="card" style="padding:0;overflow:hidden;margin-bottom:1rem">
+    <div style="background:${sc};color:#fff;padding:0.6rem 1rem;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.05em">${dateStr} — ${r.shift} Shift</div>
+      <div style="font-size:0.72rem;opacity:0.8">${savedAt?'Saved '+savedAt:''}</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:0.82rem">
+        <thead>
+          <tr style="background:var(--surface)">
+            <th style="padding:0.4rem 0.7rem;text-align:left;font-size:0.7rem;color:var(--muted);font-weight:700">WAITER</th>
+            <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">MICROS</th>
+            <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">CASH</th>
+            <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">CARDS</th>
+            <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">ZAPPER</th>
+            <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">ACCOUNTS</th>
+            <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">BREAKAGE</th>
+            <th style="padding:0.4rem 0.7rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">TIPS</th>
+          </tr>
+        </thead>
+        <tbody>${waiterRows}</tbody>
+        <tfoot>
+          <tr style="background:var(--surface)">
+            <td style="padding:0.5rem 0.7rem;font-weight:700;font-size:0.8rem">TOTALS</td>
+            <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">R ${tV.toFixed(2)}</td>
+            <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">R ${tC.toFixed(2)}</td>
+            <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">R ${tK.toFixed(2)}</td>
+            <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">R ${tZ.toFixed(2)}</td>
+            <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">R ${tR.toFixed(2)}</td>
+            <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">${tBk>0?`<span style="color:var(--green);font-weight:700">R ${tBk.toFixed(2)}</span>`:'—'}</td>
+            <td style="padding:0.5rem 0.7rem;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${tc}">${totalTips>=0?'R ':'−R '}${Math.abs(totalTips).toFixed(2)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    ${r.denoms?`<div style="padding:0.5rem 1rem;font-size:0.72rem;color:var(--muted);border-top:1px solid var(--surface)">Denomination count total: <strong>R ${(()=>{const DNS=[200,100,50,20,10,5,2,1,0.5,0.2,0.1,0.05];return DNS.reduce((s,d,i)=>s+((r.denoms[i]||0)*d),0).toFixed(2);})()</strong></div>`:''}
+  </div>`;
 }
 
 async function syncWaiterSalesFromCashUp(date, waiters){
@@ -2194,6 +2347,9 @@ function fVar(t,b){varF=t;document.querySelectorAll('#p-reports .ct').forEach(x=
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const GROUPS=['Kitchen','Bar / Waiters','Managers'];
 function getMonday(d){const dt=new Date(d);const day=dt.getDay();const diff=day===0?-6:1-day;dt.setDate(dt.getDate()+diff);dt.setHours(0,0,0,0);return dt;}
+function getWednesday(d){const dt=new Date(d);const day=dt.getDay();// 0=Sun,3=Wed
+const diff=day===0?-4:day<=3?-(day-3):3+(7-day);dt.setDate(dt.getDate()+diff);dt.setHours(0,0,0,0);return dt;}
+const MON_DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];// always Mon-indexed, used for date→dayName lookup
 function weekKey(m){return m.toISOString().split('T')[0];}
 function weekDates(m){return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(d.getDate()+i);return d;});}
 function staffForGroup(g){if(g==='Kitchen')return stfD.filter(s=>s.division==='Kitchen'||s.role.startsWith('Kitchen'));if(g==='Bar / Waiters')return stfD.filter(s=>s.division==='Floor'||s.role==='Waiter'||s.role==='Bar');if(g==='Managers')return stfD.filter(s=>s.division==='Management'||s.role==='Manager');return[];}
@@ -5911,8 +6067,8 @@ async function renderLBTrend(){
 // SHIFT SCHEDULING
 // ═══════════════════════════════════════════
 let schedData = {}; // {weekKey: {Mon:[waiter1,waiter2], Tue:[...], ...}}
-let schedWeekOf = getMonday(new Date());
-const SCHED_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+let schedWeekOf = getWednesday(new Date());// Week runs Wed→Tue (meetings on Tuesday evenings)
+const SCHED_DAYS = ['Wed','Thu','Fri','Sat','Sun','Mon','Tue'];// Wed→Tue order
 const SHIFTS = [
   {key:'morning',   label:'Môre',   short:'M', start:'07:00', end:'14:00', color:'#1a4a7a'},
   {key:'afternoon', label:'Middag', short:'A', start:'13:40', end:'17:00', color:'#b85c10'},
@@ -6030,13 +6186,13 @@ function renderSchedGrid(){
       <thead>
         <tr style="background:var(--surface)">
           <th style="padding:0.5rem 0.8rem;text-align:left;font-size:0.72rem;color:var(--muted);font-weight:700;min-width:100px" rowspan="2">NAME</th>
-          ${SCHED_DAYS.map((d,i)=>`<th colspan="${shiftArr.length}" style="padding:0.4rem;text-align:center;font-size:0.75rem;color:var(--muted);font-weight:700;border-left:1px solid var(--border);${i>=5?'background:#fef8f0':''}">
+          ${SCHED_DAYS.map((d,i)=>`<th colspan="${shiftArr.length}" style="padding:0.4rem;text-align:center;font-size:0.75rem;color:var(--muted);font-weight:700;border-left:1px solid var(--border);${i===3||i===4?'background:#fef8f0':''}">
             ${d} ${dates[i].getDate()}
           </th>`).join('')}
           <th rowspan="2" style="padding:0.4rem;text-align:center;font-size:0.68rem;color:var(--muted);min-width:36px">TOTAL</th>
         </tr>
         <tr style="background:var(--surface)">
-          ${SCHED_DAYS.map((d,i)=>shiftArr.map(s=>`<th style="padding:2px;text-align:center;font-size:0.62rem;color:${s.color};font-weight:700;border-left:${s===shiftArr[0]?'1px solid var(--border)':'none'};${i>=5?'background:#fef8f0':''}" title="${s.label} ${s.start}–${s.end}">${s.short}</th>`).join('')).join('')}
+          ${SCHED_DAYS.map((d,i)=>shiftArr.map(s=>`<th style="padding:2px;text-align:center;font-size:0.62rem;color:${s.color};font-weight:700;border-left:${s===shiftArr[0]?'1px solid var(--border)':'none'};${i===3||i===4?'background:#fef8f0':''}" title="${s.label} ${s.start}–${s.end}">${s.short}</th>`).join('')).join('')}
         </tr>
       </thead>
       <tbody>
@@ -6050,7 +6206,7 @@ function renderSchedGrid(){
               const count=(schedData[wk][d][s.key]||[]).length;
               const limit=getShiftLimit(s.key,d);
               const isFull=!isOn&&count>=limit;
-              return `<td style="padding:2px;text-align:center;border-bottom:1px solid var(--surface);${i>=5?'background:#fef8f0':''}">
+              return `<td style="padding:2px;text-align:center;border-bottom:1px solid var(--surface);${i===3||i===4?'background:#fef8f0':''}">
                 <button onclick="${ce&&(isOn||!isFull)?`toggleSched('${wk}','${d}','${name.replace(/'/g,"\'")}','${s.key}')`:''}"
                   title="${isFull?`Full (${count}/${limit})`:`${s.label} ${s.start}–${s.end}`}"
                   style="width:26px;height:26px;border-radius:5px;border:none;cursor:${ce&&(isOn||!isFull)?'pointer':'default'};font-size:0.65rem;
@@ -6175,7 +6331,10 @@ function schedCopyToRoster(){
     mgr_morning:  {start:'07:00',end:'14:30',brk:0.5},
     mgr_afternoon:{start:'14:30',end:'22:00',brk:0.5},
   };
-  SCHED_DAYS.forEach((day,i)=>{
+  // Map schedule day names to Mon-indexed roster positions (Mon=0..Sun=6)
+  const schedToRosterIdx={Wed:2,Thu:3,Fri:4,Sat:5,Sun:6,Mon:0,Tue:1};
+  SCHED_DAYS.forEach((day)=>{
+    const i=schedToRosterIdx[day];
     const d=sched[day]||emptySchedDay();
     // Managers
     MGR_SHIFTS.forEach(s=>{
