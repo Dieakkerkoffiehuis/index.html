@@ -2075,7 +2075,7 @@ function renderCUCards(){
         <div class="cf"><label>Voids</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.vo||''}" oninput="cuU(${i},'vo',this.value)"></div>
         <div class="cf"><label>Staff 25%</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.s2||''}" oninput="cuU(${i},'s2',this.value)"></div>
       </div>
-      <div class="cu-ft"><span>Cash calculated:</span><strong id="cuf-${i}" style="color:${c===null?'var(--muted)':c<0?'var(--red)':'var(--green)'}">${cTxt}</strong></div>
+      <div class="cu-ft"><span>Tips:</span><strong id="cuf-${i}" style="color:${c===null?'var(--muted)':c<0?'var(--red)':'var(--green)'}">${cTxt}</strong></div>
     </div>`;
   }).join('');
 }
@@ -2084,13 +2084,44 @@ function cuRemoveWaiter(i){
   cuD.waiters.splice(i,1);
   renderCUCards(); updCUTots(); cuLoadScheduledWaiters();
 }
-function cuCalc(w){if(!w.vk&&w.vk!==0)return null;return (w.vk||0)-(w.kt||0)-(w.rk||0)-(w.st||0)-(w.zp||0)-(w.vo||0)-(w.s2||0);}
+function cuCalc(w){if(!w.vk&&w.vk!==0)return null;return ((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0);}
 function cuU(i,f,v){cuD.waiters[i][f]=parseFloat(v)||0;const c=cuCalc(cuD.waiters[i]);const s=c===null?'—':(c<0?'−R '+Math.abs(c).toFixed(2):'R '+c.toFixed(2));const col=c===null?'var(--muted)':c<0?'var(--red)':'var(--green)';const cup=document.getElementById('cup-'+i);if(cup)cup.textContent=s;const cuf=document.getElementById('cuf-'+i);if(cuf){cuf.textContent=s;cuf.style.color=col;}updCUTots();}
 function renderDenoms(){document.getElementById('denomCard').innerHTML=`<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Enter the count of each note/coin</div><div class="dg">${DNS.map((d,i)=>`<div class="di"><div class="di-l">${DNL[i]}</div><input type="number" class="di-i" inputmode="numeric" min="0" value="${cuD.denoms[i]||''}" placeholder="0" oninput="cuD.denoms[${i}]=parseInt(this.value)||0;updDV(${i},${d},this.value)"><div class="di-v" id="dv-${i}">R ${((cuD.denoms[i]||0)*d).toFixed(2)}</div></div>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border)"><span style="font-weight:700;font-size:0.88rem">Total Count:</span><span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--burg)" id="dTot">R 0.00</span></div>`;updDTot();}
 function updDV(i,d,v){const e=document.getElementById('dv-'+i);if(e)e.textContent='R '+((parseInt(v)||0)*d).toFixed(2);updDTot();updCUTots();}
 function updDTot(){const t=DNS.reduce((s,d,i)=>s+(cuD.denoms[i]||0)*d,0);const e=document.getElementById('dTot');if(e)e.textContent='R '+t.toFixed(2);return t;}
-function updCUTots(){const tV=cuD.waiters.reduce((s,w)=>s+(w.vk||0),0),tK=cuD.waiters.reduce((s,w)=>s+(w.kt||0),0),tC=cuD.waiters.reduce((s,w)=>s+(w.ks||0),0),tZ=cuD.waiters.reduce((s,w)=>s+(w.zp||0),0),tVo=cuD.waiters.reduce((s,w)=>s+(w.vo||0),0),tS=cuD.waiters.reduce((s,w)=>s+(w.s2||0),0),dT=updDTot(),diff=dT-tC,dc=Math.abs(diff)<0.01?'var(--green)':'var(--red)',db=Math.abs(diff)<0.01?'var(--green-l)':'var(--red-l)';document.getElementById('cuTots').innerHTML=`<div class="sr"><span>Total Sales (Micros)</span><span class="am nb">R ${tV.toFixed(2)}</span></div><div class="sr"><span>Total Cards</span><span class="am">R ${tK.toFixed(2)}</span></div><div class="sr"><span>Total Cash Received</span><span class="am">R ${tC.toFixed(2)}</span></div><div class="sr"><span>Total Zapper / SnapScan</span><span class="am">R ${tZ.toFixed(2)}</span></div><div class="sr"><span>Total Voids</span><span class="am nr">R ${tVo.toFixed(2)}</span></div><div class="sr"><span>Total Staff 25%</span><span class="am">R ${tS.toFixed(2)}</span></div><div class="sr tot"><span>Count Total</span><span class="am ng">R ${dT.toFixed(2)}</span></div><div style="background:${db};border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin-top:0.4rem"><span style="font-weight:700">Difference</span><span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${dc}">${diff>=0?'+':''}R ${diff.toFixed(2)}</span></div>`;}
-async function saveCU(){
+function updCUTots(){
+  const tV=cuD.waiters.reduce((s,w)=>s+(w.vk||0),0);
+  const tK=cuD.waiters.reduce((s,w)=>s+(w.kt||0),0);
+  const tC=cuD.waiters.reduce((s,w)=>s+(w.ks||0),0);
+  const tZ=cuD.waiters.reduce((s,w)=>s+(w.zp||0),0);
+  const tR=cuD.waiters.reduce((s,w)=>s+(w.rk||0),0);
+  const tSt=cuD.waiters.reduce((s,w)=>s+(w.st||0),0);
+  const tVo=cuD.waiters.reduce((s,w)=>s+(w.vo||0),0);
+  const tS=cuD.waiters.reduce((s,w)=>s+(w.s2||0),0);
+  const totalTips=(tC+tK+tZ+tR+tSt)-tV;
+  const dT=updDTot();
+  const diff=dT-tC;
+  const dc=Math.abs(diff)<0.01?'var(--green)':'var(--red)';
+  const db=Math.abs(diff)<0.01?'var(--green-l)':'var(--red-l)';
+  const tc=totalTips>=0?'var(--green)':'var(--red)';
+  document.getElementById('cuTots').innerHTML=`
+    <div class="sr"><span>Total Sales (Micros)</span><span class="am nb">R ${tV.toFixed(2)}</span></div>
+    <div class="sr"><span>Total Cards</span><span class="am">R ${tK.toFixed(2)}</span></div>
+    <div class="sr"><span>Total Cash Received</span><span class="am">R ${tC.toFixed(2)}</span></div>
+    <div class="sr"><span>Total Zapper / SnapScan</span><span class="am">R ${tZ.toFixed(2)}</span></div>
+    <div class="sr"><span>Total Accounts</span><span class="am">R ${tR.toFixed(2)}</span></div>
+    <div class="sr"><span>Total Voids</span><span class="am nr">R ${tVo.toFixed(2)}</span></div>
+    <div class="sr"><span>Total Staff 25%</span><span class="am">R ${tS.toFixed(2)}</span></div>
+    <div style="background:${totalTips>=0?'#f0faf4':'var(--red-l)'};border:1px solid ${totalTips>=0?'var(--green-b)':'var(--red-b)'};border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin:0.4rem 0">
+      <span style="font-weight:700">Total Tips</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${tc}">${totalTips>=0?'R ':'−R '}${Math.abs(totalTips).toFixed(2)}</span>
+    </div>
+    <div class="sr tot"><span>Denomination Count Total</span><span class="am ng">R ${dT.toFixed(2)}</span></div>
+    <div style="background:${db};border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin-top:0.4rem">
+      <span style="font-weight:700">Cash Difference (Count vs Received)</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${dc}">${diff>=0?'+':''}R ${diff.toFixed(2)}</span>
+    </div>`;
+}async function saveCU(){
   setSyncStatus('syncing');
   const dt=document.getElementById('cuDate').value, sh=document.getElementById('cuShift').value;
   const {error}=await SB.from('cash_up').upsert({date:dt,shift:sh,waiters:cuD.waiters,denoms:cuD.denoms,saved_at:new Date().toISOString()},{onConflict:'date,shift'});
