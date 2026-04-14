@@ -1301,13 +1301,18 @@ CREATE POLICY "allow_all" ON pending_orders FOR ALL USING (true) WITH CHECK (tru
 </div>
 
 <div class="mo" id="moOrder">
-  <div class="md">
+  <div class="md" style="max-width:560px">
     <button class="md-close" onclick="closeMo('moOrder')">✕</button>
-    <div class="md-title" id="ordTitle">Order</div>
-    <div id="ordBody"></div>
-    <div class="brow" style="margin-top:1rem" id="ordBtns">
-      <button class="btn bgn" id="ordSendBtn" onclick="sendOrd()">📱 Send WhatsApp</button>
-      <button class="btn bs" onclick="copyOrd()">📋 Copy</button>
+    <!-- Step indicator -->
+    <div style="display:flex;align-items:center;gap:0;margin-bottom:1rem" id="ordStepBar">
+      <div id="ordStep1Dot" style="flex:1;text-align:center;padding:0.35rem 0;font-size:0.72rem;font-weight:700;border-radius:6px 0 0 6px;background:var(--burg);color:#fff">① Stock Count</div>
+      <div id="ordStep2Dot" style="flex:1;text-align:center;padding:0.35rem 0;font-size:0.72rem;font-weight:700;border-radius:0 6px 6px 0;background:var(--surface);color:var(--muted)">② Order Qty</div>
+    </div>
+    <div class="md-title" id="ordTitle" style="margin-bottom:0.3rem">Order</div>
+    <div id="ordSupContact" style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem"></div>
+    <div id="ordBody" style="max-height:60vh;overflow-y:auto"></div>
+    <div style="margin-top:1rem;display:flex;flex-direction:column;gap:0.5rem" id="ordBtns">
+      <!-- Buttons injected by JS -->
     </div>
   </div>
 </div>
@@ -1937,27 +1942,28 @@ const ORDER_SCHEDULE = {
 };
 
 // ── ORDER TEMPLATES: default quantities per supplier from Bestellyste ─────
+// ml = minimum level (what must be on hand). Numbers from Bestellyste.
 const ORDER_TEMPLATES = {
-  'Vision Meats':[{n:'Biltong 500g',q:7},{n:'Skilpad 80g',q:5},{n:'Beef Stirfry',q:5},{n:'Patties 150g',q:50},{n:'300g Rump Steak *',q:15},{n:'200g Rump Steak *',q:25},{n:'350g T-Bene',q:25},{n:'Maalvleis 1kg',q:8},{n:'Boerewors 10x40g',q:20},{n:'Varknek 180g',q:5},{n:'Minute Steak 100g',q:5}],
-  'Benmar Eggs':[{n:'Eiers',q:5}],
-  'Highveld Mushrooms':[{n:'Mushrooms 5kg',q:3}],
-  'Anchor':[{n:'Karringmelk',q:2}],
-  'Trucon Foods':[{n:'Bone',q:6},{n:'Patats',q:6},{n:'Spinasie',q:8},{n:'Pampoen',q:10}],
-  'Alpha Kafee':[{n:'Pears (each)',q:4},{n:'Apples (each)',q:4},{n:'Paw Paw (each)',q:2},{n:'Banana (pack)',q:2},{n:'Cherry Tomato (pack)',q:5},{n:'Parsley (pack)',q:7},{n:'Spring Onion (pack)',q:3},{n:'Green Pepper (each)',q:5},{n:'Red Pepper (each)',q:5},{n:'Red Onion (each)',q:8},{n:'Pineapple (each)',q:2},{n:'Red Cabbage (each)',q:1},{n:'White Cabbage (each)',q:1},{n:'Carrots (pack)',q:2},{n:'Cucumber (each)',q:6},{n:'Mixed Lettuce (each)',q:3},{n:'Lettuce (each)',q:8},{n:'Tomato (Box)',q:2},{n:'Beetroot (box)',q:1},{n:'Onions (Bag)',q:1},{n:'Potatoes (Bag)',q:4},{n:'Lemons (Box)',q:1}],
-  'Avolands':[{n:'Avocados green',q:3},{n:'Avocados orange',q:5}],
-  'Econo Foods':[{n:'Panko Crumbs',q:18},{n:'Cheesy Russian',q:6},{n:'Sliced Cheese',q:4},{n:'Soft Serve',q:24},{n:'Battered Hake',q:1},{n:'Hash Browns',q:1},{n:'Mini Butter',q:5}],
-  'Bakels':[{n:'Waffle Mix',q:10},{n:'Bakels Delight',q:24}],
-  'Golden Valley Cheese':[{n:'Feta',q:4},{n:'Halloumi',q:5},{n:'Mozzarella',q:15},{n:'Cheddar',q:25}],
-  'IJ Oil':[{n:'Palm Oil',q:4},{n:'Sunflower Oil',q:2}],
-  'SLO-JO':[{n:'Salted Caramel Stroop',q:2},{n:'Caramel Stroop',q:1},{n:'Vanilla Stroop',q:1},{n:'Hazelnut Stroop',q:1},{n:'Strawberry Stroop',q:2},{n:'Pineapple Stroop',q:1},{n:'Pina Colada Stroop',q:2},{n:'Banana Stroop',q:1},{n:'Ginger & Peach Stroop',q:2},{n:'Strawberry/Orange Stroop',q:2},{n:'Pear Elderflower Stroop',q:2},{n:'Smoothie Stroop Strawberry',q:1},{n:'Smoothie Stroop Mixed Berry',q:3},{n:'Smoothie Stroop Mango Madness',q:3}],
-  'Instant Gourmet':[{n:'Brazillian Hazelnut',q:3},{n:'Chai Tea',q:3},{n:'Vanilla Mocha',q:2},{n:'Aero Peppermint',q:1},{n:'Hot Chocolate',q:4},{n:'White Chocolate',q:3},{n:'Toffee Caramel',q:1},{n:'Rooibos Chai',q:1},{n:'Coffee Freezo',q:2},{n:'Milky Bar',q:2}],
-  'Sir Juice':[{n:'Orange 5L',q:5},{n:'Guava 1.5L',q:3},{n:'Strawberry 5L',q:3},{n:'Cocktail 5L',q:3},{n:'Smoothie Berries',q:12},{n:'Smoothie Mango & Passion',q:18}],
-  'Mr Sauce':[{n:'French Dressing 5Lt',q:3},{n:'Buffalo Wings Sauce 5Lt',q:2},{n:'Garlic & Lemon Sauce 5Lt',q:2}],
-  'Chubby Chick':[{n:'Chicken Breast Fillet',q:null},{n:'Chicken Wings',q:null},{n:'Chicken Liver',q:null}],
-  'Spill-it Coffee':[{n:'Espresso Beans',q:12},{n:'Filter Coffee',q:5}],
-  'Bidfood':[{n:'Tramezinni',q:3},{n:'Ribs MEA5919',q:2},{n:'English Muffins',q:1},{n:'Panini 150g',q:2},{n:'Ciabatta',q:2},{n:'Smoked Salmon',q:1},{n:'Hickory Ham',q:2},{n:'Sandwich Ham',q:1},{n:'Pork Sausage',q:1},{n:'Viennas',q:1},{n:'Meadowland',q:2},{n:'Romi',q:1},{n:'Rye Bread',q:1},{n:'Wraps',q:1},{n:'Cordon Bleu',q:1},{n:'Cream Cheese 2.5kg',q:2}],
-  'Blue Bottle':[{n:'Amstel',q:null},{n:'Heineken',q:null},{n:'Windhoek Draught',q:null},{n:'Windhoek Lager',q:null},{n:'Castle Lite',q:null},{n:'Flying Fish Lemon',q:null},{n:'Savanna Dry',q:null},{n:'Savanna Light',q:null},{n:'Hunters Dry',q:null},{n:'Hunters Gold',q:null},{n:'Corona',q:null},{n:'Bavaria Non Alc.',q:null},{n:'Amarula',q:null},{n:'Kahlua',q:null},{n:'Jack Daniels',q:null},{n:'J&B',q:null},{n:'Jameson',q:null},{n:'Pushkin Vodka',q:null},{n:'Tequila',q:null},{n:'Richelieu',q:null},{n:'Klipdrift Premium',q:null},{n:'Bacardi Rum',q:null},{n:'Gordons Gin',q:null},{n:'Bombay Sapphire Gin',q:null}],
-  'Golden Catering':[{n:'Sauce Soya',q:1},{n:'Ginger',q:1},{n:'Coconut',q:3},{n:'Salt - table',q:4},{n:'Salt - Sea coarse',q:4},{n:'Calamata Olywe',q:1},{n:'Muesli',q:2},{n:'Balsamic Vinegar',q:1},{n:'Olive Oil',q:1},{n:'Stroop',q:6},{n:'Sugar Brown 1kg',q:4},{n:'Chip White',q:2},{n:'Rys 2.5kg',q:2},{n:'Macaroni',q:5},{n:'Lasagne',q:5},{n:'Chip Spice',q:2},{n:'Cinnamon',q:1},{n:'Baked Beans',q:2},{n:'Cocoa 250g',q:2},{n:'Cream Bombs',q:10},{n:'Heuning',q:6},{n:'Chicken Spice',q:2},{n:'Chocolate Mousse',q:4},{n:'Icing Sugar',q:1},{n:'Cake Flour 12.5kg',q:2},{n:'Maizina',q:6},{n:'Baking Powder',q:1},{n:'Tobasco Green',q:6},{n:'Tobasco Red',q:6},{n:'Paprika',q:1},{n:'Garlic',q:1},{n:'Sprinkle Nuts',q:2},{n:'100s & 1000s',q:1},{n:'Hollandaise',q:6},{n:'Peanut Butter',q:2},{n:'B-Well Mayo 20L',q:1},{n:'Sweet Chilli',q:3},{n:'Chutney 6.25kg',q:1},{n:'Basil Pesto',q:2},{n:'Capers',q:1},{n:'Jalapeno',q:2},{n:'Peppadews',q:1},{n:'Tomato Puree 410g',q:8},{n:'Sundried Tomato',q:1},{n:'Jam Strawberry',q:1},{n:'Jam Apricot',q:1},{n:'Condensed Milk',q:18},{n:'Caramel Treat',q:12}],
+  'Vision Meats':[{n:'Biltong 500g',ml:7},{n:'Skilpad 80g',ml:5},{n:'Beef Stirfry',ml:5},{n:'Patties 150g',ml:50},{n:'300g Rump Steak *',ml:15},{n:'200g Rump Steak *',ml:25},{n:'350g T-Bene',ml:25},{n:'Maalvleis 1kg',ml:8},{n:'Boerewors 10x40g',ml:20},{n:'Varknek 180g',ml:5},{n:'Minute Steak 100g',ml:5}],
+  'Benmar Eggs':[{n:'Eiers',ml:5}],
+  'Highveld Mushrooms':[{n:'Mushrooms 5kg',ml:3}],
+  'Anchor':[{n:'Karringmelk',ml:2}],
+  'Trucon Foods':[{n:'Bone',ml:6},{n:'Patats',ml:6},{n:'Spinasie',ml:8},{n:'Pampoen',ml:10}],
+  'Alpha Kafee':[{n:'Pears (each)',ml:4},{n:'Apples (each)',ml:4},{n:'Paw Paw (each)',ml:2},{n:'Banana (pack)',ml:2},{n:'Cherry Tomato (pack)',ml:5},{n:'Parsley (pack)',ml:7},{n:'Spring Onion (pack)',ml:3},{n:'Green Pepper (each)',ml:5},{n:'Red Pepper (each)',ml:5},{n:'Red Onion (each)',ml:8},{n:'Pineapple (each)',ml:2},{n:'Red Cabbage (each)',ml:1},{n:'White Cabbage (each)',ml:1},{n:'Carrots (pack)',ml:2},{n:'Cucumber (each)',ml:6},{n:'Mixed Lettuce (each)',ml:3},{n:'Lettuce (each)',ml:8},{n:'Tomato (Box)',ml:2},{n:'Beetroot (box)',ml:1},{n:'Onions (Bag)',ml:1},{n:'Potatoes (Bag)',ml:4},{n:'Lemons (Box)',ml:1}],
+  'Avolands':[{n:'Avocados green',ml:3},{n:'Avocados orange',ml:5}],
+  'Econo Foods':[{n:'Panko Crumbs',ml:18},{n:'Cheesy Russian',ml:6},{n:'Sliced Cheese',ml:4},{n:'Soft Serve',ml:24},{n:'Battered Hake',ml:1},{n:'Hash Browns',ml:1},{n:'Mini Butter',ml:5}],
+  'Bakels':[{n:'Waffle Mix',ml:10},{n:'Bakels Delight',ml:24}],
+  'Golden Valley Cheese':[{n:'Feta',ml:4},{n:'Halloumi',ml:5},{n:'Mozzarella',ml:15},{n:'Cheddar',ml:25}],
+  'IJ Oil':[{n:'Palm Oil',ml:4},{n:'Sunflower Oil',ml:2}],
+  'SLO-JO':[{n:'Salted Caramel Stroop',ml:2},{n:'Caramel Stroop',ml:1},{n:'Vanilla Stroop',ml:1},{n:'Hazelnut Stroop',ml:1},{n:'Strawberry Stroop',ml:2},{n:'Pineapple Stroop',ml:1},{n:'Pina Colada Stroop',ml:2},{n:'Banana Stroop',ml:1},{n:'Ginger & Peach Stroop',ml:2},{n:'Strawberry/Orange Stroop',ml:2},{n:'Pear Elderflower Stroop',ml:2},{n:'Smoothie Stroop Strawberry',ml:1},{n:'Smoothie Stroop Mixed Berry',ml:3},{n:'Smoothie Stroop Mango Madness',ml:3}],
+  'Instant Gourmet':[{n:'Brazillian Hazelnut',ml:3},{n:'Chai Tea',ml:3},{n:'Vanilla Mocha',ml:2},{n:'Aero Peppermint',ml:1},{n:'Hot Chocolate',ml:4},{n:'White Chocolate',ml:3},{n:'Toffee Caramel',ml:1},{n:'Rooibos Chai',ml:1},{n:'Coffee Freezo',ml:2},{n:'Milky Bar',ml:2}],
+  'Sir Juice':[{n:'Orange 5L',ml:5},{n:'Guava 1.5L',ml:3},{n:'Strawberry 5L',ml:3},{n:'Cocktail 5L',ml:3},{n:'Smoothie Berries',ml:12},{n:'Smoothie Mango & Passion',ml:18}],
+  'Mr Sauce':[{n:'French Dressing 5Lt',ml:3},{n:'Buffalo Wings Sauce 5Lt',ml:2},{n:'Garlic & Lemon Sauce 5Lt',ml:2}],
+  'Chubby Chick':[{n:'Chicken Breast Fillet',ml:null},{n:'Chicken Wings',ml:null},{n:'Chicken Liver',ml:null}],
+  'Spill-it Coffee':[{n:'Espresso Beans',ml:12},{n:'Filter Coffee',ml:5}],
+  'Bidfood':[{n:'Tramezinni',ml:3},{n:'Ribs MEA5919',ml:2},{n:'English Muffins',ml:1},{n:'Panini 150g',ml:2},{n:'Ciabatta',ml:2},{n:'Smoked Salmon',ml:1},{n:'Hickory Ham',ml:2},{n:'Sandwich Ham',ml:1},{n:'Pork Sausage',ml:1},{n:'Viennas',ml:1},{n:'Meadowland',ml:2},{n:'Romi',ml:1},{n:'Rye Bread',ml:1},{n:'Wraps',ml:1},{n:'Cordon Bleu',ml:1},{n:'Cream Cheese 2.5kg',ml:2}],
+  'Blue Bottle':[{n:'Amstel',ml:null},{n:'Heineken',ml:null},{n:'Windhoek Draught',ml:null},{n:'Windhoek Lager',ml:null},{n:'Castle Lite',ml:null},{n:'Flying Fish Lemon',ml:null},{n:'Savanna Dry',ml:null},{n:'Savanna Light',ml:null},{n:'Hunters Dry',ml:null},{n:'Hunters Gold',ml:null},{n:'Corona',ml:null},{n:'Bavaria Non Alc.',ml:null},{n:'Amarula',ml:null},{n:'Kahlua',ml:null},{n:'Jack Daniels',ml:null},{n:'J&B',ml:null},{n:'Jameson',ml:null},{n:'Pushkin Vodka',ml:null},{n:'Tequila',ml:null},{n:'Richelieu',ml:null},{n:'Klipdrift Premium',ml:null},{n:'Bacardi Rum',ml:null},{n:'Gordons Gin',ml:null},{n:'Bombay Sapphire Gin',ml:null}],
+  'Golden Catering':[{n:'Sauce Soya',ml:1},{n:'Ginger',ml:1},{n:'Coconut',ml:3},{n:'Salt - table',ml:4},{n:'Salt - Sea coarse',ml:4},{n:'Calamata Olywe',ml:1},{n:'Muesli',ml:2},{n:'Balsamic Vinegar',ml:1},{n:'Olive Oil',ml:1},{n:'Stroop',ml:6},{n:'Sugar Brown 1kg',ml:4},{n:'Chip White',ml:2},{n:'Rys 2.5kg',ml:2},{n:'Macaroni',ml:5},{n:'Lasagne',ml:5},{n:'Chip Spice',ml:2},{n:'Cinnamon',ml:1},{n:'Baked Beans',ml:2},{n:'Cocoa 250g',ml:2},{n:'Cream Bombs',ml:10},{n:'Heuning',ml:6},{n:'Chicken Spice',ml:2},{n:'Chocolate Mousse',ml:4},{n:'Icing Sugar',ml:1},{n:'Cake Flour 12.5kg',ml:2},{n:'Maizina',ml:6},{n:'Baking Powder',ml:1},{n:'Tobasco Green',ml:6},{n:'Tobasco Red',ml:6},{n:'Paprika',ml:1},{n:'Garlic',ml:1},{n:'Sprinkle Nuts',ml:2},{n:'100s & 1000s',ml:1},{n:'Hollandaise',ml:6},{n:'Peanut Butter',ml:2},{n:'B-Well Mayo 20L',ml:1},{n:'Sweet Chilli',ml:3},{n:'Chutney 6.25kg',ml:1},{n:'Basil Pesto',ml:2},{n:'Capers',ml:1},{n:'Jalapeno',ml:2},{n:'Peppadews',ml:1},{n:'Tomato Puree 410g',ml:8},{n:'Sundried Tomato',ml:1},{n:'Jam Strawberry',ml:1},{n:'Jam Apricot',ml:1},{n:'Condensed Milk',ml:18},{n:'Caramel Treat',ml:12}],
 };
 
 async function loadSuppliers(){
@@ -2076,243 +2082,364 @@ function updateSupplierDropdowns(){
 }
 function renderTodayOrdersBanner(){
   const dayName=new Date().toLocaleDateString('en-ZA',{weekday:'long'});
+  const isOwner=CU?.role==='owner';
+  // Non-owners only see today; owners see all
   const todayList=ORDER_SCHEDULE[dayName]||[];
   const banner=document.getElementById('todayOrdersBanner');
   if(!banner) return;
-  if(!todayList.length){banner.innerHTML='';return;}
+  if(!todayList.length&&!isOwner){banner.innerHTML='';return;}
+  const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
   const chips=todayList.map(x=>{
-    const hasTemplate=!!(ORDER_TEMPLATES[x.s]);
     const inf=SUPS[x.s]||{};
-    const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
-    return `<div onclick="openOrd('${x.s.replace(/'/g,"\\'")}','today')" style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.7rem;cursor:pointer;flex-shrink:0;transition:all 0.15s;box-shadow:var(--sh)" class="today-sup-chip">
+    return `<div onclick="openOrd('${x.s.replace(/'/g,"\\'")}','today')" style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.7rem;cursor:pointer;flex-shrink:0;box-shadow:var(--sh)">
       <div style="font-size:0.75rem;font-weight:700">${mi[inf.m]||'📱'} ${x.s}${x.e2?'<span style="font-size:0.58rem;color:var(--muted)"> (2nd wk)</span>':''}</div>
-      <div style="font-size:0.63rem;color:var(--muted)">Delivers: ${x.d}${hasTemplate?' · 📋 template':''}
-      </div></div>`;
+      <div style="font-size:0.63rem;color:var(--muted)">Delivers: ${x.d}</div></div>`;
   }).join('');
   banner.innerHTML=`<div style="background:linear-gradient(135deg,#1a3a2a 0%,#1e5c36 100%);border-radius:10px;padding:0.75rem 1rem;margin-bottom:0">
     <div style="color:rgba(255,255,255,0.8);font-size:0.68rem;font-weight:700;letter-spacing:0.08em;margin-bottom:0.5rem">📅 TODAY'S ORDERS — ${dayName.toUpperCase()}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:0.4rem">${chips}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.4rem">${chips||'<span style="color:rgba(255,255,255,0.5);font-size:0.75rem">No orders scheduled today</span>'}</div>
   </div>`;
 }
 
+// ── ORDER STATE ───────────────────────────────────────────────────────────
+let actSup='', ordItems=[], ordStockCounts={}, ordOrderQty={}, ordStep=1;
+
 function renderSups(){
   const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
-  const ce=canEdit();
-  // Show all suppliers from SUPS + any in DB not yet in SUPS, sorted
-  const allSups=[...new Set([...Object.keys(SUPS),...DB.map(i=>i.supplier)])].sort();
-  // Hide edit button for non-owners
+  const isOwner=CU?.role==='owner';
   const editBtn=document.getElementById('editSuppliersBtn');
-  if(editBtn) editBtn.style.display=ce?'inline-flex':'none';
-
-  // Show pending section for owners
+  if(editBtn) editBtn.style.display=isOwner?'inline-flex':'none';
   const pendSec=document.getElementById('pendingOrdersSection');
-  if(pendSec) pendSec.style.display=CU?.role==='owner'?'block':'none';
-  if(CU?.role==='owner') loadPendingOrders();
-
+  if(pendSec) pendSec.style.display=isOwner?'block':'none';
+  if(isOwner) loadPendingOrders();
   renderTodayOrdersBanner();
+
+  // Non-owners only see today's suppliers; owners see all
+  const dayName=new Date().toLocaleDateString('en-ZA',{weekday:'long'});
+  const todayNames=(ORDER_SCHEDULE[dayName]||[]).map(x=>x.s);
+  const allSups=isOwner
+    ? [...new Set([...Object.keys(SUPS),...DB.map(i=>i.supplier)])].sort()
+    : todayNames.filter(s=>SUPS[s]||ORDER_TEMPLATES[s]);
+
+  if(!allSups.length&&!isOwner){
+    document.getElementById('supList').innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.85rem">No suppliers scheduled for today.</div>';
+    return;
+  }
 
   document.getElementById('supList').innerHTML=allSups.map(s=>{
     const its=DB.filter(i=>i.supplier===s);
     const low=its.filter(i=>i.stock<=i.min_level).length;
     const inf=SUPS[s]||{};
-    const hasTemplate=!!(ORDER_TEMPLATES[s]);
-    const noProducts=its.length===0&&!hasTemplate;
-    return `<div class="sc" onclick="${noProducts?`showToast('No products assigned to ${s} yet.',true)`:`openOrd('${s.replace(/'/g,"\\'")}')` }" style="${noProducts?'opacity:0.55':''}">
+    const hasTpl=!!(ORDER_TEMPLATES[s]);
+    const isToday=todayNames.includes(s);
+    return `<div class="sc" onclick="openOrd('${s.replace(/'/g,"\\'")}')">
       <div style="font-size:1.5rem;flex-shrink:0">${mi[inf.m]||'📱'}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:0.92rem">${s}${inf.urg?'<span class="bdg bgr" style="margin-left:0.5rem;font-size:0.58rem">⚠ Urgent</span>':''}</div>
-        <div style="font-size:0.72rem;color:var(--muted)">${inf.c||''}${its.length>0?` · ${its.length} product${its.length!==1?'s':''}${low>0?` · <strong style="color:var(--red)">⚠ ${low} low</strong>`:''}`:hasTemplate?' · <em>📋 Template available</em>':' · <em>No products yet</em>'}</div>
+        <div style="font-weight:700;font-size:0.92rem">${s}${inf.urg?'<span class="bdg bgr" style="margin-left:0.4rem;font-size:0.58rem">⚠ Urgent</span>':''}${isOwner&&isToday?'<span class="bdg bgg" style="margin-left:0.4rem;font-size:0.58rem">Today</span>':''}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${inf.c||''}${low>0?` · <strong style="color:var(--red)">⚠ ${low} item${low!==1?'s':''} low</strong>`:hasTpl?' · 📋 order list ready':''}</div>
       </div>
       <div style="color:var(--muted);font-size:1.1rem">›</div>
     </div>`;
   }).join('');
 }
-function openOrd(s, mode){
-  actSup=s; ordQ={}; ordIsTemplate=(mode==='today');
+
+// ── TWO-STEP ORDER MODAL ─────────────────────────────────────────────────
+function ordGetItems(s){
+  // Build unified item list: template items first, then any DB-only items
+  const tpl=ORDER_TEMPLATES[s]||[];
+  const dbItems=DB.filter(i=>i.supplier===s);
+  const items=tpl.map((t,idx)=>{
+    const dbMatch=dbItems.find(d=>d.name.toLowerCase()===t.n.toLowerCase());
+    return {n:t.n, ml:t.ml, dbId:dbMatch?.id||null};
+  });
+  // Add DB items not in template
+  dbItems.forEach(d=>{
+    if(!items.find(i=>i.dbId===d.id))
+      items.push({n:d.name, ml:d.min_level||null, dbId:d.id});
+  });
+  return items;
+}
+
+function ordSetStep(step){
+  ordStep=step;
+  const s1=document.getElementById('ordStep1Dot');
+  const s2=document.getElementById('ordStep2Dot');
+  if(s1){s1.style.background=step===1?'var(--burg)':'var(--green)';s1.style.color='#fff';}
+  if(s2){s2.style.background=step===2?'var(--burg)':'var(--surface)';s2.style.color=step===2?'#fff':'var(--muted)';}
+}
+
+function openOrd(s){
+  actSup=s;
+  ordItems=ordGetItems(s);
+  ordStockCounts={};
+  ordOrderQty={};
+  ordStep=1;
   const inf=SUPS[s]||{};
-  const dbItems=[...DB.filter(i=>i.supplier===s)].sort((a,b)=>(a.stock<=a.min_level?0:1)-(b.stock<=b.min_level?0:1));
-  const tplItems=ORDER_TEMPLATES[s]||[];
-  const isOwner=CU?.role==='owner';
-
   document.getElementById('ordTitle').textContent=s;
-
-  let bodyHtml=`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.8rem">${inf.c||''}</div>`;
-
-  // If we have a template, show template items (freeform qty input, not tied to DB)
-  if(tplItems.length>0){
-    bodyHtml+=`<div style="font-size:0.7rem;color:var(--muted);font-weight:700;letter-spacing:0.05em;margin-bottom:0.5rem">📋 ORDER LIST</div>`;
-    bodyHtml+=tplItems.map((it,idx)=>{
-      const defQ=it.q||0;
-      if(defQ>0) ordQ['t'+idx]=defQ; // pre-fill defaults
-      return `<div class="sti" id="oti-${idx}" style="${defQ>0?'border-color:var(--burg)':''}">
-        <div class="sti-inf"><div class="sti-name">${it.n}</div><div class="sti-meta" style="color:var(--muted)">Default: ${it.q!=null?it.q:'—'}</div></div>
-        <div style="display:flex;align-items:center;gap:0.4rem">
-          <button onclick="adjOT(${idx},-1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--surface);cursor:pointer;font-size:1rem">−</button>
-          <div style="text-align:center;min-width:26px"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;${defQ>0?'color:var(--burg)':'color:var(--muted)'}" id="oqt-${idx}">${defQ||0}</div></div>
-          <button onclick="adjOT(${idx},1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--burg);color:#fff;cursor:pointer;font-size:1rem">+</button>
-        </div></div>`;
-    }).join('');
-    if(dbItems.length>0){
-      bodyHtml+=`<div style="font-size:0.7rem;color:var(--muted);font-weight:700;letter-spacing:0.05em;margin:0.8rem 0 0.5rem">📦 STOCK ITEMS</div>`;
-    }
-  }
-
-  // DB items (if any)
-  bodyHtml+=dbItems.map(i=>`<div class="sti" id="oi-${i.id}">
-    <div class="sti-inf"><div class="sti-name">${i.name}</div><div class="sti-meta">${i.stock<=i.min_level?'<strong style="color:var(--red)">⚠ LOW</strong> · ':''} Stock: ${i.stock} ${i.unit}</div></div>
-    <div style="display:flex;align-items:center;gap:0.4rem">
-      <button onclick="adjO(${i.id},-1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--surface);cursor:pointer;font-size:1rem">−</button>
-      <div style="text-align:center;min-width:26px"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--muted)" id="oq-${i.id}">0</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">${i.unit}</div></div>
-      <button onclick="adjO(${i.id},1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--burg);color:#fff;cursor:pointer;font-size:1rem">+</button>
-    </div></div>`).join('');
-
-  if(tplItems.length===0&&dbItems.length===0){
-    bodyHtml+=`<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.82rem">No products set up for this supplier yet.</div>`;
-  }
-
-  document.getElementById('ordBody').innerHTML=bodyHtml;
-
-  // Send/submit button
-  const btn=document.getElementById('ordSendBtn');
-  if(isOwner){
-    if(inf.m==='email'){btn.innerHTML='📧 Send Email';btn.className='btn bp';}
-    else if(inf.m==='phone'){btn.innerHTML='📋 Copy (then call)';btn.className='btn bs';}
-    else if(inf.m==='app'){btn.innerHTML='📋 Copy for App';btn.className='btn bs';}
-    else{btn.innerHTML='📱 Send WhatsApp';btn.className='btn bgn';}
-  } else {
-    btn.innerHTML='📤 Submit for Approval';
-    btn.className='btn bp';
-  }
+  document.getElementById('ordSupContact').textContent=inf.c||'';
+  ordSetStep(1);
+  ordRenderStep1();
   openMo('moOrder');
 }
-// Template qty adjuster (freeform items not tied to DB)
-function adjOT(idx,d){
-  const k='t'+idx;
-  const c=ordQ[k]||0, n=Math.max(0,c+d);
-  if(!n) delete ordQ[k]; else ordQ[k]=n;
-  const e=document.getElementById('oqt-'+idx);
-  if(e){e.textContent=n||0;e.style.color=n>0?'var(--burg)':'var(--muted)';}
-  const row=document.getElementById('oti-'+idx);
-  if(row) row.style.borderColor=n>0?'var(--burg)':'var(--border)';
+
+function ordRenderStep1(){
+  // Step 1: stock count inputs
+  const rows=ordItems.map((it,i)=>`
+    <div style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0;border-bottom:1px solid var(--surface)">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:0.88rem">${it.n}</div>
+        ${it.ml!=null?`<div style="font-size:0.68rem;color:var(--muted)">Min: ${it.ml}</div>`:''}
+      </div>
+      <input type="number" min="0" step="0.5" placeholder="0"
+        id="sc-${i}" value="${ordStockCounts[i]!=null?ordStockCounts[i]:''}"
+        oninput="ordStockCounts[${i}]=parseFloat(this.value)||0"
+        style="width:70px;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.9rem;font-weight:700;text-align:center;background:var(--cream);outline:none;-moz-appearance:textfield">
+    </div>`).join('');
+
+  document.getElementById('ordBody').innerHTML=
+    `<div style="font-size:0.7rem;color:var(--muted);font-weight:700;letter-spacing:0.06em;margin-bottom:0.4rem">FILL IN CURRENT STOCK ON HAND</div>`+rows;
+
+  document.getElementById('ordBtns').innerHTML=
+    `<button class="btn bp" style="width:100%" onclick="ordSubmitStockCount()">Submit Stock Count →</button>`;
 }
-let ordIsTemplate=false;
-function adjO(id,d){const c=ordQ[id]||0,n=Math.max(0,c+d);if(!n)delete ordQ[id];else ordQ[id]=n;const e=document.getElementById('oq-'+id);if(e){e.textContent=n||'0';e.style.color=n>0?'var(--burg)':'var(--muted)';}const o=document.getElementById('oi-'+id);if(o)o.style.borderColor=n>0?'var(--burg)':'var(--border)';}
-function buildMsg(){
-  const inf=SUPS[actSup]||{};
-  const tpl=ORDER_TEMPLATES[actSup]||[];
-  const lines=[];
-  // Template items
-  Object.entries(ordQ).forEach(([k,q])=>{
-    if(k.startsWith('t')){
-      const idx=parseInt(k.slice(1));
-      const it=tpl[idx];
-      if(it&&q>0) lines.push(`${q}x ${it.n}`);
-    } else {
-      const it=DB.find(i=>i.id===parseInt(k));
-      if(it&&q>0) lines.push(`${q}x ${it.name} (${it.unit})`);
+
+async function ordSubmitStockCount(){
+  // Save stock counts and update main stock DB
+  const updates=[];
+  ordItems.forEach((it,i)=>{
+    const v=ordStockCounts[i];
+    if(v!=null&&it.dbId){
+      updates.push(SB.from('stock').update({stock:v}).eq('id',it.dbId));
+      // update local DB cache too
+      const loc=DB.find(d=>d.id===it.dbId);
+      if(loc) loc.stock=v;
     }
   });
+  if(updates.length){
+    setSyncStatus('syncing');
+    await Promise.all(updates).catch(()=>{});
+    setSyncStatus('ok');
+  }
+
+  // Pre-fill order qty = max(0, min_level - stock_on_hand), defaulting 0 when no min set
+  ordItems.forEach((it,i)=>{
+    const soh=ordStockCounts[i]||0;
+    const suggested=it.ml!=null?Math.max(0,it.ml-soh):0;
+    ordOrderQty[i]=suggested;
+  });
+
+  ordSetStep(2);
+  ordRenderStep2();
+}
+
+function ordRenderStep2(){
+  const rows=ordItems.map((it,i)=>{
+    const soh=ordStockCounts[i]!=null?ordStockCounts[i]:'—';
+    const qty=ordOrderQty[i]||0;
+    const low=it.ml!=null&&(ordStockCounts[i]||0)<it.ml;
+    return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--surface)">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:0.85rem">${it.n}</div>
+        <div style="font-size:0.68rem;${low?'color:var(--red);font-weight:700':'color:var(--muted)'}">On hand: ${soh}${it.ml!=null?' · Min: '+it.ml:''}${low?' ⚠ LOW':''}</div>
+      </div>
+      <input type="number" min="0" step="1" id="oq-${i}" value="${qty}"
+        oninput="ordOrderQty[${i}]=parseFloat(this.value)||0"
+        style="width:70px;border:1px solid ${qty>0?'var(--burg)':'var(--border)'};border-radius:8px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.9rem;font-weight:700;text-align:center;background:var(--cream);outline:none;-moz-appearance:textfield;${qty>0?'color:var(--burg)':''}">
+    </div>`;
+  }).join('');
+
+  document.getElementById('ordBody').innerHTML=
+    `<div style="font-size:0.7rem;color:var(--muted);font-weight:700;letter-spacing:0.06em;margin-bottom:0.4rem">ADJUST ORDER QUANTITIES</div>`+rows;
+
+  document.getElementById('ordBtns').innerHTML=
+    `<button class="btn bgn" style="width:100%" onclick="ordSubmitOrder()">📤 Submit Order</button>
+     <button class="btn bs" style="width:100%;color:var(--muted)" onclick="ordDoNotOrder()">🚫 Do Not Order Today</button>
+     <button class="btn bs" style="width:100%;font-size:0.78rem" onclick="ordSetStep(1);ordRenderStep1()">← Back to Stock Count</button>`;
+}
+
+function ordBuildMessage(){
+  const inf=SUPS[actSup]||{};
+  const lines=ordItems
+    .map((it,i)=>ordOrderQty[i]>0?`${ordOrderQty[i]}x ${it.n}`:null)
+    .filter(Boolean);
   if(!lines.length) return null;
   const td=new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'});
   return `${inf.g||'Good morning'}\n\n${inf.i||'Can we please order:'}\n${lines.join('\n')}${inf.urg?'\n\n⚠️ Required today before 08:30':''}\n\nThank you, ${CU?.name||'Zavier'}\nDie Akker Koffiehuis\n(${td})`;
 }
-function buildOrderItems(){
-  const tpl=ORDER_TEMPLATES[actSup]||[];
-  const items=[];
-  Object.entries(ordQ).forEach(([k,q])=>{
-    if(k.startsWith('t')){const idx=parseInt(k.slice(1));const it=tpl[idx];if(it&&q>0)items.push({n:it.n,q});}
-    else{const it=DB.find(i=>i.id===parseInt(k));if(it&&q>0)items.push({n:it.name,u:it.unit,q});}
-  });
-  return items;
-}
-async function sendOrd(){
-  const m=buildMsg();if(!m){showToast('Add items first.',true);return;}
-  const isOwner=CU?.role==='owner';
-  if(!isOwner){
-    // Submit for approval
-    await submitOrderForApproval(actSup,m,buildOrderItems());
-    return;
-  }
+
+function ordSendDirect(msg){
   const inf=SUPS[actSup]||{};
   if(inf.m==='email'){
-    const subject=encodeURIComponent('Order — Die Akker Koffiehuis');
-    const body=encodeURIComponent(m);
-    const emailMatch=(inf.c||'').match(/[\w.-]+@[\w.-]+\.\w+/);
-    const to=emailMatch?emailMatch[0]:'';
-    window.open(`mailto:${to}?subject=${subject}&body=${body}`,'_blank');
-    closeMo('moOrder');showToast('Email client opened ✓');
+    const em=(inf.c||'').match(/[\w.-]+@[\w.-]+\.\w+/);
+    window.open(`mailto:${em?em[0]:''}?subject=${encodeURIComponent('Order — Die Akker Koffiehuis')}&body=${encodeURIComponent(msg)}`,'_blank');
+    showToast('Email client opened ✓');
   } else if(inf.m==='phone'){
-    navigator.clipboard.writeText(m).then(()=>showToast('Order copied — call to place ✓'));
-    closeMo('moOrder');
+    navigator.clipboard.writeText(msg).then(()=>showToast('Order copied — call to place ✓'));
   } else if(inf.m==='app'){
-    navigator.clipboard.writeText(m).then(()=>showToast('Order copied — paste into Bidfood app ✓'));
-    closeMo('moOrder');
+    navigator.clipboard.writeText(msg).then(()=>showToast('Order copied — paste into Bidfood app ✓'));
   } else {
     const d=(inf.c||'').replace(/\D/g,'');
-    window.open(d?`https://wa.me/27${d.replace(/^0/,'')}?text=${encodeURIComponent(m)}`:`https://wa.me/?text=${encodeURIComponent(m)}`,'_blank');
-    closeMo('moOrder');showToast('WhatsApp opened ✓');
+    window.open(d?`https://wa.me/27${d.replace(/^0/,'')}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
+    showToast('WhatsApp opened ✓');
   }
 }
-// ── APPROVAL WORKFLOW ────────────────────────────────────────────────────
-async function submitOrderForApproval(sup,msg,items){
+
+async function ordSubmitOrder(){
+  const items=ordItems.map((it,i)=>({n:it.n,ml:it.ml,soh:ordStockCounts[i]||0,qty:ordOrderQty[i]||0})).filter(i=>i.qty>0||i.soh>0);
+  if(!items.some(i=>i.qty>0)){showToast('No quantities entered to order.',true);return;}
+  const msg=ordBuildMessage();
+  const isOwner=CU?.role==='owner';
+  if(isOwner){
+    ordSendDirect(msg);
+    closeMo('moOrder');
+  } else {
+    try{
+      await SB.from('pending_orders').insert({
+        supplier:actSup, message:msg, items,
+        submitted_by:CU?.name||CU?.username||'staff',
+        order_date:new Date().toISOString().slice(0,10),
+        status:'pending'
+      });
+      closeMo('moOrder');
+      showToast('Order submitted — waiting for owner approval ✓');
+    }catch(e){
+      closeMo('moOrder');
+      showToast('Could not submit — ask owner to run SQL setup in Settings.',true);
+    }
+  }
+  await logAudit('orders','Order Submitted',`${actSup} stock count + order submitted`);
+}
+
+async function ordDoNotOrder(){
+  // Save stock counts only, mark as do_not_order
+  const items=ordItems.map((it,i)=>({n:it.n,ml:it.ml,soh:ordStockCounts[i]||0,qty:0}));
   try{
     await SB.from('pending_orders').insert({
-      supplier:sup, message:msg, items:items,
+      supplier:actSup, message:'(No order placed)', items,
       submitted_by:CU?.name||CU?.username||'staff',
       order_date:new Date().toISOString().slice(0,10),
-      status:'pending'
+      status:'do_not_order'
     });
-    closeMo('moOrder');
-    showToast('Order submitted for owner approval ✓');
-  }catch(e){
-    // Table may not exist yet — show setup notice
-    closeMo('moOrder');
-    showToast('Could not submit — ask owner to run the SQL setup in Settings.',true);
-  }
+  }catch(e){}
+  closeMo('moOrder');
+  showToast('Stock count saved — no order placed for '+actSup);
+  await logAudit('orders','No Order',`${actSup} — stock counted, no order`);
 }
+
+// ── PENDING ORDERS (OWNER VIEW) ──────────────────────────────────────────
 async function loadPendingOrders(){
   const el=document.getElementById('pendingOrdersList');
   const badge=document.getElementById('pendingOrdersBadge');
   if(!el) return;
   try{
-    const {data,error}=await SB.from('pending_orders').select('*').eq('status','pending').order('created_at',{ascending:false});
-    if(error||!data){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">No pending orders.</div>';if(badge)badge.textContent='';return;}
-    if(!data.length){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">No pending orders.</div>';if(badge)badge.textContent='';return;}
-    if(badge) badge.textContent=data.length;
+    const {data,error}=await SB.from('pending_orders').select('*').in('status',['pending','do_not_order']).order('created_at',{ascending:false});
+    if(error||!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">No pending orders.</div>';if(badge)badge.textContent='';return;}
+    const pendCount=data.filter(o=>o.status==='pending').length;
+    if(badge) badge.textContent=pendCount||'';
     el.innerHTML=data.map(o=>{
       const inf=SUPS[o.supplier]||{};
       const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
-      const dt=new Date(o.created_at||o.order_date).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-      const itemsHtml=(o.items||[]).map(i=>`<div style="font-size:0.75rem;padding:0.1rem 0">${i.q}x ${i.n}</div>`).join('');
-      return `<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem">
+      const dt=new Date(o.created_at||o.order_date+'T00:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
+      const isDNO=o.status==='do_not_order';
+      // Two-column table: item | stock on hand | order qty
+      const tableRows=(o.items||[]).map(it=>{
+        const low=it.ml!=null&&it.soh<it.ml;
+        return `<tr>
+          <td style="padding:0.3rem 0.5rem;font-size:0.78rem">${it.n}</td>
+          <td style="padding:0.3rem 0.5rem;text-align:center;font-size:0.78rem;${low?'color:var(--red);font-weight:700':'color:var(--muted)'}">${it.soh!=null?it.soh:'—'}${it.ml!=null?' / '+it.ml:''}</td>
+          <td style="padding:0.3rem 0.5rem;text-align:center;font-size:0.78rem;font-weight:700;color:${it.qty>0?'var(--burg)':'var(--muted)'}">${it.qty>0?it.qty:'—'}</td>
+        </tr>`;
+      }).join('');
+      return `<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem;${isDNO?'opacity:0.7':''}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem">
           <div>
-            <div style="font-weight:700;font-size:0.9rem">${mi[inf.m]||'📱'} ${o.supplier}</div>
+            <div style="font-weight:700;font-size:0.9rem">${mi[inf.m]||'📱'} ${o.supplier} ${isDNO?'<span class="bdg bgo" style="font-size:0.6rem">No Order</span>':'<span class="bdg bgb" style="font-size:0.6rem">Pending</span>'}</div>
             <div style="font-size:0.7rem;color:var(--muted)">By ${o.submitted_by} · ${dt}</div>
           </div>
-          <div style="display:flex;gap:0.4rem;flex-shrink:0">
-            <button onclick="approvePendingOrder('${o.id}')" class="btn bgn bsm" style="font-size:0.72rem">✅ Approve & Send</button>
-            <button onclick="rejectPendingOrder('${o.id}')" class="btn bs bsm" style="font-size:0.72rem;color:var(--red)">✗ Reject</button>
+          <div style="display:flex;gap:0.4rem;flex-shrink:0;flex-wrap:wrap">
+            ${!isDNO?`<button onclick="approvePendingOrder('${o.id}')" class="btn bgn bsm" style="font-size:0.7rem">✅ Approve & Send</button>`:''}
+            <button onclick="openEditStockCount('${o.id}')" class="btn bs bsm" style="font-size:0.7rem">✏️ Edit Stock</button>
+            <button onclick="rejectPendingOrder('${o.id}')" class="btn bs bsm" style="font-size:0.7rem;color:var(--red)">✗ Dismiss</button>
           </div>
         </div>
-        <div style="background:var(--surface);border-radius:6px;padding:0.5rem 0.7rem">${itemsHtml}</div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:var(--surface)">
+              <th style="padding:0.3rem 0.5rem;text-align:left;font-size:0.65rem;color:var(--muted)">ITEM</th>
+              <th style="padding:0.3rem 0.5rem;text-align:center;font-size:0.65rem;color:var(--muted)">ON HAND / MIN</th>
+              <th style="padding:0.3rem 0.5rem;text-align:center;font-size:0.65rem;color:var(--muted)">ORDER QTY</th>
+            </tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
       </div>`;
     }).join('');
-  }catch(e){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">Run SQL setup to enable pending orders.</div>';if(badge)badge.textContent='';}
+  }catch(e){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">Run SQL setup in Settings to enable pending orders.</div>';if(badge)badge.textContent='';}
 }
+
+// Edit stock count in-place (owner correction)
+let editingOrderId=null;
+function openEditStockCount(id){
+  editingOrderId=id;
+  // Find the order in the DOM and swap stock cells to inputs — simplest: reload with edit mode
+  loadPendingOrders_edit(id);
+}
+async function loadPendingOrders_edit(targetId){
+  const {data}=await SB.from('pending_orders').select('*').eq('id',targetId).single().catch(()=>({data:null}));
+  if(!data){showToast('Could not load order.',true);return;}
+  const items=data.items||[];
+  // Show inline edit modal-style in the pending section
+  const editHtml=`<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem;border:2px solid var(--burg)">
+    <div style="font-weight:700;font-size:0.88rem;margin-bottom:0.6rem">✏️ Edit Stock Count — ${data.supplier}</div>
+    ${items.map((it,i)=>`<div style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0;border-bottom:1px solid var(--surface)">
+      <div style="flex:1;font-size:0.83rem;font-weight:600">${it.n}</div>
+      ${it.ml!=null?`<div style="font-size:0.68rem;color:var(--muted);white-space:nowrap">Min: ${it.ml}</div>`:''}
+      <input type="number" min="0" step="0.5" value="${it.soh||0}" id="esc-${i}"
+        style="width:70px;border:1px solid var(--burg);border-radius:8px;padding:0.35rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.88rem;font-weight:700;text-align:center;background:var(--cream);outline:none">
+    </div>`).join('')}
+    <div style="display:flex;gap:0.5rem;margin-top:0.8rem">
+      <button class="btn bp bsm" onclick="saveEditedStockCount('${targetId}',${JSON.stringify(items).replace(/'/g,'&#39;').replace(/"/g,"'")},${items.length})">💾 Save</button>
+      <button class="btn bs bsm" onclick="loadPendingOrders()">Cancel</button>
+    </div>
+  </div>`;
+  document.getElementById('pendingOrdersList').insertAdjacentHTML('afterbegin',editHtml);
+  document.getElementById('pendingOrdersList').scrollIntoView({behavior:'smooth'});
+}
+async function saveEditedStockCount(id,origItems,count){
+  const updated=origItems.map((it,i)=>{
+    const v=parseFloat(document.getElementById('esc-'+i)?.value)||0;
+    return {...it,soh:v};
+  });
+  // Update DB for stock items too
+  const stockUpdates=updated.map(it=>{
+    const dbIt=DB.find(d=>d.name.toLowerCase()===it.n.toLowerCase());
+    if(dbIt) return SB.from('stock').update({stock:it.soh}).eq('id',dbIt.id);
+    return null;
+  }).filter(Boolean);
+  setSyncStatus('syncing');
+  await Promise.all([
+    SB.from('pending_orders').update({items:updated}).eq('id',id),
+    ...stockUpdates
+  ]).catch(()=>{});
+  setSyncStatus('ok');
+  updated.forEach(it=>{const d=DB.find(x=>x.name.toLowerCase()===it.n.toLowerCase());if(d)d.stock=it.soh;});
+  showToast('Stock count updated ✓');
+  await logAudit('orders','Stock Edited',`Corrected stock count for order ${id}`);
+  loadPendingOrders();
+}
+
 async function approvePendingOrder(id){
   try{
     const {data}=await SB.from('pending_orders').select('*').eq('id',id).single();
     if(!data){showToast('Order not found.',true);return;}
-    const inf=SUPS[data.supplier]||{};
     const m=data.message;
-    // Mark as approved in DB
     await SB.from('pending_orders').update({status:'approved'}).eq('id',id);
-    // Send the order
+    ordSendDirect.call({actSup:data.supplier},m);  // reuse send logic
+    // Send using supplier's method
+    const inf=SUPS[data.supplier]||{};
     if(inf.m==='email'){
-      const emailMatch=(inf.c||'').match(/[\w.-]+@[\w.-]+\.\w+/);
-      const to=emailMatch?emailMatch[0]:'';
-      window.open(`mailto:${to}?subject=${encodeURIComponent('Order — Die Akker Koffiehuis')}&body=${encodeURIComponent(m)}`,'_blank');
+      const em=(inf.c||'').match(/[\w.-]+@[\w.-]+\.\w+/);
+      window.open(`mailto:${em?em[0]:''}?subject=${encodeURIComponent('Order — Die Akker Koffiehuis')}&body=${encodeURIComponent(m)}`,'_blank');
       showToast('Email client opened ✓');
     } else if(inf.m==='phone'){
       navigator.clipboard.writeText(m).then(()=>showToast('Order copied — call to place ✓'));
@@ -2328,14 +2455,13 @@ async function approvePendingOrder(id){
   }catch(e){showToast('Error approving order.',true);}
 }
 async function rejectPendingOrder(id){
-  if(!confirm('Reject this order?')) return;
+  if(!confirm('Dismiss this order?')) return;
   try{
     await SB.from('pending_orders').update({status:'rejected'}).eq('id',id);
-    showToast('Order rejected.');
+    showToast('Dismissed.');
     await loadPendingOrders();
-  }catch(e){showToast('Error rejecting order.',true);}
+  }catch(e){showToast('Error.',true);}
 }
-function copyOrd(){const m=buildMsg();if(!m){showToast('Add items first.',true);return;}navigator.clipboard.writeText(m).then(()=>showToast('Copied ✓'));closeMo('moOrder');}
 
 // ═══════════════════════════════════════════
 // CASH UP
