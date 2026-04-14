@@ -2097,11 +2097,11 @@ function cuLoadScheduledWaiters(){
       }).join('');
   }
 
-  // Auto-add scheduled waiters who aren't in the list yet
+  // Auto-add scheduled waiters who aren't in the list yet, tagged with their shift
   if(scheduled.length && cuD.waiters.length===0){
     scheduled.forEach(name=>{
       if(!cuD.waiters.find(w=>w.name===name)){
-        cuD.waiters.push({name,vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0});
+        cuD.waiters.push({name,shift:shift,vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0});
       }
     });
     renderCUCards(); updCUTots();
@@ -2113,29 +2113,49 @@ function cuAddWaiter(){
   const name=sel?.value;
   if(!name){showToast('Select a waiter first.',true);return;}
   if(cuD.waiters.find(w=>w.name===name)){showToast(`${name} is already on this cash up.`,true);return;}
-  cuD.waiters.push({name,vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0});
+  const defaultShift=document.getElementById('cuShift')?.value||'Morning';
+  cuD.waiters.push({name,shift:defaultShift,vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0});
   renderCUCards(); updCUTots();
   cuLoadScheduledWaiters(); // refresh dropdown
 }
+function cuSetShift(i,shift){
+  cuD.waiters[i].shift=shift;
+  // Re-render just the shift buttons on this card
+  ['Morning','Afternoon','Evening'].forEach(s=>{
+    const btn=document.getElementById('cuShiftBtn-'+i+'-'+s);
+    if(btn){
+      const active=s===shift;
+      const colors={Morning:'#1a4a7a',Afternoon:'#b85c10',Evening:'#7a1528'};
+      btn.style.background=active?colors[s]:'var(--surface)';
+      btn.style.color=active?'#fff':'var(--muted)';
+      btn.style.borderColor=active?colors[s]:'var(--border)';
+    }
+  });
+}
 function renderCUCards(){
   document.getElementById('cuCards').innerHTML=cuD.waiters.map((w,i)=>{
-    const c=cuCalc(w);
+    const c=cuCalc(w); // breakage + cash taken already deducted
     const cTxt=c===null?'—':(c<0?'−R '+Math.abs(c).toFixed(2):'R '+c.toFixed(2));
     const bkPaid=!!w.bk;
-    const ct=w.ct||0; // cash tips already taken
-    const balance=c===null?null:c-ct;
-    const balTxt=balance===null?'—':(balance<0?'−R '+Math.abs(balance).toFixed(2):'R '+balance.toFixed(2));
-    const balCol=balance===null?'var(--muted)':balance<0?'var(--red)':balance===0?'var(--muted)':'var(--green)';
-    // Breakage button: red/warning when NOT paid (deducted), green when paid
+    const ct=w.ct||0;
+    const wShift=w.shift||'Morning';
+    const shiftColors={Morning:'#1a4a7a',Afternoon:'#b85c10',Evening:'#7a1528'};
+    const hdrBg=shiftColors[wShift]||'var(--burg)';
     const bkBorderCol=bkPaid?'var(--green)':'#c0392b';
     const bkBgCol=bkPaid?'var(--green-l)':'#fff0f0';
     const bkTxtCol=bkPaid?'var(--green)':'#c0392b';
     const bkIcon=bkPaid?'✅':'⚠️';
     const bkLabel=bkPaid?'Breakage R10 — Paid':'Breakage R10 — Not Paid (deducted)';
     return `<div class="cu-card">
-      <div class="cu-hdr">
+      <div class="cu-hdr" style="background:${hdrBg}">
         <div style="font-weight:700;font-size:0.95rem;color:#fff">${w.name||'Waiter '+(i+1)}</div>
-        <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="display:flex;align-items:center;gap:0.4rem">
+          ${['Morning','Afternoon','Evening'].map(s=>{
+            const active=s===wShift;
+            const sc=shiftColors[s];
+            return `<button id="cuShiftBtn-${i}-${s}" onclick="cuSetShift(${i},'${s}')" title="${s}"
+              style="width:22px;height:22px;border-radius:4px;border:1px solid ${active?sc:'rgba(255,255,255,0.4)'};background:${active?'#fff':'rgba(255,255,255,0.15)'};color:${active?sc:'#fff'};font-size:0.7rem;font-weight:700;cursor:pointer;line-height:1">${s[0]}</button>`;
+          }).join('')}
           <div class="cu-pill" id="cup-${i}">${cTxt}</div>
           <button onclick="cuRemoveWaiter(${i})" title="Remove" style="background:none;border:none;cursor:pointer;font-size:1rem;color:rgba(255,255,255,0.7);line-height:1">✕</button>
         </div>
@@ -2157,7 +2177,7 @@ function renderCUCards(){
           <input type="number" inputmode="decimal" placeholder="0.00" value="${ct||''}"
             oninput="cuU(${i},'ct',this.value)"
             style="flex:1;border:1px solid #e8c87a;border-radius:6px;padding:0.4rem 0.6rem;font-size:0.88rem;background:#fff;font-family:'Karla',sans-serif;text-align:right;max-width:140px">
-          ${ct>0?`<span style="font-size:0.75rem;color:var(--muted)">Balance: <strong style="color:${balCol}">${balTxt}</strong></span>`:'<span style="font-size:0.72rem;color:var(--muted)">Amount waiter already took in cash</span>'}
+          <span style="font-size:0.72rem;color:var(--muted)">${ct>0?'Already paid out':'Amount waiter already took in cash'}</span>
         </div>
       </div>
       <!-- Breakage + Tips footer -->
@@ -2202,7 +2222,7 @@ function cuRemoveWaiter(i){
 }
 // bk=true means breakage was paid in cash to manager → no deduction
 // bk=false/undefined means not paid → deduct R10 from tips
-function cuCalc(w){if(!w.vk&&w.vk!==0)return null;return ((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0)-(w.bk?0:10);}
+function cuCalc(w){if(!w.vk&&w.vk!==0)return null;return ((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0)-(w.bk?0:10)-(w.ct||0);}
 function cuU(i,f,v){cuD.waiters[i][f]=parseFloat(v)||0;const c=cuCalc(cuD.waiters[i]);const s=c===null?'—':(c<0?'−R '+Math.abs(c).toFixed(2):'R '+c.toFixed(2));const col=c===null?'var(--muted)':c<0?'var(--red)':'var(--green)';const cup=document.getElementById('cup-'+i);if(cup)cup.textContent=s;const cuf=document.getElementById('cuf-'+i);if(cuf){cuf.textContent=s;cuf.style.color=col;}updCUTots();}
 function renderDenoms(){document.getElementById('denomCard').innerHTML=`<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Enter the count of each note/coin</div><div class="dg">${DNS.map((d,i)=>`<div class="di"><div class="di-l">${DNL[i]}</div><input type="number" class="di-i" inputmode="numeric" min="0" value="${cuD.denoms[i]||''}" placeholder="0" oninput="cuD.denoms[${i}]=parseInt(this.value)||0;updDV(${i},${d},this.value)"><div class="di-v" id="dv-${i}">R ${((cuD.denoms[i]||0)*d).toFixed(2)}</div></div>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border)"><span style="font-weight:700;font-size:0.88rem">Total Count:</span><span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--burg)" id="dTot">R 0.00</span></div>`;updDTot();}
 function updDV(i,d,v){const e=document.getElementById('dv-'+i);if(e)e.textContent='R '+((parseInt(v)||0)*d).toFixed(2);updDTot();updCUTots();}
@@ -2251,16 +2271,36 @@ function updCUTots(){
     </div>`;
 }async function saveCU(){
   setSyncStatus('syncing');
-  const dt=document.getElementById('cuDate').value, sh=document.getElementById('cuShift').value;
-  const {error}=await SB.from('cash_up').upsert({date:dt,shift:sh,waiters:cuD.waiters,denoms:cuD.denoms,saved_at:new Date().toISOString()},{onConflict:'date,shift'});
-  if(!error){
-    await logAudit('cashup','Cash Up Saved',`${sh} shift cash up saved for ${dt}`);
-    // Auto-save waiter daily sales from cash up
-    await syncWaiterSalesFromCashUp(dt, cuD.waiters);
+  const dt=document.getElementById('cuDate').value;
+  // Group waiters by their assigned shift
+  const shiftGroups={};
+  cuD.waiters.forEach(w=>{
+    const s=w.shift||document.getElementById('cuShift').value||'Morning';
+    if(!shiftGroups[s]) shiftGroups[s]=[];
+    shiftGroups[s].push(w);
+  });
+  const shifts=Object.keys(shiftGroups);
+  let anyError=false;
+  for(const sh of shifts){
+    const waitersInShift=shiftGroups[sh];
+    // Denoms only go on the first/only shift, not duplicated across multiple
+    const isFirst=sh===shifts[0];
+    const {error}=await SB.from('cash_up').upsert(
+      {date:dt,shift:sh,waiters:waitersInShift,denoms:isFirst?cuD.denoms:[],saved_at:new Date().toISOString()},
+      {onConflict:'date,shift'}
+    );
+    if(error) anyError=true;
+    else{
+      await logAudit('cashup','Cash Up Saved',`${sh} shift saved for ${dt} (${waitersInShift.length} waiter${waitersInShift.length!==1?'s':''})`);
+      await syncWaiterSalesFromCashUp(dt, waitersInShift);
+    }
   }
-  setSyncStatus(error?'err':'ok');
-  showToast(error?'Error saving.':'Cash up saved ✓ Waiter sales updated', !!error);
+  setSyncStatus(anyError?'err':'ok');
+  const shiftList=shifts.join(', ');
+  showToast(anyError?'Error saving one or more shifts.':`Cash up saved ✓ (${shiftList})`, anyError);
 }
+
+let cuHistoryCache={};// stores loaded records keyed by date_shift so onclick can reference safely
 
 function cuSwitchTab(tab, btn){
   document.querySelectorAll('#cuTabBar .ct').forEach(b=>b.classList.remove('act'));
@@ -2303,6 +2343,9 @@ async function loadCUHistory(){
       el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No cash up records found for this period.</div>';
       return;
     }
+    // Cache records by date_shift key so the Edit button can look them up safely
+    cuHistoryCache={};
+    data.forEach(r=>{ cuHistoryCache[r.date+'_'+r.shift]=r; });
     el.innerHTML=data.map(r=>renderCUHistoryCard(r)).join('');
   } catch(e){
     el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--red)">Error loading records.</div>';
@@ -2352,8 +2395,9 @@ function renderCUHistoryCard(r){
   const tc=totalTips>=0?'var(--green)':'var(--red)';
 
   const canOwnerEdit=CU?.role==='owner';
+  const cacheKey=r.date+'_'+r.shift;
   const editBtn=canOwnerEdit
-    ?`<button onclick="cuLoadForEdit(${JSON.stringify(JSON.stringify(r))})"
+    ?`<button onclick="cuLoadForEdit('${cacheKey}')"
         style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:0.25rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.3rem;white-space:nowrap">
         ✏️ Edit
       </button>`
@@ -2399,9 +2443,10 @@ function renderCUHistoryCard(r){
   </div>`;
 }
 
-function cuLoadForEdit(jsonStr){
+function cuLoadForEdit(cacheKey){
   if(CU?.role!=='owner'){showToast('Only owners can edit cash ups.',true);return;}
-  const r=JSON.parse(jsonStr);
+  const r=cuHistoryCache[cacheKey];
+  if(!r){showToast('Record not found — please reload the submissions list.',true);return;}
   // Load record into the entry form
   cuD.waiters=(r.waiters||[]).map(w=>Object.assign({},w));
   cuD.denoms=r.denoms||Array(12).fill(0);
