@@ -2365,12 +2365,17 @@ function renderCUHistoryCard(r){
   const denomTot=cuDenomTotal(r.denoms);
   const sc=shiftColors[r.shift]||'var(--burg)';
 
-  // Per-waiter rows
+  // Per-waiter rows — bk=true means paid (no deduction), bk=false means deduct R10
   const waiterRows=waiters.map((w,i)=>{
-    const c=((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0)-(w.bk?10:0);
+    const grossTips=((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0);
+    const bkDeduct=w.bk?0:10;
+    const netTips=grossTips-bkDeduct;
+    const ct=w.ct||0;
+    const toEft=netTips-ct;
     const hasData=w.vk||w.vk===0;
-    const tipsCol=c<0?'var(--red)':c>0?'var(--green)':'var(--muted)';
-    const tipsTxt=!hasData?'—':(c<0?'−R '+Math.abs(c).toFixed(2):'R '+c.toFixed(2));
+    const netCol=netTips<0?'var(--red)':netTips>0?'var(--green)':'var(--muted)';
+    const eftCol=toEft<0?'var(--red)':toEft>0?'#1a4a7a':'var(--muted)';
+    const fmt=(v,col)=>v===null?'—':`<span style="color:${col};font-weight:700">${v<0?'−R ':' R '}${Math.abs(v).toFixed(2)}</span>`;
     return `<tr style="border-bottom:1px solid var(--surface)">
       <td style="padding:0.45rem 0.7rem;font-weight:600;font-size:0.85rem">${w.name||'?'}</td>
       <td style="padding:0.45rem 0.5rem;font-size:0.82rem;text-align:right">R ${(w.vk||0).toFixed(2)}</td>
@@ -2378,8 +2383,10 @@ function renderCUHistoryCard(r){
       <td style="padding:0.45rem 0.5rem;font-size:0.82rem;text-align:right">R ${(w.kt||0).toFixed(2)}</td>
       <td style="padding:0.45rem 0.5rem;font-size:0.82rem;text-align:right">R ${(w.zp||0).toFixed(2)}</td>
       <td style="padding:0.45rem 0.5rem;font-size:0.82rem;text-align:right">R ${(w.rk||0).toFixed(2)}</td>
-      <td style="padding:0.45rem 0.5rem;font-size:0.82rem;text-align:right">${w.bk?'<span style="color:var(--green);font-weight:700">✅ Paid</span>':'<span style="color:var(--muted)">—</span>'}</td>
-      <td style="padding:0.45rem 0.7rem;text-align:right;font-family:\'Bebas Neue\',sans-serif;font-size:1rem;color:${tipsCol}">${tipsTxt}</td>
+      <td style="padding:0.45rem 0.5rem;text-align:center">${w.bk?'<span style="color:var(--green);font-size:0.75rem;font-weight:700">✅ Paid</span>':'<span style="color:#c0392b;font-size:0.72rem;font-weight:700">⚠️ −R10</span>'}</td>
+      <td style="padding:0.45rem 0.5rem;text-align:right;font-size:0.82rem">${hasData?fmt(netTips,netCol):'—'}</td>
+      <td style="padding:0.45rem 0.5rem;text-align:right;font-size:0.82rem">${ct>0?`<span style="color:#b85c10;font-weight:700">💵 R ${ct.toFixed(2)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="padding:0.45rem 0.7rem;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1.05rem">${hasData?fmt(toEft,eftCol):'—'}</td>
     </tr>`;
   }).join('');
 
@@ -2390,9 +2397,13 @@ function renderCUHistoryCard(r){
   const tZ=waiters.reduce((s,w)=>s+(w.zp||0),0);
   const tR=waiters.reduce((s,w)=>s+(w.rk||0),0);
   const tSt=waiters.reduce((s,w)=>s+(w.st||0),0);
-  const tBk=waiters.filter(w=>w.bk).length*10;
-  const totalTips=(tC+tK+tZ+tR+tSt)-tV-tBk;
-  const tc=totalTips>=0?'var(--green)':'var(--red)';
+  const tBkDeduct=waiters.filter(w=>!w.bk).length*10; // total deducted from unpaid
+  const tBkCollected=waiters.filter(w=>w.bk).length*10; // total collected in cash
+  const tCT=waiters.reduce((s,w)=>s+(w.ct||0),0);
+  const totalNetTips=(tC+tK+tZ+tR+tSt)-tV-tBkDeduct;
+  const totalToEft=totalNetTips-tCT;
+  const tc=totalNetTips>=0?'var(--green)':'var(--red)';
+  const eftc=totalToEft>=0?'#1a4a7a':'var(--red)';
 
   const canOwnerEdit=CU?.role==='owner';
   const cacheKey=r.date+'_'+r.shift;
@@ -2420,26 +2431,50 @@ function renderCUHistoryCard(r){
             <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">CARDS</th>
             <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">ZAPPER</th>
             <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">ACCOUNTS</th>
-            <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">BREAKAGE</th>
-            <th style="padding:0.4rem 0.7rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">TIPS</th>
+            <th style="padding:0.4rem 0.5rem;text-align:center;font-size:0.7rem;color:var(--muted);font-weight:700">BREAKAGE</th>
+            <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:var(--muted);font-weight:700">NET TIPS</th>
+            <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.7rem;color:#b85c10;font-weight:700">CASH TAKEN</th>
+            <th style="padding:0.4rem 0.7rem;text-align:right;font-size:0.7rem;color:#1a4a7a;font-weight:700">TO EFT</th>
           </tr>
         </thead>
         <tbody>${waiterRows}</tbody>
         <tfoot>
-          <tr style="background:var(--surface)">
+          <tr style="background:var(--surface);border-top:2px solid var(--border)">
             <td style="padding:0.5rem 0.7rem;font-weight:700;font-size:0.8rem">TOTALS</td>
             <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">R ${tV.toFixed(2)}</td>
             <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">R ${tC.toFixed(2)}</td>
             <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">R ${tK.toFixed(2)}</td>
             <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">R ${tZ.toFixed(2)}</td>
             <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">R ${tR.toFixed(2)}</td>
-            <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem">${tBk>0?`<span style="color:var(--green);font-weight:700">R ${tBk.toFixed(2)}</span>`:'—'}</td>
-            <td style="padding:0.5rem 0.7rem;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${tc}">${totalTips>=0?'R ':'−R '}${Math.abs(totalTips).toFixed(2)}</td>
+            <td style="padding:0.5rem 0.5rem;text-align:center;font-size:0.75rem">
+              ${tBkDeduct>0?`<span style="color:#c0392b;font-weight:700">⚠️ −R ${tBkDeduct.toFixed(2)}</span>`:''}
+              ${tBkCollected>0?`<span style="color:var(--green);font-weight:700;display:block">✅ R ${tBkCollected.toFixed(2)}</span>`:''}
+              ${tBkDeduct===0&&tBkCollected===0?'—':''}
+            </td>
+            <td style="padding:0.5rem 0.5rem;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:${tc}">${totalNetTips>=0?'R ':'−R '}${Math.abs(totalNetTips).toFixed(2)}</td>
+            <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem;color:#b85c10">${tCT>0?`R ${tCT.toFixed(2)}`:'—'}</td>
+            <td style="padding:0.5rem 0.7rem;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${eftc}">${totalToEft>=0?'R ':'−R '}${Math.abs(totalToEft).toFixed(2)}</td>
           </tr>
         </tfoot>
       </table>
     </div>
     ${denomTot!==null?`<div style="padding:0.5rem 1rem;font-size:0.72rem;color:var(--muted);border-top:1px solid var(--surface)">Denomination count total: <strong>R ${denomTot.toFixed(2)}</strong></div>`:''}
+    <div style="padding:0.75rem 1rem;background:linear-gradient(135deg,#1a3a6a 0%,#1a4a7a 100%);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+      <div style="color:rgba(255,255,255,0.8);font-size:0.75rem;font-weight:600;letter-spacing:0.05em">💳 EFT PAYOUT SUMMARY</div>
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center">
+        ${waiters.filter(w=>w.vk||w.vk===0).map(w=>{
+          const gross=((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0);
+          const net=gross-(w.bk?0:10);
+          const eft=net-(w.ct||0);
+          if(eft<=0) return '';
+          return `<div style="text-align:center"><div style="color:rgba(255,255,255,0.7);font-size:0.65rem;font-weight:700;letter-spacing:0.04em">${(w.name||'?').toUpperCase()}</div><div style="color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.05em">R ${eft.toFixed(2)}</div></div>`;
+        }).join('')}
+        <div style="border-left:1px solid rgba(255,255,255,0.3);padding-left:1.5rem;text-align:center">
+          <div style="color:rgba(255,255,255,0.7);font-size:0.65rem;font-weight:700;letter-spacing:0.04em">TOTAL TO EFT</div>
+          <div style="color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:0.05em">${totalToEft>=0?'R ':'−R '}${Math.abs(totalToEft).toFixed(2)}</div>
+        </div>
+      </div>
+    </div>
   </div>`;
 }
 
