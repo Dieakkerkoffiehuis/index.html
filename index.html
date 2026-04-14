@@ -2277,11 +2277,17 @@ async function loadCUHistory(){
   }
 }
 
+function cuDenomTotal(denoms){
+  if(!denoms) return null;
+  const DNS=[200,100,50,20,10,5,2,1,0.5,0.2,0.1,0.05];
+  return DNS.reduce((s,d,i)=>s+((denoms[i]||0)*d),0);
+}
 function renderCUHistoryCard(r){
   const waiters=r.waiters||[];
   const dateStr=new Date(r.date+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
   const savedAt=r.saved_at?new Date(r.saved_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'}):'';
   const shiftColors={Morning:'#1a4a7a',Afternoon:'#b85c10',Evening:'#7a1528'};
+  const denomTot=cuDenomTotal(r.denoms);
   const sc=shiftColors[r.shift]||'var(--burg)';
 
   // Per-waiter rows
@@ -2347,7 +2353,7 @@ function renderCUHistoryCard(r){
         </tfoot>
       </table>
     </div>
-    ${r.denoms?`<div style="padding:0.5rem 1rem;font-size:0.72rem;color:var(--muted);border-top:1px solid var(--surface)">Denomination count total: <strong>R ${(()=>{const DNS=[200,100,50,20,10,5,2,1,0.5,0.2,0.1,0.05];return DNS.reduce((s,d,i)=>s+((r.denoms[i]||0)*d),0).toFixed(2);})()</strong></div>`:''}
+    ${denomTot!==null?`<div style="padding:0.5rem 1rem;font-size:0.72rem;color:var(--muted);border-top:1px solid var(--surface)">Denomination count total: <strong>R ${denomTot.toFixed(2)}</strong></div>`:''}
   </div>`;
 }
 
