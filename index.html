@@ -3484,6 +3484,18 @@ async function savePay(){
 // ═══════════════════════════════════════════
 // WAITER PAYROLL
 // ═══════════════════════════════════════════
+// Resolve a cash-up first name to the full staff name
+// e.g. "Amber" → "Amber Uys", "Hes-Mari" → "Hes-mari van der Merwe"
+function resolveWaiterName(name){
+  if(!stfD||!stfD.length) return name;
+  const norm = s => s.toLowerCase().replace(/[^a-z]/g,'');
+  // Exact match first
+  if(stfD.find(s=>s.name===name)) return name;
+  // First-name match (case-insensitive, ignore hyphens/spaces)
+  const match = stfD.find(s => norm(s.name.split(' ')[0]) === norm(name));
+  return match ? match.name : name;
+}
+
 async function loadWaiterSalesForMonth(){
   const mo=new Date().toISOString().slice(0,7);
   const lastDay=new Date(parseInt(mo.split('-')[0]),parseInt(mo.split('-')[1]),0).getDate();
@@ -3499,9 +3511,12 @@ async function loadWaiterSalesForMonth(){
         if(w.name&&w.vk>0) data.push({waiter_name:w.name,sales:w.vk});
       }));
     }
-    // Sum by waiter
+    // Sum by waiter — resolve first names to full staff names first
     const totals={};
-    (data||[]).forEach(r=>{totals[r.waiter_name]=(totals[r.waiter_name]||0)+(parseFloat(r.sales)||0);});
+    (data||[]).forEach(r=>{
+      const resolved = resolveWaiterName(r.waiter_name);
+      totals[resolved]=(totals[resolved]||0)+(parseFloat(r.sales)||0);
+    });
     // Push into payD.waiters
     if(!payD.waiters) payD.waiters=[];
     Object.entries(totals).forEach(([name,sales])=>{
@@ -3517,9 +3532,12 @@ function renderWaiterPay(){
   if(!payD.waiters) payD.waiters=[];
   waiters.forEach(s=>{if(!payD.waiters.find(w=>w.name===s.name))payD.waiters.push({name:s.name,pos:s.role,sales:0,tips:0,extra:0,breakage:0,borrowed:0});});
 
-  // Also include any waiter in payD not in stfD (from cash ups)
+  // Also include any cash-up name that couldn't be resolved to a staff member
   const allWaiters=[...waiters];
-  payD.waiters.forEach(w=>{if(!allWaiters.find(s=>s.name===w.name))allWaiters.push({name:w.name,role:w.pos||'Waiter'});});
+  payD.waiters.forEach(w=>{
+    const resolved=resolveWaiterName(w.name);
+    if(!allWaiters.find(s=>s.name===resolved)) allWaiters.push({name:resolved,role:w.pos||'Waiter'});
+  });
 
   document.getElementById('waiterPay').innerHTML=allWaiters.map((s,i)=>{
     const w=payD.waiters.find(x=>x.name===s.name)||{sales:0,tips:0,extra:0,breakage:0,borrowed:0};
