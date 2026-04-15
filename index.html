@@ -1260,7 +1260,7 @@ CREATE POLICY "allow_all" ON pending_orders FOR ALL USING (true) WITH CHECK (tru
           <pre id="stockSetupSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.68rem;overflow-x:auto;white-space:pre-wrap;color:var(--text);max-height:300px">-- =====================================================
 -- STEP 1: Add unique constraint on name (run once)
 -- =====================================================
-ALTER TABLE stock ADD CONSTRAINT stock_name_unique UNIQUE (name);
+ALTER TABLE stock ADD CONSTRAINT IF NOT EXISTS stock_name_unique UNIQUE (name);
 
 -- =====================================================
 -- STEP 2: Remove any existing duplicate rows first
