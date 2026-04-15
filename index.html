@@ -1254,6 +1254,199 @@ ALTER TABLE pending_orders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "allow_all" ON pending_orders FOR ALL USING (true) WITH CHECK (true);</pre>
           <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.querySelector('#pendingOrdersSQL pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
+        <div class="card" id="stockSetupSQL">
+          <div class="card-title">Stock Database Setup</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL in your Supabase SQL editor to populate all stock items with correct suppliers, categories and minimum levels. It will not create duplicates — existing items are updated, not replaced.</div>
+          <pre id="stockSetupSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.68rem;overflow-x:auto;white-space:pre-wrap;color:var(--text);max-height:300px">-- =====================================================
+-- STOCK DATABASE SETUP
+-- Run this in Supabase SQL Editor
+-- =====================================================
+
+INSERT INTO stock (name, category, supplier, unit, stock, min_level)
+VALUES
+  ('Biltong 500g', 'Meat', 'Vision Meats', 'unit', 0, 7),
+  ('Skilpad 80g', 'Meat', 'Vision Meats', 'unit', 0, 5),
+  ('Braaibroodjie Mix 500g', 'Meat', 'Vision Meats', 'unit', 0, 3),
+  ('Chicken Flatties', 'Meat', 'Vision Meats', 'unit', 0, 10),
+  ('Chicken Wings 2kg', 'Meat', 'Vision Meats', 'unit', 0, 5),
+  ('Steak Burgers 8s', 'Meat', 'Vision Meats', 'unit', 0, 4),
+  ('Beef Mince 500g', 'Meat', 'Vision Meats', 'unit', 0, 4),
+  ('Beef Strips 500g', 'Meat', 'Vision Meats', 'unit', 0, 4),
+  ('Ostrich Strips 500g', 'Meat', 'Vision Meats', 'unit', 0, 3),
+  ('Pork Ribs 1kg', 'Meat', 'Vision Meats', 'unit', 0, 3),
+  ('Boerewors 500g', 'Meat', 'Vision Meats', 'unit', 0, 4),
+  ('Eiers', 'Dairy', 'Benmar Eggs', 'tray', 0, 5),
+  ('Pears (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 4),
+  ('Apples (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 4),
+  ('Naartjies (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 4),
+  ('Avocados (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 4),
+  ('Lettuce (head)', 'Produce', 'Alpha Kafee', 'unit', 0, 3),
+  ('Baby Spinach (bag)', 'Produce', 'Alpha Kafee', 'unit', 0, 3),
+  ('Rocket (bag)', 'Produce', 'Alpha Kafee', 'unit', 0, 3),
+  ('Cucumber (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 3),
+  ('Peppers (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 6),
+  ('Red Onion (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 4),
+  ('Lemons (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 6),
+  ('Limes (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 4),
+  ('Fresh Ginger (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 2),
+  ('Garlic (head)', 'Produce', 'Alpha Kafee', 'unit', 0, 4),
+  ('Cherry Tomatoes (punnet)', 'Produce', 'Alpha Kafee', 'unit', 0, 3),
+  ('Mushrooms (250g)', 'Produce', 'Alpha Kafee', 'unit', 0, 4),
+  ('Jalapeños (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 3),
+  ('Chillies (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 4),
+  ('Butternut (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 2),
+  ('Sweet Potatoes (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 4),
+  ('Beetroot (each)', 'Produce', 'Alpha Kafee', 'unit', 0, 3),
+  ('Broccoli (head)', 'Produce', 'Alpha Kafee', 'unit', 0, 2),
+  ('Cooking Oil 5L', 'Dry Goods', 'Golden Catering', 'unit', 0, 5),
+  ('Olive Oil 750ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Sunflower Margarine 1kg', 'Dairy', 'Golden Catering', 'unit', 0, 4),
+  ('Butter 500g', 'Dairy', 'Golden Catering', 'unit', 0, 5),
+  ('Long Life Milk 1L', 'Dairy', 'Golden Catering', 'unit', 0, 10),
+  ('Cream 250ml', 'Dairy', 'Golden Catering', 'unit', 0, 6),
+  ('Sour Cream 250ml', 'Dairy', 'Golden Catering', 'unit', 0, 4),
+  ('Cream Cheese 1kg', 'Dairy', 'Golden Catering', 'unit', 0, 3),
+  ('Cheddar 1kg', 'Dairy', 'Golden Catering', 'unit', 0, 3),
+  ('Mozzarella 1kg', 'Dairy', 'Golden Catering', 'unit', 0, 3),
+  ('Sugar 1kg', 'Dry Goods', 'Golden Catering', 'unit', 0, 5),
+  ('Brown Sugar 1kg', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Castor Sugar 1kg', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Salt 1kg', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Black Pepper (ground) 500g', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Flour 5kg', 'Dry Goods', 'Golden Catering', 'unit', 0, 4),
+  ('Bread Flour 5kg', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Bicarbonate of Soda 200g', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Baking Powder 200g', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Cornstarch 500g', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('White Wine Vinegar 500ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Apple Cider Vinegar 500ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Balsamic Vinegar 500ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Soy Sauce 500ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Worcestershire Sauce 500ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Tabasco 150ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Tomato Paste 410g', 'Dry Goods', 'Golden Catering', 'unit', 0, 4),
+  ('Honey 500g', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Mustard (whole grain) 400g', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Mayonnaise 750g', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Lemon Juice 500ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Vanilla Essence 200ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Chicken Stock 500ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 4),
+  ('Beef Stock 500ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Coconut Milk 400ml', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Breadcrumbs 500g', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Jasmine Rice 2kg', 'Dry Goods', 'Golden Catering', 'unit', 0, 4),
+  ('Basmati Rice 2kg', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Pasta Fettuccini 500g', 'Dry Goods', 'Golden Catering', 'unit', 0, 4),
+  ('Pasta Penne 500g', 'Dry Goods', 'Golden Catering', 'unit', 0, 4),
+  ('Pasta Linguine 500g', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Arborio Rice 1kg', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Couscous 500g', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Polenta 500g', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Lentils 500g', 'Dry Goods', 'Golden Catering', 'unit', 0, 2),
+  ('Chickpeas (canned) 400g', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
+  ('Button Mushrooms 500g', 'Produce', 'Highveld Mushrooms', 'unit', 0, 4),
+  ('Portabellini 250g', 'Produce', 'Highveld Mushrooms', 'unit', 0, 3),
+  ('Oyster Mushrooms 200g', 'Produce', 'Highveld Mushrooms', 'unit', 0, 2),
+  ('Still Water 500ml x24', 'Beverages', 'Blue Bottle', 'case', 0, 4),
+  ('Still Water 1.5L x6', 'Beverages', 'Blue Bottle', 'case', 0, 4),
+  ('Sparkling Water 500ml x24', 'Beverages', 'Blue Bottle', 'case', 0, 4),
+  ('Sparkling Water 1.5L x6', 'Beverages', 'Blue Bottle', 'case', 0, 4),
+  ('Tonic Water 200ml x24', 'Beverages', 'Blue Bottle', 'case', 0, 3),
+  ('Chicken Breasts 1kg', 'Meat', 'Chubby Chick', 'unit', 0, 6),
+  ('Chicken Thighs 1kg', 'Meat', 'Chubby Chick', 'unit', 0, 4),
+  ('Chicken Livers 500g', 'Meat', 'Chubby Chick', 'unit', 0, 3),
+  ('Pork Belly 1kg', 'Meat', 'Chubby Chick', 'unit', 0, 3),
+  ('Cocktail Mix Passion Fruit 1L', 'Beverages', 'SLO-JO', 'unit', 0, 3),
+  ('Cocktail Mix Elderflower 1L', 'Beverages', 'SLO-JO', 'unit', 0, 3),
+  ('Grenadine 1L', 'Beverages', 'SLO-JO', 'unit', 0, 2),
+  ('Blue Curacao 1L', 'Beverages', 'SLO-JO', 'unit', 0, 2),
+  ('Lime Juice 1L', 'Beverages', 'SLO-JO', 'unit', 0, 3),
+  ('Ginger Beer 1L', 'Beverages', 'SLO-JO', 'unit', 0, 4),
+  ('Cranberry Juice 1L', 'Beverages', 'SLO-JO', 'unit', 0, 3),
+  ('Bread Improver 1kg', 'Bakery', 'Bakels', 'unit', 0, 2),
+  ('Cake Mix Chocolate 5kg', 'Bakery', 'Bakels', 'unit', 0, 2),
+  ('Cake Mix Vanilla 5kg', 'Bakery', 'Bakels', 'unit', 0, 2),
+  ('Icing Sugar 1kg', 'Bakery', 'Bakels', 'unit', 0, 4),
+  ('Fondant White 1kg', 'Bakery', 'Bakels', 'unit', 0, 2),
+  ('Chocolate Chips 1kg', 'Bakery', 'Bakels', 'unit', 0, 3),
+  ('Cocktail Sauce 2kg', 'Dry Goods', 'Bidfood', 'unit', 0, 2),
+  ('Tartare Sauce 2kg', 'Dry Goods', 'Bidfood', 'unit', 0, 2),
+  ('Tzatziki 1kg', 'Dairy', 'Bidfood', 'unit', 0, 3),
+  ('Pesto Basil 1kg', 'Dry Goods', 'Bidfood', 'unit', 0, 2),
+  ('Sundried Tomatoes 1kg', 'Dry Goods', 'Bidfood', 'unit', 0, 2),
+  ('Capers 500g', 'Dry Goods', 'Bidfood', 'unit', 0, 2),
+  ('Olives Green 1kg', 'Dry Goods', 'Bidfood', 'unit', 0, 2),
+  ('Olives Black 1kg', 'Dry Goods', 'Bidfood', 'unit', 0, 2),
+  ('Parmesan 500g', 'Dairy', 'Bidfood', 'unit', 0, 3),
+  ('Prosciutto 500g', 'Meat', 'Bidfood', 'unit', 0, 2),
+  ('Smoked Salmon 500g', 'Meat', 'Bidfood', 'unit', 0, 2),
+  ('Ciabatta Rolls (each)', 'Bakery', 'MafBake', 'unit', 0, 20),
+  ('Sourdough Loaf (each)', 'Bakery', 'MafBake', 'unit', 0, 4),
+  ('Hotdog Rolls 6s', 'Bakery', 'MafBake', 'unit', 0, 4),
+  ('Burger Buns 6s', 'Bakery', 'MafBake', 'unit', 0, 5),
+  ('Croissants (each)', 'Bakery', 'MafBake', 'unit', 0, 10),
+  ('Muffins (each)', 'Bakery', 'MafBake', 'unit', 0, 8),
+  ('Avocados (bag 4s)', 'Produce', 'Avolands', 'unit', 0, 5),
+  ('Avocado Halves 500g', 'Produce', 'Avolands', 'unit', 0, 4),
+  ('Panko Breadcrumbs 500g', 'Dry Goods', 'Instant Gourmet', 'unit', 0, 3),
+  ('Desiccated Coconut 500g', 'Dry Goods', 'Instant Gourmet', 'unit', 0, 2),
+  ('Almond Flour 500g', 'Dry Goods', 'Instant Gourmet', 'unit', 0, 2),
+  ('Oats 1kg', 'Dry Goods', 'Instant Gourmet', 'unit', 0, 2),
+  ('Canola Oil 5L', 'Dry Goods', 'IJ Oil', 'unit', 0, 3),
+  ('Olive Oil Extra Virgin 5L', 'Dry Goods', 'IJ Oil', 'unit', 0, 2),
+  ('Hand Soap Refill 5L', 'Cleaning', 'Pienk Pilletjies', 'unit', 0, 2),
+  ('Dish Soap 5L', 'Cleaning', 'Pienk Pilletjies', 'unit', 0, 2),
+  ('Sanitizer 5L', 'Cleaning', 'Pienk Pilletjies', 'unit', 0, 2),
+  ('Bleach 5L', 'Cleaning', 'Pienk Pilletjies', 'unit', 0, 2),
+  ('All-Purpose Cleaner 5L', 'Cleaning', 'Pienk Pilletjies', 'unit', 0, 2),
+  ('Glass Cleaner 5L', 'Cleaning', 'Pienk Pilletjies', 'unit', 0, 2),
+  ('BBQ Spice 1kg', 'Dry Goods', 'Trucon Foods', 'unit', 0, 2),
+  ('Steak &amp; Chops Spice 1kg', 'Dry Goods', 'Trucon Foods', 'unit', 0, 2),
+  ('Paprika 500g', 'Dry Goods', 'Trucon Foods', 'unit', 0, 2),
+  ('Cumin 500g', 'Dry Goods', 'Trucon Foods', 'unit', 0, 2),
+  ('Coriander (ground) 500g', 'Dry Goods', 'Trucon Foods', 'unit', 0, 2),
+  ('Turmeric 500g', 'Dry Goods', 'Trucon Foods', 'unit', 0, 2),
+  ('Chilli Flakes 500g', 'Dry Goods', 'Trucon Foods', 'unit', 0, 2),
+  ('Orange Juice 1L', 'Beverages', 'Sir Juice', 'unit', 0, 5),
+  ('Apple Juice 1L', 'Beverages', 'Sir Juice', 'unit', 0, 4),
+  ('Mango Juice 1L', 'Beverages', 'Sir Juice', 'unit', 0, 3),
+  ('Guava Juice 1L', 'Beverages', 'Sir Juice', 'unit', 0, 3),
+  ('Tomato Sauce 5kg', 'Dry Goods', 'Mr Sauce', 'unit', 0, 2),
+  ('Sweet Chilli Sauce 5L', 'Dry Goods', 'Mr Sauce', 'unit', 0, 2),
+  ('BBQ Sauce 5kg', 'Dry Goods', 'Mr Sauce', 'unit', 0, 2),
+  ('Mushroom Sauce 5L', 'Dry Goods', 'Mr Sauce', 'unit', 0, 2),
+  ('Cling Wrap 300m', 'Packaging', 'New Fly', 'unit', 0, 3),
+  ('Baking Paper 300m', 'Packaging', 'New Fly', 'unit', 0, 3),
+  ('Foil 300m', 'Packaging', 'New Fly', 'unit', 0, 3),
+  ('Takeaway Containers 50s', 'Packaging', 'New Fly', 'unit', 0, 4),
+  ('Napkins 500s', 'Packaging', 'New Fly', 'unit', 0, 4),
+  ('Pasta Spaghetti 500g', 'Dry Goods', 'Econo Foods', 'unit', 0, 4),
+  ('Tinned Tomatoes 400g', 'Dry Goods', 'Econo Foods', 'unit', 0, 6),
+  ('Tomato Paste (small) 70g', 'Dry Goods', 'Econo Foods', 'unit', 0, 6),
+  ('Coconut Cream 400ml', 'Dry Goods', 'Econo Foods', 'unit', 0, 3),
+  ('Butter 250g', 'Dairy', 'Anchor', 'unit', 0, 8),
+  ('Whipping Cream 250ml', 'Dairy', 'Anchor', 'unit', 0, 5),
+  ('Espresso Beans 1kg', 'Beverages', 'Spill-it Coffee', 'unit', 0, 3),
+  ('Filter Coffee 500g', 'Beverages', 'Spill-it Coffee', 'unit', 0, 2),
+  ('Decaf Beans 250g', 'Beverages', 'Spill-it Coffee', 'unit', 0, 2),
+  ('Hot Chocolate Powder 1kg', 'Beverages', 'Spill-it Coffee', 'unit', 0, 2),
+  ('Chai Latte Mix 1kg', 'Beverages', 'Spill-it Coffee', 'unit', 0, 2),
+  ('Gouda 1kg', 'Dairy', 'Golden Valley Cheese', 'unit', 0, 2),
+  ('Brie 200g', 'Dairy', 'Golden Valley Cheese', 'unit', 0, 2),
+  ('Camembert 200g', 'Dairy', 'Golden Valley Cheese', 'unit', 0, 2),
+  ('Blue Cheese 200g', 'Dairy', 'Golden Valley Cheese', 'unit', 0, 2)
+ON CONFLICT (name) DO UPDATE SET
+  supplier  = EXCLUDED.supplier,
+  category  = EXCLUDED.category,
+  unit      = EXCLUDED.unit,
+  min_level = EXCLUDED.min_level;
+
+-- Remove duplicate rows (keep lowest id per name)
+DELETE FROM stock WHERE id NOT IN (
+  SELECT MIN(id) FROM stock GROUP BY name
+);</pre>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('stockSetupSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
       </div>
 
     </div></div>
@@ -2104,7 +2297,9 @@ function renderTodayOrdersBanner(){
 // ── ORDER STATE ───────────────────────────────────────────────────────────
 let actSup='', ordItems=[], ordStockCounts={}, ordOrderQty={}, ordStep=1;
 
-function renderSups(){
+let todaySubmittedSuppliers=new Set(); // tracks which suppliers Fridah submitted today
+
+async function renderSups(){
   const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
   const isOwner=CU?.role==='owner';
   const editBtn=document.getElementById('editSuppliersBtn');
@@ -2114,28 +2309,48 @@ function renderSups(){
   if(isOwner) loadPendingOrders();
   renderTodayOrdersBanner();
 
-  // Non-owners only see today's suppliers; owners see all
   const dayName=new Date().toLocaleDateString('en-ZA',{weekday:'long'});
   const todayNames=(ORDER_SCHEDULE[dayName]||[]).map(x=>x.s);
+
+  // For non-owners: check which suppliers are already submitted today
+  if(!isOwner){
+    try{
+      const today=new Date().toISOString().slice(0,10);
+      const {data}=await SB.from('pending_orders').select('supplier')
+        .eq('order_date',today).eq('submitted_by',CU?.name||CU?.username||'')
+        .in('status',['pending','do_not_order','approved']);
+      todaySubmittedSuppliers=new Set((data||[]).map(r=>r.supplier));
+    }catch(e){ todaySubmittedSuppliers=new Set(); }
+  }
+
+  // Non-owners only see today's unsubmitted suppliers; owners see all
   const allSups=isOwner
     ? [...new Set([...Object.keys(SUPS),...DB.map(i=>i.supplier)])].sort()
-    : todayNames.filter(s=>SUPS[s]||ORDER_TEMPLATES[s]);
+    : todayNames.filter(s=>(SUPS[s]||ORDER_TEMPLATES[s])&&!todaySubmittedSuppliers.has(s));
+
+  const supListEl=document.getElementById('supList');
 
   if(!allSups.length&&!isOwner){
-    document.getElementById('supList').innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.85rem">No suppliers scheduled for today.</div>';
+    const doneCount=todaySubmittedSuppliers.size;
+    supListEl.innerHTML=`<div style="text-align:center;padding:2.5rem 1rem">
+      <div style="font-size:2rem;margin-bottom:0.5rem">✅</div>
+      <div style="font-weight:700;font-size:0.95rem;color:var(--green)">All done for today!</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:0.3rem">${doneCount} supplier${doneCount!==1?'s':''} submitted · waiting for owner approval</div>
+    </div>`;
     return;
   }
 
-  document.getElementById('supList').innerHTML=allSups.map(s=>{
+  supListEl.innerHTML=allSups.map(s=>{
     const its=DB.filter(i=>i.supplier===s);
     const low=its.filter(i=>i.stock<=i.min_level).length;
     const inf=SUPS[s]||{};
     const hasTpl=!!(ORDER_TEMPLATES[s]);
     const isToday=todayNames.includes(s);
+    const submitted=todaySubmittedSuppliers.has(s);
     return `<div class="sc" onclick="openOrd('${s.replace(/'/g,"\\'")}')">
       <div style="font-size:1.5rem;flex-shrink:0">${mi[inf.m]||'📱'}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:0.92rem">${s}${inf.urg?'<span class="bdg bgr" style="margin-left:0.4rem;font-size:0.58rem">⚠ Urgent</span>':''}${isOwner&&isToday?'<span class="bdg bgg" style="margin-left:0.4rem;font-size:0.58rem">Today</span>':''}</div>
+        <div style="font-weight:700;font-size:0.92rem">${s}${inf.urg?'<span class="bdg bgr" style="margin-left:0.4rem;font-size:0.58rem">⚠ Urgent</span>':''}${isOwner&&isToday?'<span class="bdg bgg" style="margin-left:0.4rem;font-size:0.58rem">Today</span>':''}${submitted?'<span class="bdg bgg" style="margin-left:0.4rem;font-size:0.58rem">✓ Submitted</span>':''}</div>
         <div style="font-size:0.72rem;color:var(--muted)">${inf.c||''}${low>0?` · <strong style="color:var(--red)">⚠ ${low} item${low!==1?'s':''} low</strong>`:hasTpl?' · 📋 order list ready':''}</div>
       </div>
       <div style="color:var(--muted);font-size:1.1rem">›</div>
@@ -2300,8 +2515,10 @@ async function ordSubmitOrder(){
         order_date:new Date().toISOString().slice(0,10),
         status:'pending'
       });
+      todaySubmittedSuppliers.add(actSup);
       closeMo('moOrder');
       showToast('Order submitted — waiting for owner approval ✓');
+      renderSups();
     }catch(e){
       closeMo('moOrder');
       showToast('Could not submit — ask owner to run SQL setup in Settings.',true);
@@ -2321,8 +2538,10 @@ async function ordDoNotOrder(){
       status:'do_not_order'
     });
   }catch(e){}
+  todaySubmittedSuppliers.add(actSup);
   closeMo('moOrder');
   showToast('Stock count saved — no order placed for '+actSup);
+  renderSups();
   await logAudit('orders','No Order',`${actSup} — stock counted, no order`);
 }
 
@@ -2333,6 +2552,9 @@ async function loadPendingOrders(){
   if(!el) return;
   try{
     const {data,error}=await SB.from('pending_orders').select('*').in('status',['pending','do_not_order']).order('created_at',{ascending:false});
+    // Populate cache so openEditStockCount can safely look up by ID
+    pendingOrderCache={};
+    (data||[]).forEach(o=>{ pendingOrderCache[o.id]=o; });
     if(error||!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">No pending orders.</div>';if(badge)badge.textContent='';return;}
     const pendCount=data.filter(o=>o.status==='pending').length;
     if(badge) badge.textContent=pendCount||'';
@@ -2378,54 +2600,75 @@ async function loadPendingOrders(){
 }
 
 // Edit stock count in-place (owner correction)
+// Safe: store order data in a global cache by ID — no data in onclick attributes
+let pendingOrderCache={};  // populated in loadPendingOrders
 let editingOrderId=null;
+
 function openEditStockCount(id){
   editingOrderId=id;
-  // Find the order in the DOM and swap stock cells to inputs — simplest: reload with edit mode
-  loadPendingOrders_edit(id);
-}
-async function loadPendingOrders_edit(targetId){
-  const {data}=await SB.from('pending_orders').select('*').eq('id',targetId).single().catch(()=>({data:null}));
-  if(!data){showToast('Could not load order.',true);return;}
+  const data=pendingOrderCache[id];
+  if(!data){showToast('Reload the page and try again.',true);return;}
   const items=data.items||[];
-  // Show inline edit modal-style in the pending section
-  const editHtml=`<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem;border:2px solid var(--burg)">
-    <div style="font-weight:700;font-size:0.88rem;margin-bottom:0.6rem">✏️ Edit Stock Count — ${data.supplier}</div>
-    ${items.map((it,i)=>`<div style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0;border-bottom:1px solid var(--surface)">
-      <div style="flex:1;font-size:0.83rem;font-weight:600">${it.n}</div>
-      ${it.ml!=null?`<div style="font-size:0.68rem;color:var(--muted);white-space:nowrap">Min: ${it.ml}</div>`:''}
-      <input type="number" min="0" step="0.5" value="${it.soh||0}" id="esc-${i}"
-        style="width:70px;border:1px solid var(--burg);border-radius:8px;padding:0.35rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.88rem;font-weight:700;text-align:center;background:var(--cream);outline:none">
+  // Render edit form at top of pending list
+  const editHtml=`<div class="card" id="editStockCard" style="padding:0.8rem 1rem;margin-bottom:0.8rem;border:2px solid var(--burg)">
+    <div style="font-weight:700;font-size:0.9rem;margin-bottom:0.7rem;color:var(--burg)">✏️ Edit Stock Count — ${data.supplier}</div>
+    ${items.map((it,i)=>`<div style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0;border-bottom:1px solid var(--surface)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.83rem;font-weight:600">${it.n}</div>
+        ${it.ml!=null?`<div style="font-size:0.65rem;color:var(--muted)">Min: ${it.ml}</div>`:''}
+      </div>
+      <input type="number" min="0" step="0.5" value="${it.soh!=null?it.soh:0}" id="esc-${i}"
+        style="width:72px;border:1.5px solid var(--burg);border-radius:8px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.92rem;font-weight:700;text-align:center;background:var(--cream);outline:none">
     </div>`).join('')}
-    <div style="display:flex;gap:0.5rem;margin-top:0.8rem">
-      <button class="btn bp bsm" onclick="saveEditedStockCount('${targetId}',${JSON.stringify(items).replace(/'/g,'&#39;').replace(/"/g,"'")},${items.length})">💾 Save</button>
-      <button class="btn bs bsm" onclick="loadPendingOrders()">Cancel</button>
+    <div style="display:flex;gap:0.5rem;margin-top:0.9rem">
+      <button class="btn bp" style="flex:1" onclick="saveEditedStockCount()">💾 Save Changes</button>
+      <button class="btn bs" style="flex:1" onclick="document.getElementById('editStockCard')?.remove();editingOrderId=null">Cancel</button>
     </div>
   </div>`;
+  // Remove any existing edit card first
+  document.getElementById('editStockCard')?.remove();
   document.getElementById('pendingOrdersList').insertAdjacentHTML('afterbegin',editHtml);
-  document.getElementById('pendingOrdersList').scrollIntoView({behavior:'smooth'});
+  document.getElementById('editStockCard').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-async function saveEditedStockCount(id,origItems,count){
+
+async function saveEditedStockCount(){
+  const id=editingOrderId;
+  if(!id){showToast('No order selected.',true);return;}
+  const data=pendingOrderCache[id];
+  if(!data){showToast('Order data not found — please reload.',true);return;}
+  const origItems=data.items||[];
   const updated=origItems.map((it,i)=>{
-    const v=parseFloat(document.getElementById('esc-'+i)?.value)||0;
+    const el=document.getElementById('esc-'+i);
+    const v=el?parseFloat(el.value)||0:it.soh||0;
     return {...it,soh:v};
   });
-  // Update DB for stock items too
+  // Update stock DB entries that match by name
   const stockUpdates=updated.map(it=>{
     const dbIt=DB.find(d=>d.name.toLowerCase()===it.n.toLowerCase());
-    if(dbIt) return SB.from('stock').update({stock:it.soh}).eq('id',dbIt.id);
+    if(dbIt){
+      dbIt.stock=it.soh; // update local cache
+      return SB.from('stock').update({stock:it.soh}).eq('id',dbIt.id);
+    }
     return null;
   }).filter(Boolean);
   setSyncStatus('syncing');
-  await Promise.all([
-    SB.from('pending_orders').update({items:updated}).eq('id',id),
-    ...stockUpdates
-  ]).catch(()=>{});
-  setSyncStatus('ok');
-  updated.forEach(it=>{const d=DB.find(x=>x.name.toLowerCase()===it.n.toLowerCase());if(d)d.stock=it.soh;});
-  showToast('Stock count updated ✓');
-  await logAudit('orders','Stock Edited',`Corrected stock count for order ${id}`);
-  loadPendingOrders();
+  try{
+    await Promise.all([
+      SB.from('pending_orders').update({items:updated}).eq('id',id),
+      ...stockUpdates
+    ]);
+    // Update local cache
+    pendingOrderCache[id]={...data,items:updated};
+    setSyncStatus('ok');
+    showToast('Stock count updated ✓');
+    await logAudit('orders','Stock Edited',`Corrected stock count for ${data.supplier}`);
+    document.getElementById('editStockCard')?.remove();
+    editingOrderId=null;
+    loadPendingOrders();
+  }catch(e){
+    setSyncStatus('err');
+    showToast('Save failed — check connection.',true);
+  }
 }
 
 async function approvePendingOrder(id){
@@ -7245,90 +7488,6 @@ function calcPaymentDate(year, month){
     const pd=payDate.getDay();
     if(pd===0) payDate.setDate(payDate.getDate()-2);
     if(pd===6) payDate.setDate(payDate.getDate()-1);
-  }
-  return payDate;
-}
-
-function renderPaymentDate(){
-  const now=new Date();
-  const yr=now.getFullYear(), mo=now.getMonth()+1;
-  const payDate=calcPaymentDate(yr,mo);
-  const today=new Date(yr,now.getMonth(),now.getDate());
-  const diffDays=Math.round((payDate-today)/(1000*60*60*24));
-
-  const banner=document.getElementById('payDateBanner');
-  const display=document.getElementById('payDateDisplay');
-  const sub=document.getElementById('payDateSub');
-  const countdown=document.getElementById('payDateCountdown');
-  if(!banner||!display) return;
-
-  let showDate=payDate, showDiff=diffDays, label='This month payment date';
-  if(diffDays<0){
-    // Already passed — show next month
-    const nm=mo===12?1:mo+1, ny=mo===12?yr+1:yr;
-    showDate=calcPaymentDate(ny,nm);
-    showDiff=Math.round((showDate-today)/(1000*60*60*24));
-    label='Next month payment date';
-  }
-
-  display.textContent=showDate.toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  countdown.textContent=showDiff<=0?'TODAY':showDiff;
-
-  if(showDiff<=0){
-    sub.textContent='🚨 PAY TODAY!';
-    banner.style.cssText='border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.8rem;border:2px solid var(--red);background:var(--red-l)';
-    countdown.style.color='var(--red)';
-    showPaymentNotification('🚨 Pay day is TODAY — process payroll now!');
-  } else if(showDiff<=2){
-    sub.textContent=`⚠️ ${label} — ${showDiff} day${showDiff!==1?'s':''} away`;
-    banner.style.cssText='border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.8rem;border:2px solid var(--gold);background:#fff9ef';
-    countdown.style.color='var(--gold)';
-    showPaymentNotification(`⚠️ Payroll payment due in ${showDiff} day${showDiff!==1?'s':''}!`);
-  } else if(showDiff<=5){
-    sub.textContent=`${label} — ${showDiff} days away`;
-    banner.style.cssText='border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.8rem;border:2px solid var(--gold);background:#fffef0';
-    countdown.style.color='var(--gold)';
-  } else {
-    sub.textContent=label;
-    banner.style.cssText='border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.8rem;border:2px solid var(--green-b);background:var(--green-l)';
-    countdown.style.color='var(--green)';
-  }
-}
-
-function showPaymentNotification(msg){
-  if('Notification' in window){
-    if(Notification.permission==='granted'){
-      new Notification('Die Akker — Payroll',{body:msg});
-    } else if(Notification.permission!=='denied'){
-      Notification.requestPermission().then(p=>{
-        if(p==='granted') new Notification('Die Akker — Payroll',{body:msg});
-      });
-    }
-  }
-}
-
-
-// ═══════════════════════════════════════════
-// PAYMENT DATE CALCULATOR
-// ═══════════════════════════════════════════
-function calcPaymentDate(year, month){
-  // Last day of the given month
-  const lastDay = new Date(year, month, 0);
-  const dow = lastDay.getDay(); // 0=Sun,1=Mon...6=Sat
-  let payDate = new Date(lastDay);
-  if(dow === 6){
-    // Saturday → pay on Friday
-    payDate.setDate(payDate.getDate() - 1);
-  } else if(dow === 0){
-    // Sunday → pay on Friday
-    payDate.setDate(payDate.getDate() - 2);
-  } else {
-    // Weekday → 2 days before last day
-    payDate.setDate(payDate.getDate() - 2);
-    // If that lands on weekend, move back to Friday
-    const pd = payDate.getDay();
-    if(pd === 0) payDate.setDate(payDate.getDate() - 2);
-    if(pd === 6) payDate.setDate(payDate.getDate() - 1);
   }
   return payDate;
 }
