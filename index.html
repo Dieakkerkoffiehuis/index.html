@@ -1258,9 +1258,16 @@ CREATE POLICY "allow_all" ON pending_orders FOR ALL USING (true) WITH CHECK (tru
           <div class="card-title">Stock Database Setup</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL in your Supabase SQL editor to populate all stock items with correct suppliers, categories and minimum levels. It will not create duplicates — existing items are updated, not replaced.</div>
           <pre id="stockSetupSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.68rem;overflow-x:auto;white-space:pre-wrap;color:var(--text);max-height:300px">-- =====================================================
--- STOCK DATABASE SETUP — generated from Bestellyste
--- Run in Supabase SQL Editor
+-- STEP 1: Add unique constraint on name (run once)
 -- =====================================================
+ALTER TABLE stock ADD CONSTRAINT stock_name_unique UNIQUE (name);
+
+-- =====================================================
+-- STEP 2: Remove any existing duplicate rows first
+-- =====================================================
+DELETE FROM stock WHERE id NOT IN (
+  SELECT MIN(id) FROM stock GROUP BY name
+);
 
 INSERT INTO stock (name, category, supplier, unit, stock, min_level)
 VALUES
