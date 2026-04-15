@@ -1258,17 +1258,14 @@ CREATE POLICY "allow_all" ON pending_orders FOR ALL USING (true) WITH CHECK (tru
           <div class="card-title">Stock Database Setup</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL in your Supabase SQL editor to populate all stock items with correct suppliers, categories and minimum levels. It will not create duplicates — existing items are updated, not replaced.</div>
           <pre id="stockSetupSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.68rem;overflow-x:auto;white-space:pre-wrap;color:var(--text);max-height:300px">-- =====================================================
--- STEP 1: Add unique constraint on name (run once)
+-- STOCK TABLE CLEAN REBUILD
+-- Wipes old/duplicate entries and inserts correct data
 -- =====================================================
-ALTER TABLE stock ADD CONSTRAINT IF NOT EXISTS stock_name_unique UNIQUE (name);
 
--- =====================================================
--- STEP 2: Remove any existing duplicate rows first
--- =====================================================
-DELETE FROM stock WHERE id NOT IN (
-  SELECT MIN(id) FROM stock GROUP BY name
-);
+-- Delete ALL existing stock rows for a clean slate
+DELETE FROM stock;
 
+-- Insert all items fresh from Bestellyste
 INSERT INTO stock (name, category, supplier, unit, stock, min_level)
 VALUES
   ('Biltong 500g', 'Meat', 'Vision Meats', 'unit', 0, 7),
@@ -1454,16 +1451,7 @@ VALUES
   ('Jam Apricot', 'Dry Goods', 'Golden Catering', 'unit', 0, 1),
   ('Condensed Milk', 'Dry Goods', 'Golden Catering', 'unit', 0, 18),
   ('Caramel Treat', 'Dry Goods', 'Golden Catering', 'unit', 0, 12)
-ON CONFLICT (name) DO UPDATE SET
-  supplier  = EXCLUDED.supplier,
-  category  = EXCLUDED.category,
-  unit      = EXCLUDED.unit,
-  min_level = EXCLUDED.min_level;
-
--- Remove duplicate rows (keep lowest id per name)
-DELETE FROM stock WHERE id NOT IN (
-  SELECT MIN(id) FROM stock GROUP BY name
-);</pre>
+;</pre>
           <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('stockSetupSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
       </div>
