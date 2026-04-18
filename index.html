@@ -1473,12 +1473,19 @@ VALUES
           <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('stockSetupSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
         <div class="card" id="payrollColsSQL">
-          <div class="card-title">Payroll Table — Add Taxi &amp; Lening Columns</div>
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this once in Supabase to add the Taxi and Lening (borrowing) deduction columns to the payroll table:</div>
-          <pre id="payrollColsSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">ALTER TABLE payroll ADD COLUMN IF NOT EXISTS taxi numeric DEFAULT 0;
+          <div class="card-title">Payroll Table — Required Updates</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this once in Supabase to add deduction columns and fix the unique constraint for multiple staff groups:</div>
+          <pre id="payrollColsSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">-- Add deduction columns
+ALTER TABLE payroll ADD COLUMN IF NOT EXISTS taxi numeric DEFAULT 0;
 ALTER TABLE payroll ADD COLUMN IF NOT EXISTS borrowed numeric DEFAULT 0;
 ALTER TABLE payroll ADD COLUMN IF NOT EXISTS saccawu numeric DEFAULT 0;
-ALTER TABLE payroll ADD COLUMN IF NOT EXISTS breakage numeric DEFAULT 0;</pre>
+ALTER TABLE payroll ADD COLUMN IF NOT EXISTS breakage numeric DEFAULT 0;
+
+-- Fix unique constraint to include group_type
+-- (needed so managers can appear in both Manager and Waiters PH sections)
+ALTER TABLE payroll DROP CONSTRAINT IF EXISTS payroll_staff_name_month_key;
+ALTER TABLE payroll DROP CONSTRAINT IF EXISTS payroll_pkey;
+ALTER TABLE payroll ADD CONSTRAINT payroll_staff_month_group_unique UNIQUE (staff_name, month, group_type);</pre>
           <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('payrollColsSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
       </div>
@@ -3561,7 +3568,7 @@ async function savePay(){
   const mo=new Date().toISOString().slice(0,7);
   const toRows=(grp,label)=>(payD[grp]||[]).map(s=>({staff_name:s.name,group_type:label,position:s.pos,hourly_rate:s.hourly_rate,hours:s.hrs,taxi:s.taxi||0,borrowed:s.borrowed||0,saccawu:s.saccawu||0,breakage:s.breakage||0,month:mo}));
   const rows=[...toRows('mgr','manager'),...toRows('kit','kitchen'),...toRows('bar','bar'),...toRows('waitph','waitph')];
-  const{error}=await SB.from('payroll').upsert(rows,{onConflict:'staff_name,month'});
+  const{error}=await SB.from('payroll').upsert(rows,{onConflict:'staff_name,month,group_type'});
   setSyncStatus(error?'err':'ok');
   showToast(error?'Error saving payroll.':'Payroll saved to database ✓',!!error);
 }
