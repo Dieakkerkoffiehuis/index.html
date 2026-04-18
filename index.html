@@ -1454,6 +1454,13 @@ VALUES
 ;</pre>
           <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('stockSetupSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
+        <div class="card" id="payrollColsSQL">
+          <div class="card-title">Payroll Table — Add Taxi &amp; Lening Columns</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this once in Supabase to add the Taxi and Lening (borrowing) deduction columns to the payroll table:</div>
+          <pre id="payrollColsSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">ALTER TABLE payroll ADD COLUMN IF NOT EXISTS taxi numeric DEFAULT 0;
+ALTER TABLE payroll ADD COLUMN IF NOT EXISTS borrowed numeric DEFAULT 0;</pre>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('payrollColsSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
       </div>
 
     </div></div>
@@ -3397,8 +3404,8 @@ function buildPayData(rows){
   const mo=new Date().toISOString().slice(0,7);
   const mgrStaff=stfD.filter(s=>s.division==='Management'||s.role==='Manager');
   const kitStaff=stfD.filter(s=>s.division==='Kitchen'||s.role.startsWith('Kitchen'));
-  payD.mgr=mgrStaff.map(s=>{const r=rows.find(x=>x.staff_name===s.name)||{hourly_rate:35,hours:0};return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||35,hrs:r.hours||0,month:mo};});
-  payD.kit=kitStaff.map(s=>{const r=rows.find(x=>x.staff_name===s.name)||{hourly_rate:22,hours:0};return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||22,hrs:r.hours||0,month:mo};});
+  payD.mgr=mgrStaff.map(s=>{const r=rows.find(x=>x.staff_name===s.name)||{hourly_rate:35,hours:0};return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||35,hrs:r.hours||0,taxi:r.taxi||0,borrowed:r.borrowed||0,month:mo};});
+  payD.kit=kitStaff.map(s=>{const r=rows.find(x=>x.staff_name===s.name)||{hourly_rate:22,hours:0};return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||22,hrs:r.hours||0,taxi:r.taxi||0,borrowed:r.borrowed||0,month:mo};});
 }
 
 async function syncRosterHoursToPayroll(){
@@ -3439,43 +3446,73 @@ async function syncRosterHoursToPayroll(){
 
 function renderPaySec(list,cId,tId){
   document.getElementById(cId).innerHTML=list.map((s,i)=>{
-    const g=s.hrs*s.hourly_rate,u=Math.round(g*0.01*100)/100,n=g-u;
+    const g=s.hrs*(s.hourly_rate||0);
+    const uif=Math.round(g*0.01*100)/100;
+    const taxi=s.taxi||0;
+    const borrowed=s.borrowed||0;
+    const net=g-uif-taxi-borrowed;
     const grp=cId==='mgrPay'?'manager':'kitchen';
-    return `<div class="pr">
-      <div class="prav" style="background:${PAC[i%PAC.length]}">${(s.name[0])||'?'}</div>
-      <div class="pri">
-        <div style="display:flex;align-items:center;gap:0.4rem">
-          <div class="prn">${s.name}</div>
-          <button onclick="editPayName('${cId}',${i},'${tId}')" style="background:none;border:none;cursor:pointer;font-size:0.75rem;color:var(--muted);padding:0.1rem 0.3rem;border-radius:4px" title="Edit name">✏️</button>
+    const nm=s.name.replace(/'/g,"\\'");
+    return `<div class="pr" style="flex-wrap:wrap;gap:0.5rem 0.8rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:180px">
+        <div class="prav" style="background:${PAC[i%PAC.length]}">${s.name[0]||'?'}</div>
+        <div class="pri">
+          <div style="display:flex;align-items:center;gap:0.4rem">
+            <div class="prn">${s.name}</div>
+            <button onclick="editPayName('${cId}',${i},'${tId}')" style="background:none;border:none;cursor:pointer;font-size:0.75rem;color:var(--muted);padding:0.1rem 0.3rem;border-radius:4px" title="Edit name">✏️</button>
+          </div>
+          <div class="prp">${s.pos}</div>
         </div>
-        <div class="prp">${s.pos}</div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
-        <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Rate/Hr</div>
-        <input type="number" class="ri" value="${s.hourly_rate}" min="0" step="0.5" ${canER()?'':'readonly'} oninput="updR('${cId}',${i},this.value,'${tId}')">
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:flex-end;flex:2;min-width:260px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
+          <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Rate/Hr</div>
+          <input type="number" class="ri" value="${s.hourly_rate}" min="0" step="0.5" ${canER()?'':'readonly'} oninput="updR('${cId}',${i},this.value,'${tId}')">
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
+          <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Hours</div>
+          <input type="number" class="hi" value="${s.hrs||''}" placeholder="0" min="0" oninput="updH('${cId}',${i},this.value,'${tId}')">
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
+          <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">UIF (1%)</div>
+          <div style="width:62px;height:32px;border:1px solid var(--border);border-radius:6px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:0.78rem;color:var(--muted)">${g>0?uif.toFixed(2):'—'}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
+          <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Taxi</div>
+          <input type="number" class="hi" value="${taxi||''}" placeholder="0" min="0" style="width:62px" oninput="updKitField('${cId}',${i},'taxi',this.value,'${tId}')">
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
+          <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Lening</div>
+          <input type="number" class="hi" value="${borrowed||''}" placeholder="0" min="0" style="width:62px" oninput="updKitField('${cId}',${i},'borrowed',this.value,'${tId}')">
+        </div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
-        <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Hours</div>
-        <input type="number" class="hi" value="${s.hrs||''}" placeholder="0" min="0" oninput="updH('${cId}',${i},this.value,'${tId}')">
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem">
-        <div class="pnet">${n>0?'R '+n.toFixed(2):'—'}</div>
-        <button onclick="openPayslip('${s.name.replace(/'/g,"\\'")}','${grp}')" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;cursor:pointer;color:var(--burg);white-space:nowrap">🖨️ Slip</button>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem;min-width:80px">
+        <div class="pnet">${net>0?'R '+net.toFixed(2):'—'}</div>
+        <button onclick="openPayslip('${nm}','${grp}')" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;cursor:pointer;color:var(--burg);white-space:nowrap">🖨️ Slip</button>
       </div>
     </div>`;
   }).join('');
   updPTot(list,tId);
 }
 
-function updH(c,i,v,t){const l=c==='mgrPay'?payD.mgr:payD.kit;l[i].hrs=parseFloat(v)||0;updPTot(l,t);}
-function updR(c,i,v,t){if(!canER())return;const l=c==='mgrPay'?payD.mgr:payD.kit;l[i].hourly_rate=parseFloat(v)||0;updPTot(l,t);}
-function updPTot(l,t){const s=l.reduce((sum,x)=>{const g=x.hrs*x.hourly_rate;return sum+(g>0?g-Math.round(g*0.01*100)/100:0);},0);document.getElementById(t).textContent='R '+s.toFixed(2);}
+function updH(c,i,v,t){const l=c==='mgrPay'?payD.mgr:payD.kit;l[i].hrs=parseFloat(v)||0;renderPaySec(l,c,t);}
+function updR(c,i,v,t){if(!canER())return;const l=c==='mgrPay'?payD.mgr:payD.kit;l[i].hourly_rate=parseFloat(v)||0;renderPaySec(l,c,t);}
+function updKitField(c,i,field,v,t){const l=c==='mgrPay'?payD.mgr:payD.kit;l[i][field]=parseFloat(v)||0;updPTot(l,t);}
+function updPTot(l,t){
+  const s=l.reduce((sum,x)=>{
+    const g=(x.hrs||0)*(x.hourly_rate||0);
+    if(g<=0) return sum;
+    const uif=Math.round(g*0.01*100)/100;
+    return sum+g-uif-(x.taxi||0)-(x.borrowed||0);
+  },0);
+  document.getElementById(t).textContent='R '+s.toFixed(2);
+}
 function editPayName(cId,i,tId){const l=cId==='mgrPay'?payD.mgr:payD.kit;const v=prompt(`Edit name for "${l[i].name}":`,l[i].name);if(!v||!v.trim())return;l[i].name=v.trim();renderPaySec(l,cId,tId);showToast(`Updated to "${v.trim()}" ✓`);}
 
 async function savePay(){
   setSyncStatus('syncing');
   const mo=new Date().toISOString().slice(0,7);
-  const rows=[...payD.mgr,...payD.kit].map(s=>({staff_name:s.name,group_type:payD.mgr.includes(s)?'manager':'kitchen',position:s.pos,hourly_rate:s.hourly_rate,hours:s.hrs,month:mo}));
+  const rows=[...payD.mgr,...payD.kit].map(s=>({staff_name:s.name,group_type:payD.mgr.includes(s)?'manager':'kitchen',position:s.pos,hourly_rate:s.hourly_rate,hours:s.hrs,taxi:s.taxi||0,borrowed:s.borrowed||0,month:mo}));
   const{error}=await SB.from('payroll').upsert(rows,{onConflict:'staff_name,month'});
   setSyncStatus(error?'err':'ok');
   showToast(error?'Error saving payroll.':'Payroll saved to database ✓',!!error);
