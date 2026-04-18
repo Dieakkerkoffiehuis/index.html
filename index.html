@@ -1047,6 +1047,15 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
             <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="kitTot">R 0.00</span>
           </div>
         </div>
+        <div class="stitle">Bar Staff Payroll</div>
+        <div class="card">
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">🔵 Blue = hourly rate (owner can edit) · Enter hours worked this month</div>
+          <div id="barPay"></div>
+          <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;color:var(--green)">Total Bar Staff Net Pay:</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="barTot">R 0.00</span>
+          </div>
+        </div>
         <div class="stitle">Waiters / Floor Staff</div>
         <div class="card">
           <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Enter monthly sales and tips per waiter to calculate commission</div>
@@ -1054,6 +1063,15 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
           <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
             <span style="font-weight:700;color:var(--green)">Total Waiter Net Pay:</span>
             <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="waiterTot">R 0.00</span>
+          </div>
+        </div>
+        <div class="stitle">Waiters Per Hour (PH)</div>
+        <div class="card">
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Managers working waiter shifts — paid hourly, not on commission</div>
+          <div id="waitphPay"></div>
+          <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;color:var(--green)">Total Waiters PH Net Pay:</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="waitphTot">R 0.00</span>
           </div>
         </div>
         <div class="brow" style="margin-top:0.5rem">
@@ -1458,7 +1476,9 @@ VALUES
           <div class="card-title">Payroll Table — Add Taxi &amp; Lening Columns</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this once in Supabase to add the Taxi and Lening (borrowing) deduction columns to the payroll table:</div>
           <pre id="payrollColsSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">ALTER TABLE payroll ADD COLUMN IF NOT EXISTS taxi numeric DEFAULT 0;
-ALTER TABLE payroll ADD COLUMN IF NOT EXISTS borrowed numeric DEFAULT 0;</pre>
+ALTER TABLE payroll ADD COLUMN IF NOT EXISTS borrowed numeric DEFAULT 0;
+ALTER TABLE payroll ADD COLUMN IF NOT EXISTS saccawu numeric DEFAULT 0;
+ALTER TABLE payroll ADD COLUMN IF NOT EXISTS breakage numeric DEFAULT 0;</pre>
           <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('payrollColsSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
       </div>
@@ -3400,12 +3420,22 @@ const canER=()=>CU?.role==='owner';
 const canEdit=()=>CU?.role==='owner'||CU?.role==='manager';
 const isReadOnly=()=>CU?.role==='investor'||CU?.role==='employee';
 
+function buildPayEntry(s, rows, defaultRate){
+  const r=rows.find(x=>x.staff_name===s.name&&x.group_type===s._grp)||rows.find(x=>x.staff_name===s.name)||{hourly_rate:defaultRate,hours:0};
+  return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||defaultRate,hrs:r.hours||0,taxi:r.taxi||0,borrowed:r.borrowed||0,saccawu:r.saccawu||0,breakage:r.breakage||0};
+}
+
 function buildPayData(rows){
-  const mo=new Date().toISOString().slice(0,7);
-  const mgrStaff=stfD.filter(s=>s.division==='Management'||s.role==='Manager');
-  const kitStaff=stfD.filter(s=>s.division==='Kitchen'||s.role.startsWith('Kitchen'));
-  payD.mgr=mgrStaff.map(s=>{const r=rows.find(x=>x.staff_name===s.name)||{hourly_rate:35,hours:0};return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||35,hrs:r.hours||0,taxi:r.taxi||0,borrowed:r.borrowed||0,month:mo};});
-  payD.kit=kitStaff.map(s=>{const r=rows.find(x=>x.staff_name===s.name)||{hourly_rate:22,hours:0};return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||22,hrs:r.hours||0,taxi:r.taxi||0,borrowed:r.borrowed||0,month:mo};});
+  const mgrStaff  = stfD.filter(s=>s.division==='Management'||s.role==='Manager');
+  const kitStaff  = stfD.filter(s=>s.division==='Kitchen'||s.role?.startsWith('Kitchen'));
+  const barStaff  = stfD.filter(s=>s.division==='Bar'||s.role?.toLowerCase().includes('barman')||s.role?.toLowerCase().includes('bar staff'));
+  // Managers who also work waiter shifts (paid per hour)
+  const waitphStaff = mgrStaff.map(s=>({...s,_grp:'waitph'}));
+
+  payD.mgr    = mgrStaff.map(s=>buildPayEntry({...s,_grp:'manager'}, rows, 35));
+  payD.kit    = kitStaff.map(s=>buildPayEntry({...s,_grp:'kitchen'}, rows, 22));
+  payD.bar    = barStaff.map(s=>buildPayEntry({...s,_grp:'bar'},     rows, 22));
+  payD.waitph = waitphStaff.map(s=>buildPayEntry(s, rows, 35));
 }
 
 async function syncRosterHoursToPayroll(){
@@ -3429,7 +3459,7 @@ async function syncRosterHoursToPayroll(){
     });
 
     // Update payD with these hours
-    ['mgr','kit'].forEach(grp=>{
+    ['mgr','kit','bar','waitph'].forEach(grp=>{
       (payD[grp]||[]).forEach(s=>{
         if(hoursByStaff[s.name]!==undefined){
           s.hrs=parseFloat(hoursByStaff[s.name].toFixed(1));
@@ -3444,15 +3474,36 @@ async function syncRosterHoursToPayroll(){
   } catch(e){ console.error('Roster→Payroll sync error',e); }
 }
 
+function getPayList(cId){
+  if(cId==='mgrPay')    return payD.mgr;
+  if(cId==='kitPay')    return payD.kit;
+  if(cId==='barPay')    return payD.bar;
+  if(cId==='waitphPay') return payD.waitph;
+  return [];
+}
+function getGrpLabel(cId){
+  if(cId==='mgrPay')    return 'manager';
+  if(cId==='kitPay')    return 'kitchen';
+  if(cId==='barPay')    return 'bar';
+  if(cId==='waitphPay') return 'waitph';
+  return 'kitchen';
+}
+
 function renderPaySec(list,cId,tId){
   document.getElementById(cId).innerHTML=list.map((s,i)=>{
     const g=s.hrs*(s.hourly_rate||0);
     const uif=Math.round(g*0.01*100)/100;
     const taxi=s.taxi||0;
     const borrowed=s.borrowed||0;
-    const net=g-uif-taxi-borrowed;
-    const grp=cId==='mgrPay'?'manager':'kitchen';
+    const saccawu=s.saccawu||0;
+    const breakage=s.breakage||0;
+    const net=g-uif-taxi-borrowed-saccawu-breakage;
+    const grp=getGrpLabel(cId);
     const nm=s.name.replace(/'/g,"\\'");
+    const inp=(field,val,label)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
+          <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">${label}</div>
+          <input type="number" class="hi" value="${val||''}" placeholder="0" min="0" style="width:62px" oninput="updKitField('${cId}',${i},'${field}',this.value,'${tId}')">
+        </div>`;
     return `<div class="pr" style="flex-wrap:wrap;gap:0.5rem 0.8rem">
       <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:180px">
         <div class="prav" style="background:${PAC[i%PAC.length]}">${s.name[0]||'?'}</div>
@@ -3464,7 +3515,7 @@ function renderPaySec(list,cId,tId){
           <div class="prp">${s.pos}</div>
         </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:flex-end;flex:2;min-width:260px">
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:flex-end;flex:2;min-width:280px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
           <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Rate/Hr</div>
           <input type="number" class="ri" value="${s.hourly_rate}" min="0" step="0.5" ${canER()?'':'readonly'} oninput="updR('${cId}',${i},this.value,'${tId}')">
@@ -3477,14 +3528,10 @@ function renderPaySec(list,cId,tId){
           <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">UIF (1%)</div>
           <div style="width:62px;height:32px;border:1px solid var(--border);border-radius:6px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:0.78rem;color:var(--muted)">${g>0?uif.toFixed(2):'—'}</div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
-          <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Taxi</div>
-          <input type="number" class="hi" value="${taxi||''}" placeholder="0" min="0" style="width:62px" oninput="updKitField('${cId}',${i},'taxi',this.value,'${tId}')">
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
-          <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Lening</div>
-          <input type="number" class="hi" value="${borrowed||''}" placeholder="0" min="0" style="width:62px" oninput="updKitField('${cId}',${i},'borrowed',this.value,'${tId}')">
-        </div>
+        ${inp('taxi',taxi,'Taxi')}
+        ${inp('borrowed',borrowed,'Lening')}
+        ${inp('saccawu',saccawu,'SACCAWU')}
+        ${inp('breakage',breakage,'Breakage')}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem;min-width:80px">
         <div class="pnet">${net>0?'R '+net.toFixed(2):'—'}</div>
@@ -3495,24 +3542,25 @@ function renderPaySec(list,cId,tId){
   updPTot(list,tId);
 }
 
-function updH(c,i,v,t){const l=c==='mgrPay'?payD.mgr:payD.kit;l[i].hrs=parseFloat(v)||0;renderPaySec(l,c,t);}
-function updR(c,i,v,t){if(!canER())return;const l=c==='mgrPay'?payD.mgr:payD.kit;l[i].hourly_rate=parseFloat(v)||0;renderPaySec(l,c,t);}
-function updKitField(c,i,field,v,t){const l=c==='mgrPay'?payD.mgr:payD.kit;l[i][field]=parseFloat(v)||0;updPTot(l,t);}
+function updH(c,i,v,t){const l=getPayList(c);l[i].hrs=parseFloat(v)||0;renderPaySec(l,c,t);}
+function updR(c,i,v,t){if(!canER())return;const l=getPayList(c);l[i].hourly_rate=parseFloat(v)||0;renderPaySec(l,c,t);}
+function updKitField(c,i,field,v,t){const l=getPayList(c);l[i][field]=parseFloat(v)||0;updPTot(l,t);}
 function updPTot(l,t){
   const s=l.reduce((sum,x)=>{
     const g=(x.hrs||0)*(x.hourly_rate||0);
     if(g<=0) return sum;
     const uif=Math.round(g*0.01*100)/100;
-    return sum+g-uif-(x.taxi||0)-(x.borrowed||0);
+    return sum+g-uif-(x.taxi||0)-(x.borrowed||0)-(x.saccawu||0)-(x.breakage||0);
   },0);
   document.getElementById(t).textContent='R '+s.toFixed(2);
 }
-function editPayName(cId,i,tId){const l=cId==='mgrPay'?payD.mgr:payD.kit;const v=prompt(`Edit name for "${l[i].name}":`,l[i].name);if(!v||!v.trim())return;l[i].name=v.trim();renderPaySec(l,cId,tId);showToast(`Updated to "${v.trim()}" ✓`);}
+function editPayName(cId,i,tId){const l=getPayList(cId);const v=prompt(`Edit name for "${l[i].name}":`,l[i].name);if(!v||!v.trim())return;l[i].name=v.trim();renderPaySec(l,cId,tId);showToast(`Updated to "${v.trim()}" ✓`);}
 
 async function savePay(){
   setSyncStatus('syncing');
   const mo=new Date().toISOString().slice(0,7);
-  const rows=[...payD.mgr,...payD.kit].map(s=>({staff_name:s.name,group_type:payD.mgr.includes(s)?'manager':'kitchen',position:s.pos,hourly_rate:s.hourly_rate,hours:s.hrs,taxi:s.taxi||0,borrowed:s.borrowed||0,month:mo}));
+  const toRows=(grp,label)=>(payD[grp]||[]).map(s=>({staff_name:s.name,group_type:label,position:s.pos,hourly_rate:s.hourly_rate,hours:s.hrs,taxi:s.taxi||0,borrowed:s.borrowed||0,saccawu:s.saccawu||0,breakage:s.breakage||0,month:mo}));
+  const rows=[...toRows('mgr','manager'),...toRows('kit','kitchen'),...toRows('bar','bar'),...toRows('waitph','waitph')];
   const{error}=await SB.from('payroll').upsert(rows,{onConflict:'staff_name,month'});
   setSyncStatus(error?'err':'ok');
   showToast(error?'Error saving payroll.':'Payroll saved to database ✓',!!error);
@@ -3626,9 +3674,11 @@ function updWaiter(name,field,val){
 }
 
 function renderPay(){
-  renderPaySec(payD.mgr,'mgrPay','mgrTot');
-  renderPaySec(payD.kit,'kitPay','kitTot');
+  renderPaySec(payD.mgr||[],'mgrPay','mgrTot');
+  renderPaySec(payD.kit||[],'kitPay','kitTot');
+  renderPaySec(payD.bar||[],'barPay','barTot');
   renderWaiterPay();
+  renderPaySec(payD.waitph||[],'waitphPay','waitphTot');
 }
 
 // ═══════════════════════════════════════════
