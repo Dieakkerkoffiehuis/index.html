@@ -3541,7 +3541,7 @@ function renderPaySec(list,cId,tId){
         ${inp('breakage',breakage,'Breakage')}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem;min-width:80px">
-        <div class="pnet">${net>0?'R '+net.toFixed(2):'—'}</div>
+        <div class="pnet" id="pnet-${cId}-${i}">${net>0?'R '+net.toFixed(2):'—'}</div>
         <button onclick="openPayslip('${nm}','${grp}')" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;cursor:pointer;color:var(--burg);white-space:nowrap">🖨️ Slip</button>
       </div>
     </div>`;
@@ -3549,16 +3549,22 @@ function renderPaySec(list,cId,tId){
   updPTot(list,tId);
 }
 
-function updH(c,i,v,t){const l=getPayList(c);l[i].hrs=parseFloat(v)||0;renderPaySec(l,c,t);}
-function updR(c,i,v,t){if(!canER())return;const l=getPayList(c);l[i].hourly_rate=parseFloat(v)||0;renderPaySec(l,c,t);}
-function updKitField(c,i,field,v,t){const l=getPayList(c);l[i][field]=parseFloat(v)||0;updPTot(l,t);}
+function calcRowNet(s){
+  const g=(s.hrs||0)*(s.hourly_rate||0);
+  if(g<=0) return 0;
+  const uif=Math.round(g*0.01*100)/100;
+  return g-uif-(s.taxi||0)-(s.borrowed||0)-(s.saccawu||0)-(s.breakage||0);
+}
+function refreshRowNet(c,i){
+  const s=getPayList(c)[i];
+  const el=document.getElementById('pnet-'+c+'-'+i);
+  if(el){const n=calcRowNet(s);el.textContent=n>0?'R '+n.toFixed(2):'—';}
+}
+function updH(c,i,v,t){const l=getPayList(c);l[i].hrs=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
+function updR(c,i,v,t){if(!canER())return;const l=getPayList(c);l[i].hourly_rate=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
+function updKitField(c,i,field,v,t){const l=getPayList(c);l[i][field]=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
 function updPTot(l,t){
-  const s=l.reduce((sum,x)=>{
-    const g=(x.hrs||0)*(x.hourly_rate||0);
-    if(g<=0) return sum;
-    const uif=Math.round(g*0.01*100)/100;
-    return sum+g-uif-(x.taxi||0)-(x.borrowed||0)-(x.saccawu||0)-(x.breakage||0);
-  },0);
+  const s=l.reduce((sum,x)=>sum+Math.max(0,calcRowNet(x)),0);
   document.getElementById(t).textContent='R '+s.toFixed(2);
 }
 function editPayName(cId,i,tId){const l=getPayList(cId);const v=prompt(`Edit name for "${l[i].name}":`,l[i].name);if(!v||!v.trim())return;l[i].name=v.trim();renderPaySec(l,cId,tId);showToast(`Updated to "${v.trim()}" ✓`);}
