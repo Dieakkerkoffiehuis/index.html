@@ -531,7 +531,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
             <div style="font-size:0.7rem;color:var(--muted);margin-top:0.15rem" id="stDateLabel"></div>
           </div>
           <div class="brow">
-            <a href="Stock_Take_Template_Weekly.pdf" download class="btn bs bsm" style="text-decoration:none">📥 Download Form</a>
+            <button class="btn bs bsm" onclick="printStockTemplate()">📥 Download Form</button>
             <button class="btn bs bsm" onclick="openPhotoST()">📸 Scan Form</button>
             <button class="btn bp bsm" onclick="submitST()">Submit ✓</button>
           </div>
@@ -1509,7 +1509,7 @@ ALTER TABLE payroll ADD CONSTRAINT payroll_staff_month_group_unique UNIQUE (staf
           <div id="aiKeyStatus" style="font-size:0.78rem;padding:0.5rem 0.7rem;border-radius:8px;display:none"></div>
           <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap">
             <button class="btn bp bsm" onclick="saveAnthropicKey()">💾 Save Key</button>
-            <a href="Stock_Take_Template_Weekly.pdf" download class="btn bs bsm" style="text-decoration:none">📥 Download Stock Form (PDF)</a>
+            <button class="btn bs bsm" onclick="printStockTemplate()">📥 Download Stock Form</button>
           </div>
         </div>
       </div>
@@ -5326,6 +5326,170 @@ function initAuditDates(){
   const auTo=document.getElementById('auTo');
   if(auFrom&&!auFrom.value) auFrom.value=f;
   if(auTo&&!auTo.value) auTo.value=t;
+}
+
+// ── STOCK TAKE TEMPLATE PRINT ────────────────────────────────────────────
+function printStockTemplate(){
+  const DIVS=[
+    {name:'KITCHEN — MEAT & PROTEIN', emoji:'🥩', items:[
+      'Chicken Breast Fillet','Chicken Wings','Chicken Liver',
+      'Biltong 500g','Skilpad 80g','Beef Stirfry','Patties 150g',
+      '300g Rump Steak *','200g Rump Steak *','350g T-Bene','Maalvleis 1kg',
+      'Boerewors 10x40g','Varknek 180g','Minute Steak 100g',
+      'Ribs MEA5919','Smoked Salmon','Hickory Ham','Sandwich Ham',
+      'Pork Sausage','Viennas','Cordon Bleu','Bone',
+    ]},
+    {name:'KITCHEN — PRODUCE & DAIRY', emoji:'🥦', items:[
+      'Mushrooms 5kg','Patats','Spinasie','Pampoen',
+      'Pears (each)','Apples (each)','Paw Paw (each)','Banana (pack)',
+      'Cherry Tomato (pack)','Parsley (pack)','Spring Onion (pack)',
+      'Green Pepper (each)','Red Pepper (each)','Red Onion (each)',
+      'Pineapple (each)','Red Cabbage (each)','White Cabbage (each)',
+      'Carrots (pack)','Cucumber (each)','Mixed Lettuce (each)',
+      'Lettuce (each)','Tomato (Box)','Beetroot (box)',
+      'Onions (Bag)','Potatoes (Bag)','Lemons (Box)',
+      'Avocados green','Avocados orange',
+      'Eiers','Karringmelk','Sliced Cheese','Mini Butter',
+      'Feta','Halloumi','Mozzarella','Cheddar',
+      'Meadowland','Romi','Cream Cheese 2.5kg',
+    ]},
+    {name:'KITCHEN — FROZEN & BAKERY', emoji:'🧊', items:[
+      'Cheesy Russian','Soft Serve','Battered Hake','Hash Browns',
+      'Waffle Mix','Bakels Delight','Tramezinni','English Muffins',
+      'Panini 150g','Ciabatta','Rye Bread','Wraps',
+    ]},
+    {name:'DRY STORE', emoji:'🏪', items:[
+      'Panko Crumbs','Palm Oil','Sunflower Oil',
+      'French Dressing 5Lt','Buffalo Wings Sauce 5Lt','Garlic & Lemon Sauce 5Lt',
+      'Sauce Soya','Ginger','Coconut','Salt - table','Salt - Sea coarse',
+      'Calamata Olywe','Muesli','Balsamic Vinegar','Olive Oil','Stroop',
+      'Sugar Brown 1kg','Chip White','Rys 2.5kg','Macaroni','Lasagne',
+      'Chip Spice','Cinnamon','Baked Beans','Cocoa 250g','Cream Bombs',
+      'Heuning','Chicken Spice','Chocolate Mousse','Icing Sugar',
+      'Cake Flour 12.5kg','Maizina','Baking Powder',
+      'Tobasco Green','Tobasco Red','Paprika','Garlic','Sprinkle Nuts',
+      '100s & 1000s','Hollandaise','Peanut Butter','B-Well Mayo 20L',
+      'Sweet Chilli','Chutney 6.25kg','Basil Pesto','Capers',
+      'Jalapeno','Peppadews','Tomato Puree 410g','Sundried Tomato',
+      'Jam Strawberry','Jam Apricot','Condensed Milk','Caramel Treat',
+    ]},
+    {name:'BAR — DRINKS & SPIRITS', emoji:'🍺', items:[
+      'Amstel','Heineken','Windhoek Draught','Windhoek Lager',
+      'Castle Lite','Flying Fish Lemon','Savanna Dry','Savanna Light',
+      'Hunters Dry','Hunters Gold','Corona','Bavaria Non Alc.',
+      'Amarula','Kahlua','Jack Daniels','J&B','Jameson',
+      'Pushkin Vodka','Tequila','Richelieu','Klipdrift Premium',
+      'Bacardi Rum','Gordons Gin','Bombay Sapphire Gin',
+    ]},
+    {name:'BEVERAGE STATION', emoji:'☕', items:[
+      'Salted Caramel Stroop','Caramel Stroop','Vanilla Stroop',
+      'Hazelnut Stroop','Strawberry Stroop','Pineapple Stroop',
+      'Pina Colada Stroop','Banana Stroop','Ginger & Peach Stroop',
+      'Strawberry/Orange Stroop','Pear Elderflower Stroop',
+      'Smoothie Stroop Strawberry','Smoothie Stroop Mixed Berry',
+      'Smoothie Stroop Mango Madness',
+      'Brazillian Hazelnut','Chai Tea','Vanilla Mocha',
+      'Aero Peppermint','Hot Chocolate','White Chocolate',
+      'Toffee Caramel','Rooibos Chai','Coffee Freezo','Milky Bar',
+      'Orange 5L','Guava 1.5L','Strawberry 5L','Cocktail 5L',
+      'Smoothie Berries','Smoothie Mango & Passion',
+      'Espresso Beans','Filter Coffee',
+    ]},
+  ];
+  const DAYS=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+
+  const sectionHtml=DIVS.map(d=>{
+    const rows=d.items.map((item,i)=>`
+      <tr class="${i%2===0?'even':''}">
+        <td class="item">${item}</td>
+        ${DAYS.map(()=>'<td class="day"></td>').join('')}
+        <td class="notes"></td>
+      </tr>`).join('');
+    return `
+      <div class="section">
+        <table>
+          <thead>
+            <tr class="sec-head">
+              <th class="item-h">${d.emoji} ${d.name}</th>
+              ${DAYS.map(dy=>`<th class="day-h">${dy}</th>`).join('')}
+              <th class="notes-h">NOTES</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+
+  const html=`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Die Akker Koffiehuis — Weekly Stock Take</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Karla',Arial,sans-serif;color:#1a0d10;background:#fff;padding:10mm;}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:22pt;color:#7a1528;letter-spacing:0.05em;}
+.header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #7a1528;padding-bottom:4mm;margin-bottom:5mm;}
+.meta{font-size:8pt;color:#9a8070;text-align:right;}
+.meta-line{display:flex;gap:20mm;font-size:8pt;color:#1a0d10;margin-bottom:6mm;}
+.meta-line span{border-bottom:1px solid #aaa;min-width:55mm;padding-bottom:1mm;}
+.meta-line label{color:#9a8070;font-size:7pt;margin-right:2mm;}
+.section{margin-bottom:4mm;}
+table{width:100%;border-collapse:collapse;font-size:8pt;}
+.sec-head th{background:#7a1528;color:#fff;padding:3mm 2mm;text-align:center;border:1px solid #5a1020;font-family:'Bebas Neue',sans-serif;font-size:9pt;letter-spacing:0.05em;}
+.sec-head .item-h{text-align:left;padding-left:3mm;width:28%;}
+.day-h{width:8%;}
+.notes-h{width:12%;}
+td{border:0.5pt solid #d0c0b8;padding:2mm 2mm;}
+td.item{font-size:7.5pt;font-weight:600;padding-left:3mm;width:28%;}
+td.day{width:8%;background:#fdf9f6;}
+td.notes{width:12%;background:#fffcf8;}
+tr.even td{background:#f7f1ec;}
+tr.even td.day{background:#f2ece6;}
+tr.even td.notes{background:#faf6f2;}
+.footer{margin-top:5mm;border-top:0.5pt solid #d0c0b8;padding-top:3mm;display:flex;justify-content:space-between;font-size:7pt;color:#9a8070;}
+.no-print{text-align:center;padding:8mm;background:#faf7f4;}
+.no-print button{background:#7a1528;color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:700;font-family:'Karla',sans-serif;margin:4px;}
+.no-print .note{font-size:11px;color:#9a8070;margin-top:6px;}
+@media print{
+  body{padding:8mm;}
+  .no-print{display:none;}
+  .section{page-break-inside:avoid;}
+  @page{size:A4 landscape;margin:8mm;}
+}
+</style>
+</head>
+<body>
+<div class="no-print">
+  <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+  <button onclick="window.close()" style="background:#e8ddd5;color:#1a0d10">✕ Close</button>
+  <div class="note">To save as PDF: click Print → change destination to "Save as PDF"</div>
+</div>
+<div class="header">
+  <div>
+    <div class="brand">DIE AKKER KOFFIEHUIS</div>
+    <div style="font-size:8pt;color:#9a8070">Weekly Stock Take Sheet</div>
+  </div>
+  <div class="meta">Print · Count · Sign off</div>
+</div>
+<div class="meta-line">
+  <span><label>Week of:</label></span>
+  <span><label>Completed by:</label></span>
+  <span><label>Manager sign-off:</label></span>
+</div>
+${sectionHtml}
+<div class="footer">
+  <span>Die Akker Koffiehuis — Potchefstroom</span>
+  <span>Instructions: Count each item at close of day · Circle anything below minimum level · Upload a photo to the app</span>
+  <span>Printed: ${new Date().toLocaleDateString('en-ZA')}</span>
+</div>
+</body>
+</html>`;
+
+  const w=window.open('','_blank');
+  if(w){ w.document.write(html); w.document.close(); }
+  else showToast('Please allow popups for this page, then try again.',true);
 }
 
 // ── ANTHROPIC API KEY ─────────────────────────────────────────────────────
