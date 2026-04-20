@@ -1040,7 +1040,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
         </div>
         <div class="stitle">Kitchen Staff Payroll</div>
         <div class="card">
-          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">🔵 Blue = hourly rate (owner can edit) · Enter hours worked this month</div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">🔵 Blue = hourly rate (owner can edit) · Hours auto-filled from Shift Roster · 🚕 Taxi R25/evening shift · 🍽️ Breakage R5/shift (auto-calculated)</div>
           <div id="kitPay"></div>
           <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
             <span style="font-weight:700;color:var(--green)">Total Kitchen Net Pay:</span>
@@ -3456,20 +3456,33 @@ async function syncRosterHoursToPayroll(){
     const {data}=await SB.from('roster').select('*').gte('week_start',monthStart).lte('week_start',monthEnd);
     if(!data||!data.length) return;
 
-    // Sum effective hours per staff for the month
+    // Sum effective hours, count evening shifts and total shifts per staff
     const hoursByStaff={};
+    const eveningShiftsByStaff={};
+    const totalShiftsByStaff={};
     data.forEach(r=>{
       const hrs=calcEffectiveHours(r.start_time,r.end_time,r.break_hours,r.day_index,{ph:false});
       if(hrs>0){
         hoursByStaff[r.staff_name]=(hoursByStaff[r.staff_name]||0)+hrs;
+        totalShiftsByStaff[r.staff_name]=(totalShiftsByStaff[r.staff_name]||0)+1;
+      }
+      // Evening shift = start time 14:00 or later
+      if(r.start_time && hrs>0){
+        const [h]=r.start_time.split(':').map(Number);
+        if(h>=14) eveningShiftsByStaff[r.staff_name]=(eveningShiftsByStaff[r.staff_name]||0)+1;
       }
     });
 
-    // Update payD with these hours
+    // Update payD: hours + auto-deductions for kitchen staff
+    // Taxi: R25 per evening shift | Breakage: R5 per shift
     ['mgr','kit','bar','waitph'].forEach(grp=>{
       (payD[grp]||[]).forEach(s=>{
         if(hoursByStaff[s.name]!==undefined){
           s.hrs=parseFloat(hoursByStaff[s.name].toFixed(1));
+        }
+        if(grp==='kit'){
+          s.taxi=(eveningShiftsByStaff[s.name]||0)*25;
+          s.breakage=(totalShiftsByStaff[s.name]||0)*5;
         }
       });
     });
