@@ -582,6 +582,13 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
           </div>
           <div id="pendingOrdersList"><div style="text-align:center;padding:1rem;color:var(--muted);font-size:0.82rem">Loading...</div></div>
         </div>
+        <!-- Awaiting Delivery (owner only) -->
+        <div id="awaitingDeliverySection" style="display:none;margin-bottom:1.2rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.05em;color:var(--burg)">📦 AWAITING DELIVERY <span id="awaitingDeliveryBadge" style="font-size:0.7rem;background:var(--burg);color:#fff;border-radius:50%;padding:0.1rem 0.4rem;vertical-align:middle"></span></div>
+          </div>
+          <div id="awaitingDeliveryList"><div style="text-align:center;padding:1rem;color:var(--muted);font-size:0.82rem">Loading...</div></div>
+        </div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
           <div style="font-size:0.82rem;color:var(--muted)">Select a supplier to build and send an order.</div>
           <button class="btn bs bsm" onclick="openSupplierManager()" id="editSuppliersBtn">⚙️ Edit Suppliers</button>
@@ -2597,60 +2604,118 @@ async function ordDoNotOrder(){
 async function loadPendingOrders(){
   const el=document.getElementById('pendingOrdersList');
   const badge=document.getElementById('pendingOrdersBadge');
+  const awEl=document.getElementById('awaitingDeliveryList');
+  const awBadge=document.getElementById('awaitingDeliveryBadge');
+  const awSec=document.getElementById('awaitingDeliverySection');
   if(!el) return;
   try{
+    // Load pending/do_not_order
     const {data,error}=await SB.from('pending_orders').select('*').in('status',['pending','do_not_order']).order('created_at',{ascending:false});
-    // Populate cache so openEditStockCount can safely look up by ID
+    // Load approved (awaiting delivery)
+    const {data:apprData}=await SB.from('pending_orders').select('*').eq('status','approved').order('created_at',{ascending:false});
+    // Populate caches
     pendingOrderCache={};
     (data||[]).forEach(o=>{ pendingOrderCache[o.id]=o; });
-    if(error||!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">No pending orders.</div>';if(badge)badge.textContent='';return;}
-    const pendCount=data.filter(o=>o.status==='pending').length;
-    if(badge) badge.textContent=pendCount||'';
-    el.innerHTML=data.map(o=>{
-      const inf=SUPS[o.supplier]||{};
-      const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
-      const dt=new Date(o.created_at||o.order_date+'T00:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
-      const isDNO=o.status==='do_not_order';
-      // Two-column table: item | stock on hand | order qty
-      const tableRows=(o.items||[]).map(it=>{
-        const low=it.ml!=null&&it.soh<it.ml;
-        return `<tr>
-          <td style="padding:0.3rem 0.5rem;font-size:0.78rem">${it.n}</td>
-          <td style="padding:0.3rem 0.5rem;text-align:center;font-size:0.78rem;${low?'color:var(--red);font-weight:700':'color:var(--muted)'}">${it.soh!=null?it.soh:'—'}${it.ml!=null?' / '+it.ml:''}</td>
-          <td style="padding:0.3rem 0.5rem;text-align:center;font-size:0.78rem;font-weight:700;color:${it.qty>0?'var(--burg)':'var(--muted)'}">${it.qty>0?it.qty:'—'}</td>
-        </tr>`;
+    approvedOrderCache={};
+    (apprData||[]).forEach(o=>{ approvedOrderCache[o.id]=o; });
+
+    // ── Pending section ──
+    if(error||!data||!data.length){
+      el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">No pending orders.</div>';
+      if(badge)badge.textContent='';
+    } else {
+      const pendCount=data.filter(o=>o.status==='pending').length;
+      if(badge) badge.textContent=pendCount||'';
+      el.innerHTML=data.map(o=>{
+        const inf=SUPS[o.supplier]||{};
+        const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
+        const dt=new Date(o.created_at||o.order_date+'T00:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
+        const isDNO=o.status==='do_not_order';
+        const tableRows=(o.items||[]).map(it=>{
+          const low=it.ml!=null&&it.soh<it.ml;
+          return `<tr>
+            <td style="padding:0.3rem 0.5rem;font-size:0.78rem">${it.n}</td>
+            <td style="padding:0.3rem 0.5rem;text-align:center;font-size:0.78rem;${low?'color:var(--red);font-weight:700':'color:var(--muted)'}">${it.soh!=null?it.soh:'—'}${it.ml!=null?' / '+it.ml:''}</td>
+            <td style="padding:0.3rem 0.5rem;text-align:center;font-size:0.78rem;font-weight:700;color:${it.qty>0?'var(--burg)':'var(--muted)'}">${it.qty>0?it.qty:'—'}</td>
+          </tr>`;
+        }).join('');
+        return `<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem;${isDNO?'opacity:0.7':''}">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem">
+            <div>
+              <div style="font-weight:700;font-size:0.9rem">${mi[inf.m]||'📱'} ${o.supplier} ${isDNO?'<span class="bdg bgo" style="font-size:0.6rem">No Order</span>':'<span class="bdg bgb" style="font-size:0.6rem">Pending</span>'}</div>
+              <div style="font-size:0.7rem;color:var(--muted)">By ${o.submitted_by} · ${dt}</div>
+            </div>
+            <div style="display:flex;gap:0.4rem;flex-shrink:0;flex-wrap:wrap">
+              ${!isDNO?`<button onclick="approvePendingOrder('${o.id}')" class="btn bgn bsm" style="font-size:0.7rem">✅ Approve & Send</button>`:''}
+              <button onclick="openEditStockCount('${o.id}')" class="btn bs bsm" style="font-size:0.7rem">✏️ Edit Stock</button>
+              <button onclick="rejectPendingOrder('${o.id}')" class="btn bs bsm" style="font-size:0.7rem;color:var(--red)">✗ Dismiss</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="background:var(--surface)">
+                <th style="padding:0.3rem 0.5rem;text-align:left;font-size:0.65rem;color:var(--muted)">ITEM</th>
+                <th style="padding:0.3rem 0.5rem;text-align:center;font-size:0.65rem;color:var(--muted)">ON HAND / MIN</th>
+                <th style="padding:0.3rem 0.5rem;text-align:center;font-size:0.65rem;color:var(--muted)">ORDER QTY</th>
+              </tr></thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </div>
+        </div>`;
       }).join('');
-      return `<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem;${isDNO?'opacity:0.7':''}">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem">
-          <div>
-            <div style="font-weight:700;font-size:0.9rem">${mi[inf.m]||'📱'} ${o.supplier} ${isDNO?'<span class="bdg bgo" style="font-size:0.6rem">No Order</span>':'<span class="bdg bgb" style="font-size:0.6rem">Pending</span>'}</div>
-            <div style="font-size:0.7rem;color:var(--muted)">By ${o.submitted_by} · ${dt}</div>
-          </div>
-          <div style="display:flex;gap:0.4rem;flex-shrink:0;flex-wrap:wrap">
-            ${!isDNO?`<button onclick="approvePendingOrder('${o.id}')" class="btn bgn bsm" style="font-size:0.7rem">✅ Approve & Send</button>`:''}
-            <button onclick="openEditStockCount('${o.id}')" class="btn bs bsm" style="font-size:0.7rem">✏️ Edit Stock</button>
-            <button onclick="rejectPendingOrder('${o.id}')" class="btn bs bsm" style="font-size:0.7rem;color:var(--red)">✗ Dismiss</button>
-          </div>
-        </div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse">
-            <thead><tr style="background:var(--surface)">
-              <th style="padding:0.3rem 0.5rem;text-align:left;font-size:0.65rem;color:var(--muted)">ITEM</th>
-              <th style="padding:0.3rem 0.5rem;text-align:center;font-size:0.65rem;color:var(--muted)">ON HAND / MIN</th>
-              <th style="padding:0.3rem 0.5rem;text-align:center;font-size:0.65rem;color:var(--muted)">ORDER QTY</th>
-            </tr></thead>
-            <tbody>${tableRows}</tbody>
-          </table>
-        </div>
-      </div>`;
-    }).join('');
-  }catch(e){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">Run SQL setup in Settings to enable pending orders.</div>';if(badge)badge.textContent='';}
+    }
+
+    // ── Awaiting Delivery section ──
+    if(awSec) awSec.style.display=(apprData&&apprData.length)?'block':'none';
+    if(awEl){
+      if(!apprData||!apprData.length){
+        awEl.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">No orders awaiting delivery.</div>';
+        if(awBadge) awBadge.textContent='';
+      } else {
+        if(awBadge) awBadge.textContent=apprData.length||'';
+        awEl.innerHTML=apprData.map(o=>{
+          const inf=SUPS[o.supplier]||{};
+          const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
+          const dt=new Date(o.created_at||o.order_date+'T00:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
+          const tableRows=(o.items||[]).filter(it=>it.qty>0).map(it=>`<tr>
+            <td style="padding:0.28rem 0.5rem;font-size:0.78rem">${it.n}</td>
+            <td style="padding:0.28rem 0.5rem;text-align:center;font-size:0.78rem;font-weight:700;color:var(--burg)">${it.qty}</td>
+          </tr>`).join('');
+          return `<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem;border-left:3px solid var(--burg)">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem">
+              <div>
+                <div style="font-weight:700;font-size:0.9rem">${mi[inf.m]||'📱'} ${o.supplier} <span class="bdg" style="font-size:0.6rem;background:#f0a000;color:#fff">Sent — Awaiting Delivery</span></div>
+                <div style="font-size:0.7rem;color:var(--muted)">By ${o.submitted_by} · ${dt}</div>
+              </div>
+              <div style="display:flex;gap:0.4rem;flex-shrink:0;flex-wrap:wrap">
+                <button onclick="openDeliveryCheck('${o.id}')" class="btn bsm" style="font-size:0.7rem;background:var(--burg);color:#fff;border-color:var(--burg)">📦 Check Delivery</button>
+                <button onclick="markDelivered('${o.id}')" class="btn bgn bsm" style="font-size:0.7rem">✅ All Good</button>
+              </div>
+            </div>
+            ${tableRows?`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+              <thead><tr style="background:var(--surface)">
+                <th style="padding:0.28rem 0.5rem;text-align:left;font-size:0.65rem;color:var(--muted)">ITEM ORDERED</th>
+                <th style="padding:0.28rem 0.5rem;text-align:center;font-size:0.65rem;color:var(--muted)">QTY</th>
+              </tr></thead>
+              <tbody>${tableRows}</tbody>
+            </table></div>`:''}
+          </div>`;
+        }).join('');
+      }
+    }
+  }catch(e){
+    el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem">Run SQL setup in Settings to enable pending orders.</div>';
+    if(badge)badge.textContent='';
+  }
 }
 
 // Edit stock count in-place (owner correction)
 // Safe: store order data in a global cache by ID — no data in onclick attributes
-let pendingOrderCache={};  // populated in loadPendingOrders
+let pendingOrderCache={};   // populated in loadPendingOrders
+let approvedOrderCache={};  // approved (awaiting delivery) orders
 let editingOrderId=null;
+let delivCheckId=null;
+let delivCheckItems=[];  // [{status:'ok'|'missing'|'wrong', note:''}]
 
 function openEditStockCount(id){
   editingOrderId=id;
@@ -2717,6 +2782,95 @@ async function saveEditedStockCount(){
     setSyncStatus('err');
     showToast('Save failed — check connection.',true);
   }
+}
+
+// ── DELIVERY CHECKLIST ────────────────────────────────────────────────────
+function openDeliveryCheck(id){
+  delivCheckId=id;
+  const data=approvedOrderCache[id];
+  if(!data){showToast('Reload and try again.',true);return;}
+  const items=(data.items||[]).filter(it=>it.qty>0);
+  // Initialise state: all items received by default
+  delivCheckItems=items.map(()=>({status:'ok',note:''}));
+  const rows=items.map((it,i)=>`
+    <div id="dci-${i}" style="padding:0.5rem 0;border-bottom:1px solid var(--surface)">
+      <div style="font-size:0.83rem;font-weight:600;margin-bottom:0.4rem">${it.n} <span style="font-size:0.68rem;color:var(--muted);font-weight:400">· qty ordered: ${it.qty}</span></div>
+      <div style="display:flex;gap:0.35rem;flex-wrap:wrap">
+        <button id="dcs-ok-${i}" onclick="setDelivStatus(${i},'ok')" class="btn bsm" style="font-size:0.72rem;background:#1a7a45;color:#fff;border-color:#1a7a45">✅ Received</button>
+        <button id="dcs-missing-${i}" onclick="setDelivStatus(${i},'missing')" class="btn bsm" style="font-size:0.72rem">❌ Not Delivered</button>
+        <button id="dcs-wrong-${i}" onclick="setDelivStatus(${i},'wrong')" class="btn bsm" style="font-size:0.72rem">⚠️ Wrong Item</button>
+      </div>
+      <div id="dcn-${i}" style="display:none;margin-top:0.4rem">
+        <input type="text" id="dcnn-${i}" placeholder="Describe the issue (e.g. wrong size, damaged)..."
+          style="width:100%;border:1.5px solid #f0a000;border-radius:8px;padding:0.35rem 0.6rem;font-size:0.8rem;font-family:'Karla',sans-serif;background:var(--cream);box-sizing:border-box;outline:none"
+          oninput="if(delivCheckItems[${i}])delivCheckItems[${i}].note=this.value">
+      </div>
+    </div>`).join('');
+  const html=`<div class="card" id="delivCheckCard" style="padding:0.9rem 1rem;margin-bottom:0.8rem;border:2px solid var(--burg)">
+    <div style="font-weight:700;font-size:0.95rem;margin-bottom:0.25rem;color:var(--burg)">📦 Delivery Check — ${data.supplier}</div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Tap each item to mark its status. Items marked Missing or Wrong will be included in the report to the supplier.</div>
+    ${rows}
+    <div style="display:flex;gap:0.5rem;margin-top:1rem;flex-wrap:wrap">
+      <button class="btn bsm" style="flex:1;min-width:160px;background:var(--burg);color:#fff;border-color:var(--burg);font-size:0.78rem" onclick="sendDeliveryReport()">📤 Report Issues to Supplier</button>
+      <button class="btn bgn bsm" style="flex:1;min-width:140px;font-size:0.78rem" onclick="markDelivered('${id}')">✅ Mark as Delivered</button>
+      <button class="btn bs bsm" style="font-size:0.78rem" onclick="document.getElementById('delivCheckCard')?.remove();delivCheckId=null">Cancel</button>
+    </div>
+  </div>`;
+  document.getElementById('delivCheckCard')?.remove();
+  const awEl=document.getElementById('awaitingDeliveryList');
+  if(awEl){ awEl.insertAdjacentHTML('afterbegin',html); awEl.firstElementChild?.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+}
+
+function setDelivStatus(i,status){
+  if(!delivCheckItems[i]) return;
+  delivCheckItems[i].status=status;
+  const styles={
+    ok:  {active:{bg:'#1a7a45',cl:'#fff',bc:'#1a7a45'}, inactive:{bg:'var(--surface)',cl:'var(--text)',bc:'var(--border)'}},
+    missing:{active:{bg:'var(--red)',cl:'#fff',bc:'var(--red)'}, inactive:{bg:'var(--surface)',cl:'var(--text)',bc:'var(--border)'}},
+    wrong:  {active:{bg:'#f0a000',cl:'#fff',bc:'#f0a000'}, inactive:{bg:'var(--surface)',cl:'var(--text)',bc:'var(--border)'}}
+  };
+  ['ok','missing','wrong'].forEach(s=>{
+    const btn=document.getElementById('dcs-'+s+'-'+i);
+    if(!btn) return;
+    const st=s===status?styles[s].active:styles[s].inactive;
+    btn.style.background=st.bg; btn.style.color=st.cl; btn.style.borderColor=st.bc;
+  });
+  const noteDiv=document.getElementById('dcn-'+i);
+  if(noteDiv) noteDiv.style.display=status==='wrong'?'block':'none';
+  if(status!=='wrong'){ delivCheckItems[i].note=''; const inp=document.getElementById('dcnn-'+i); if(inp) inp.value=''; }
+}
+
+function sendDeliveryReport(){
+  const id=delivCheckId;
+  if(!id){showToast('No order selected.',true);return;}
+  const data=approvedOrderCache[id];
+  if(!data){showToast('Order data missing — reload.',true);return;}
+  const orderedItems=(data.items||[]).filter(it=>it.qty>0);
+  const issues=delivCheckItems.map((dc,i)=>({...dc,name:orderedItems[i]?.n||'',qty:orderedItems[i]?.qty||''})).filter(dc=>dc.status!=='ok');
+  if(!issues.length){showToast('No issues to report — all items are marked as received.',true);return;}
+  const inf=SUPS[data.supplier]||{};
+  const greet=inf.g||'Good morning';
+  const dt=new Date(data.created_at||data.order_date+'T00:00:00').toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  let msg=`${greet},\n\nWe need to follow up on our delivery from ${dt}.\n\nThe following items had issues:\n\n`;
+  issues.forEach(iss=>{
+    if(iss.status==='missing') msg+=`❌ ${iss.name} (qty: ${iss.qty}) — Not delivered\n`;
+    else if(iss.status==='wrong') msg+=`⚠️ ${iss.name} (qty: ${iss.qty}) — Wrong item${iss.note?': '+iss.note:''}\n`;
+  });
+  msg+=`\nPlease advise or correct at your earliest convenience.\n\nThank you,\nDie Akker Koffiehuis`;
+  actSup=data.supplier;
+  ordSendDirect(msg);
+}
+
+async function markDelivered(id){
+  try{
+    const sup=approvedOrderCache[id]?.supplier||'supplier';
+    await SB.from('pending_orders').update({status:'delivered'}).eq('id',id);
+    document.getElementById('delivCheckCard')?.remove();
+    delivCheckId=null;
+    showToast(`${sup} delivery confirmed ✓`);
+    await logAudit('orders','Delivery Confirmed',`Marked ${sup} delivery as complete`);
+    loadPendingOrders();
+  }catch(e){showToast('Error updating order.',true);}
 }
 
 async function approvePendingOrder(id){
