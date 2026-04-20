@@ -531,6 +531,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
             <div style="font-size:0.7rem;color:var(--muted);margin-top:0.15rem" id="stDateLabel"></div>
           </div>
           <div class="brow">
+            <a href="Stock_Take_Template_Weekly.pdf" download class="btn bs bsm" style="text-decoration:none">📥 Download Form</a>
             <button class="btn bs bsm" onclick="openPhotoST()">📸 Scan Form</button>
             <button class="btn bp bsm" onclick="submitST()">Submit ✓</button>
           </div>
@@ -544,7 +545,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;}
           <option value="all">All Divisions</option>
           <option>Meat</option><option>Dairy</option><option>Produce</option>
           <option>Dry Goods</option><option>Bar</option><option>Bakery</option>
-          <option>Freezer</option><option>Cleaning</option>
+          <option>Frozen</option><option>Beverages</option>
         </select>
         <div class="sb2"><span>🔍</span><input type="text" id="stSrch" placeholder="Search items..." oninput="renderST()"></div>
         <div id="stList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading stock...</div></div>
@@ -1495,6 +1496,22 @@ ALTER TABLE payroll DROP CONSTRAINT IF EXISTS payroll_pkey;
 ALTER TABLE payroll ADD CONSTRAINT payroll_staff_month_group_unique UNIQUE (staff_name, month, group_type);</pre>
           <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('payrollColsSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
+        <div class="card" id="aiSettingsCard">
+          <div class="card-title">🤖 AI Photo Scan — API Key</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">The <strong>📸 Scan Form</strong> feature uses Claude AI to read handwritten stock counts from a photo of the printed form. Enter your Anthropic API key below to enable it.</div>
+          <div class="fg">
+            <label>Anthropic API Key</label>
+            <input type="password" id="anthropicKeyInput" placeholder="sk-ant-api03-..."
+              style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box"
+              oninput="localStorage.setItem('anthropicKey',this.value)">
+          </div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;margin-bottom:0.7rem">Get your API key at <strong>console.anthropic.com</strong> → API Keys. The key is stored only on this device.</div>
+          <div id="aiKeyStatus" style="font-size:0.78rem;padding:0.5rem 0.7rem;border-radius:8px;display:none"></div>
+          <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap">
+            <button class="btn bp bsm" onclick="saveAnthropicKey()">💾 Save Key</button>
+            <a href="Stock_Take_Template_Weekly.pdf" download class="btn bs bsm" style="text-decoration:none">📥 Download Stock Form (PDF)</a>
+          </div>
+        </div>
       </div>
 
     </div></div>
@@ -1513,7 +1530,7 @@ ALTER TABLE payroll ADD CONSTRAINT payroll_staff_month_group_unique UNIQUE (staf
         <select id="nsCat">
           <option>Meat</option><option>Dairy</option><option>Produce</option>
           <option>Dry Goods</option><option>Bar</option><option>Bakery</option>
-          <option>Freezer</option><option>Cleaning</option>
+          <option>Frozen</option><option>Beverages</option><option>Cleaning</option>
         </select>
       </div>
       <div class="fg"><label>Unit</label>
@@ -1871,6 +1888,9 @@ function go(id,el){
   if(id==='settings'){
     const sqlCard=document.getElementById('pendingOrdersSQL');
     if(sqlCard) sqlCard.style.display=CU?.role==='owner'?'block':'none';
+    // Populate AI key input from localStorage
+    const keyInp=document.getElementById('anthropicKeyInput');
+    if(keyInp){ const k=localStorage.getItem('anthropicKey')||''; keyInp.value=k; updateAiKeyStatus(k); }
   }
   closeSb();
 }
@@ -1881,7 +1901,7 @@ function closeSb(){ document.getElementById('sb').classList.remove('open'); docu
 // ═══════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════
-const CEM={Meat:'🥩',Dairy:'🧀',Produce:'🥦','Dry Goods':'🌾',Bar:'☕',Bakery:'🥐',Freezer:'❄️',Cleaning:'🧹'};
+const CEM={Meat:'🥩',Dairy:'🧀',Produce:'🥦','Dry Goods':'🌾',Bar:'🍺',Bakery:'🥐',Frozen:'❄️',Beverages:'☕',Cleaning:'🧹'};
 function renderDash(){
   const low=DB.filter(i=>i.stock<=i.min_level);
   document.getElementById('ds-tot').textContent=DB.length;
@@ -5308,6 +5328,37 @@ function initAuditDates(){
   if(auTo&&!auTo.value) auTo.value=t;
 }
 
+// ── ANTHROPIC API KEY ─────────────────────────────────────────────────────
+function saveAnthropicKey(){
+  const inp=document.getElementById('anthropicKeyInput');
+  if(!inp) return;
+  const k=inp.value.trim();
+  if(k) localStorage.setItem('anthropicKey',k);
+  else localStorage.removeItem('anthropicKey');
+  updateAiKeyStatus(k);
+  showToast(k?'API key saved ✓':'API key cleared');
+}
+function updateAiKeyStatus(key){
+  const el=document.getElementById('aiKeyStatus');
+  if(!el) return;
+  if(key&&key.startsWith('sk-ant')){
+    el.style.display='block';
+    el.style.background='var(--green-l)'; el.style.color='var(--green)';
+    el.style.border='1px solid var(--green-b)';
+    el.innerHTML='✅ API key set — 📸 Scan Form is enabled';
+  } else if(key){
+    el.style.display='block';
+    el.style.background='#fff8e1'; el.style.color='#b45309';
+    el.style.border='1px solid #fde68a';
+    el.innerHTML='⚠️ Key saved but looks unusual — make sure it starts with sk-ant…';
+  } else {
+    el.style.display='block';
+    el.style.background='var(--surface)'; el.style.color='var(--muted)';
+    el.style.border='1px solid var(--border)';
+    el.innerHTML='ℹ️ No key set — 📸 Scan Form will ask you to add a key first';
+  }
+}
+
 // ═══════════════════════════════════════════
 // PHOTO STOCKTAKE SCAN
 // ═══════════════════════════════════════════
@@ -5385,6 +5436,8 @@ function readPhotoFile(file){
 
 async function scanStPhoto(){
   if(!photoSTPhotos.length){ showToast('Add at least one photo first.',true); return; }
+  const apiKey = localStorage.getItem('anthropicKey')||'';
+  if(!apiKey){ showToast('Add your Anthropic API key in Settings → AI Photo Scan first.',true); return; }
   const btn = document.getElementById('scanBtn');
   const status = document.getElementById('scanStatus');
   btn.disabled=true;
@@ -5404,9 +5457,9 @@ async function scanStPhoto(){
   content.push({type:'text', text:`These photos show a restaurant stocktake form from Die Akker Koffiehuis.
 
 The form may be:
-- A landscape spreadsheet with item names written vertically in column headers and quantities written below in rows
+- A landscape spreadsheet with item names listed down the left and 7 day columns (Mon–Sun) across the top
 - OR a portrait form with items listed down the left and quantities in columns
-- The quantities may be written in the row labelled "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" or similar day labels
+- The quantities may be written in the column labelled "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" or similar day labels
 - Read the MOST RECENT day column that has numbers filled in (rightmost filled column)
 - Numbers may be written as fractions like "2½", decimals like "2.5", or whole numbers
 
@@ -5421,9 +5474,14 @@ Only include items where a quantity number is clearly visible. Match item names 
     status.textContent = `Reading ${photoSTPhotos.length} photo${photoSTPhotos.length>1?'s':''}...`;
     const response = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-haiku-4-5-20251001',
         max_tokens:2000,
         messages:[{role:'user', content}]
       })
@@ -8078,7 +8136,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
           <option value="all">All / Mixed</option>
           <option>Meat</option><option>Dairy</option><option>Produce</option>
           <option>Dry Goods</option><option>Bar</option><option>Bakery</option>
-          <option>Freezer</option><option>Cleaning</option>
+          <option>Frozen</option><option>Beverages</option>
         </select>
       </div>
       <div id="scanStatus" style="font-size:0.78rem;color:var(--muted);text-align:center;padding:0.3rem 0;display:none"></div>
