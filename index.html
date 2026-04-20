@@ -1649,13 +1649,19 @@ ALTER TABLE payroll ADD CONSTRAINT payroll_staff_month_group_unique UNIQUE (staf
       <div class="fg"><label>Date</label><input type="date" id="newDocDate"></div>
       <div class="fg"><label>Notes</label><input type="text" id="newDocNotes" placeholder="e.g. Original received, filed"></div>
       <!-- Warning-specific fields — shown only for warning types -->
-      <div id="warningFields" style="display:none">
-        <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--burg);margin:0.5rem 0 0.4rem">Warning Details</div>
-        <div class="fg"><label>Manager on Duty</label>
-          <select id="newDocManager" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"></select>
+      <div id="warningFields" style="display:none;background:var(--red-l);border:1px solid #e8c0c0;border-radius:10px;padding:0.9rem 1rem;margin-top:0.5rem">
+        <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--red);margin-bottom:0.7rem">⚠️ Warning Details</div>
+        <div class="fg">
+          <label>Offence Description <span style="color:var(--red)">*</span></label>
+          <textarea id="newDocReason" rows="4" placeholder="Describe the offence in full detail — what happened, when, and any previous incidents..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none;resize:vertical;box-sizing:border-box"></textarea>
         </div>
-        <div class="fg"><label>Witness Name</label><input type="text" id="newDocWitness" placeholder="e.g. Sipho Ndlovu"></div>
-        <div class="fg"><label>Reason for Warning</label><input type="text" id="newDocReason" placeholder="e.g. Late arrival, 3rd incident"></div>
+        <div class="fg2">
+          <div class="fg"><label>Manager on Duty <span style="color:var(--red)">*</span></label>
+            <select id="newDocManager" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></select>
+          </div>
+          <div class="fg"><label>Witness Name <span style="color:var(--red)">*</span></label>
+            <input type="text" id="newDocWitness" placeholder="Full name of witness"></div>
+        </div>
       </div>
       <div class="fg"><label>Upload File (optional)</label><input type="file" id="newDocFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.82rem;width:100%"></div>
       <button class="btn bp bsm" id="addDocBtn" onclick="saveDoc()" style="width:100%;margin-top:0.2rem">Add Document</button>
@@ -4521,8 +4527,8 @@ function renderDocLog(nm){
   el.innerHTML=docs.map(d=>{
     const isWarning=['Verbal Warning','Written Warning','Final Warning'].includes(d.doc_type);
     const notesStr=d.notes?` · ${d.notes}`:'';
-    const mgrStr=d.manager_on_duty?`<div style="font-size:0.7rem;color:var(--muted);margin-top:0.2rem">👔 Manager: <strong>${d.manager_on_duty}</strong>${d.witness?' · Witness: <strong>'+d.witness+'</strong>':''}</div>`:'';
-    const reasonStr=d.reason?`<div style="font-size:0.7rem;color:var(--muted)">Reason: ${d.reason}</div>`:'';
+    const mgrStr=d.manager_on_duty?`<div style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;display:flex;gap:1rem;flex-wrap:wrap"><span>👔 <strong>${d.manager_on_duty}</strong></span>${d.witness?`<span>👁 Witness: <strong>${d.witness}</strong></span>`:''}</div>`:'';
+    const reasonStr=d.reason?`<div style="font-size:0.8rem;color:var(--text);background:var(--red-l);border-left:3px solid var(--red);border-radius:0 6px 6px 0;padding:0.5rem 0.7rem;margin:0.4rem 0;white-space:pre-wrap">${d.reason}</div>`:'';
     return `<div class="doc-log-item" style="${isWarning?'border-left:3px solid var(--red);padding-left:0.7rem':''}">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div class="doc-log-type">${DOC_ICONS[d.doc_type]||'📋'} ${d.doc_type}</div>
@@ -4545,6 +4551,10 @@ async function saveDoc(){
   const manager_on_duty=isWarning?document.getElementById('newDocManager')?.value||'':null;
   const witness=isWarning?document.getElementById('newDocWitness')?.value.trim()||'':null;
   const reason=isWarning?document.getElementById('newDocReason')?.value.trim()||'':null;
+  if(isWarning){
+    if(!reason){showToast('Please describe the offence.',true);document.getElementById('newDocReason').focus();return;}
+    if(!witness){showToast('Please enter a witness name.',true);document.getElementById('newDocWitness').focus();return;}
+  }
   const fileInput=document.getElementById('newDocFile');
   const doSave=async(fn,fd)=>{
     setSyncStatus('syncing');
@@ -4558,7 +4568,7 @@ async function saveDoc(){
     showToast(`${type} logged ✓`);
     document.getElementById('newDocNotes').value='';
     document.getElementById('newDocFile').value='';
-    if(isWarning){document.getElementById('newDocWitness').value='';document.getElementById('newDocReason').value='';}
+    if(isWarning){document.getElementById('newDocWitness').value='';document.getElementById('newDocReason').value='';document.getElementById('newDocManager').selectedIndex=0;}
   };
   if(fileInput.files&&fileInput.files[0]){const f=fileInput.files[0];const r=new FileReader();r.onload=e=>doSave(f.name,e.target.result);r.readAsDataURL(f);}
   else doSave('','');
