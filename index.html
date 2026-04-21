@@ -2541,8 +2541,16 @@ function ordRenderStep2(){
   document.getElementById('ordBody').innerHTML=
     `<div style="font-size:0.7rem;color:var(--muted);font-weight:700;letter-spacing:0.06em;margin-bottom:0.4rem">ADJUST ORDER QUANTITIES</div>`+rows;
 
+  const previewMsg=ordBuildMessage()||'';
   document.getElementById('ordBtns').innerHTML=
-    `<button class="btn bgn" style="width:100%" onclick="ordSubmitOrder()">📤 Submit Order</button>
+    `<div style="margin-bottom:0.7rem">
+       <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);margin-bottom:0.35rem">MESSAGE PREVIEW</div>
+       <textarea id="ordMsgEdit" rows="7" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;resize:vertical;box-sizing:border-box;color:var(--text)">${previewMsg}</textarea>
+     </div>
+     <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem">
+       <button class="btn bp" style="flex:1" onclick="ordSendEdited()">📤 Send Order</button>
+       <button class="btn bs" style="flex:0 0 auto" onclick="copyOrderMsg()" title="Copy to clipboard">📋 Copy</button>
+     </div>
      <button class="btn bs" style="width:100%;color:var(--muted)" onclick="ordDoNotOrder()">🚫 Do Not Order Today</button>
      <button class="btn bs" style="width:100%;font-size:0.78rem" onclick="ordSetStep(1);ordRenderStep1()">← Back to Stock Count</button>`;
 }
@@ -2555,6 +2563,19 @@ function ordBuildMessage(){
   if(!lines.length) return null;
   const td=new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'});
   return `${inf.g||'Good morning'}\n\n${inf.i||'Can we please order:'}\n${lines.join('\n')}${inf.urg?'\n\n⚠️ Required today before 08:30':''}\n\nThank you, ${CU?.name||'Zavier'}\nDie Akker Koffiehuis\n(${td})`;
+}
+
+function copyOrderMsg(){
+  const ta=document.getElementById('ordMsgEdit');
+  const msg=ta?ta.value:(ordBuildMessage()||'');
+  navigator.clipboard.writeText(msg).then(()=>showToast('Message copied — paste and edit anywhere ✓'));
+}
+
+function ordSendEdited(){
+  const ta=document.getElementById('ordMsgEdit');
+  const msg=ta?ta.value.trim():(ordBuildMessage()||'');
+  if(!msg){showToast('Nothing to send.',true);return;}
+  ordSendDirect(msg);
 }
 
 function ordSendDirect(msg){
@@ -2577,7 +2598,9 @@ function ordSendDirect(msg){
 async function ordSubmitOrder(){
   const items=ordItems.map((it,i)=>({n:it.n,ml:it.ml,soh:ordStockCounts[i]||0,qty:ordOrderQty[i]||0})).filter(i=>i.qty>0||i.soh>0);
   if(!items.some(i=>i.qty>0)){showToast('No quantities entered to order.',true);return;}
-  const msg=ordBuildMessage();
+  // Use edited message from textarea if available, otherwise build fresh
+  const ta=document.getElementById('ordMsgEdit');
+  const msg=(ta&&ta.value.trim())?ta.value.trim():ordBuildMessage();
   const isOwner=CU?.role==='owner';
   if(isOwner){
     ordSendDirect(msg);
@@ -2667,7 +2690,8 @@ async function loadPendingOrders(){
             </div>
             <div style="display:flex;gap:0.4rem;flex-shrink:0;flex-wrap:wrap">
               ${!isDNO?`<button onclick="approvePendingOrder('${o.id}')" class="btn bgn bsm" style="font-size:0.7rem">✅ Approve & Send</button>`:''}
-              <button onclick="openEditStockCount('${o.id}')" class="btn bs bsm" style="font-size:0.7rem">✏️ Edit Stock</button>
+              ${!isDNO?`<button onclick="openEditOrderMsg('${o.id}')" class="btn bs bsm" style="font-size:0.7rem">✏️ Edit & Send</button>`:''}
+              <button onclick="openEditStockCount('${o.id}')" class="btn bs bsm" style="font-size:0.7rem">📦 Edit Stock</button>
               <button onclick="rejectPendingOrder('${o.id}')" class="btn bs bsm" style="font-size:0.7rem;color:var(--red)">✗ Dismiss</button>
             </div>
           </div>
@@ -2802,6 +2826,45 @@ async function saveEditedStockCount(){
     setSyncStatus('err');
     showToast('Save failed — check connection.',true);
   }
+}
+
+// ── EDIT ORDER MESSAGE (PENDING ORDERS) ──────────────────────────────────
+function openEditOrderMsg(id){
+  const data=pendingOrderCache[id];
+  if(!data){showToast('Reload and try again.',true);return;}
+  document.getElementById('editOrderMsgCard')?.remove();
+  const html=`<div class="card" id="editOrderMsgCard" style="padding:0.9rem 1rem;margin-bottom:0.8rem;border:2px solid var(--burg)">
+    <div style="font-weight:700;font-size:0.9rem;margin-bottom:0.25rem;color:var(--burg)">✏️ Edit Message — ${data.supplier}</div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.6rem">Edit the message below before sending, then choose how to send it.</div>
+    <textarea id="pendOrdMsgEdit" rows="8" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;resize:vertical;box-sizing:border-box;color:var(--text)">${data.message||''}</textarea>
+    <div style="display:flex;gap:0.5rem;margin-top:0.7rem;flex-wrap:wrap">
+      <button class="btn bgn bsm" style="flex:1;min-width:130px" onclick="sendEditedPendingOrder('${id}')">📤 Approve & Send</button>
+      <button class="btn bs bsm" style="flex:0 0 auto" onclick="copyPendingMsg('${id}')">📋 Copy Only</button>
+      <button class="btn bs bsm" style="flex:0 0 auto" onclick="document.getElementById('editOrderMsgCard')?.remove()">Cancel</button>
+    </div>
+  </div>`;
+  document.getElementById('pendingOrdersList').insertAdjacentHTML('afterbegin',html);
+  document.getElementById('editOrderMsgCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function copyPendingMsg(id){
+  const ta=document.getElementById('pendOrdMsgEdit');
+  const msg=ta?ta.value:(pendingOrderCache[id]?.message||'');
+  navigator.clipboard.writeText(msg).then(()=>showToast('Message copied — paste and edit anywhere ✓'));
+}
+
+async function sendEditedPendingOrder(id){
+  const ta=document.getElementById('pendOrdMsgEdit');
+  const msg=ta?ta.value.trim():(pendingOrderCache[id]?.message||'');
+  if(!msg){showToast('Message is empty.',true);return;}
+  try{
+    await SB.from('pending_orders').update({status:'approved',message:msg}).eq('id',id);
+    actSup=pendingOrderCache[id]?.supplier||'';
+    ordSendDirect(msg);
+    document.getElementById('editOrderMsgCard')?.remove();
+    await logAudit('orders','Order Approved',`Approved & sent edited order to ${actSup}`);
+    loadPendingOrders();
+  }catch(e){showToast('Error sending order.',true);}
 }
 
 // ── DELIVERY CHECKLIST ────────────────────────────────────────────────────
