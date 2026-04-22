@@ -1496,6 +1496,22 @@ ALTER TABLE payroll DROP CONSTRAINT IF EXISTS payroll_pkey;
 ALTER TABLE payroll ADD CONSTRAINT payroll_staff_month_group_unique UNIQUE (staff_name, month, group_type);</pre>
           <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('payrollColsSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
+        <div class="card" id="stockSectionSQL">
+          <div class="card-title">Stock Sections Setup</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this once in Supabase to add the <strong>section</strong> column and pre-assign items to their stations based on category. You can then fine-tune each item via the Stock Database.</div>
+          <pre id="stockSectionSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.68rem;overflow-x:auto;white-space:pre-wrap;color:var(--text);max-height:260px">-- Add section column
+ALTER TABLE stock ADD COLUMN IF NOT EXISTS section text DEFAULT '';
+
+-- Pre-assign based on category (adjust as needed)
+UPDATE stock SET section = 'Grillers'   WHERE category = 'Meat'      AND (section IS NULL OR section = '');
+UPDATE stock SET section = 'Bakers'     WHERE category IN ('Bakery','Dry Goods') AND (section IS NULL OR section = '');
+UPDATE stock SET section = 'Bar'        WHERE category = 'Bar'        AND (section IS NULL OR section = '');
+UPDATE stock SET section = 'Bar'        WHERE category = 'Beverages'  AND (section IS NULL OR section = '');
+UPDATE stock SET section = 'Soft Serve' WHERE category = 'Frozen'     AND (section IS NULL OR section = '');
+UPDATE stock SET section = 'Orders'     WHERE category IN ('Produce','Dairy') AND (section IS NULL OR section = '');
+UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (section IS NULL OR section = '');</pre>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('stockSectionSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
         <div class="card" id="aiSettingsCard">
           <div class="card-title">🤖 AI Photo Scan — API Key</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">The <strong>📸 Scan Form</strong> feature uses Claude AI to read handwritten stock counts from a photo of the printed form. Enter your Anthropic API key below to enable it.</div>
@@ -1536,6 +1552,19 @@ ALTER TABLE payroll ADD CONSTRAINT payroll_staff_month_group_unique UNIQUE (staf
       <div class="fg"><label>Unit</label>
         <select id="nsUn"><option>kg</option><option>litre</option><option>unit</option><option>pack</option><option>box</option></select>
       </div>
+    </div>
+    <div class="fg">
+      <label>Station / Section <span style="font-size:0.7rem;color:var(--muted);font-weight:400">(used to organise the printable stock take form)</span></label>
+      <select id="nsSection" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+        <option value="">— Not assigned —</option>
+        <option>Grillers</option>
+        <option>Orders</option>
+        <option>Soft Serve</option>
+        <option>Bakers</option>
+        <option>Cleaning</option>
+        <option>Bar</option>
+        <option>Waiters</option>
+      </select>
     </div>
     <div class="fg2">
       <div class="fg"><label>Current Stock</label><input type="number" id="nsQty" placeholder="0" min="0" step="0.1"></div>
@@ -2009,7 +2038,7 @@ async function submitST(){
 // ═══════════════════════════════════════════
 // STOCK DB
 // ═══════════════════════════════════════════
-const CATS=['All','Meat','Dairy','Produce','Dry Goods','Bar','Bakery','Freezer','Cleaning'];
+const CATS=['All','Meat','Dairy','Produce','Dry Goods','Bar','Bakery','Frozen','Beverages','Cleaning'];
 function renderDB(){
   const q=document.getElementById('dbSrch').value.toLowerCase();
   document.getElementById('dbTabs').innerHTML=CATS.map(c=>`<button class="ct ${dbCat===c?'act':''}" onclick="dbCat='${c}';renderDB()">${CEM[c]||'📦'} ${c}</button>`).join('');
@@ -2029,7 +2058,7 @@ function renderDB(){
     return `<div style="display:flex;align-items:center;padding:0.7rem 0;border-bottom:1px solid var(--surface);gap:0.7rem;cursor:${ce?'pointer':'default'}${isDup?';background:#fff9f0':''}" onclick="${ce?`openEditStock(${i.id})`:''}" >
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:0.88rem">${i.name}${isDup?'<span style="font-size:0.6rem;background:var(--gold-l);color:var(--gold);border:1px solid #f0d090;padding:0.1rem 0.4rem;border-radius:4px;margin-left:0.4rem;font-weight:700">DUP</span>':''}</div>
-        <div style="font-size:0.7rem;color:var(--muted)">${CEM[i.category]||''} ${i.category} · <span style="background:var(--surface);padding:0.1rem 0.4rem;border-radius:3px;font-size:0.68rem">${i.supplier}</span></div>
+        <div style="font-size:0.7rem;color:var(--muted)">${CEM[i.category]||''} ${i.category} · <span style="background:var(--surface);padding:0.1rem 0.4rem;border-radius:3px;font-size:0.68rem">${i.supplier}</span>${i.section?`<span style="margin-left:0.4rem;background:var(--burg-l,#f9eff1);color:var(--burg);border:1px solid #eac8d0;padding:0.1rem 0.4rem;border-radius:3px;font-size:0.65rem;font-weight:700">${i.section}</span>`:''}</div>
         <div class="sbar"><div class="sbf" style="width:${pct}%;background:${col}"></div></div>
       </div>
       <div style="text-align:right;min-width:55px"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${col}">${i.stock<=0?'OUT':i.stock}</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">${i.unit}</div></div>
@@ -2042,10 +2071,11 @@ function openAddStock(){
   document.getElementById('nsId').value='';
   document.getElementById('nsNm').value='';
   document.getElementById('nsCat').value='Meat';
-  document.getElementById('nsUn').value='kg';
+  document.getElementById('nsUn').value='unit';
   document.getElementById('nsQty').value='';
   document.getElementById('nsMn').value='';
   document.getElementById('nsSup').value='Chubby Chick';
+  document.getElementById('nsSection').value='';
   document.getElementById('nsDeleteBtn').style.display='none';
   openMo('moAddStock');
 }
@@ -2061,6 +2091,7 @@ function openEditStock(id){
   document.getElementById('nsQty').value=it.stock;
   document.getElementById('nsMn').value=it.min_level;
   document.getElementById('nsSup').value=it.supplier;
+  document.getElementById('nsSection').value=it.section||'';
   document.getElementById('nsDeleteBtn').style.display='inline-flex';
   openMo('moAddStock');
 }
@@ -2076,6 +2107,7 @@ async function saveNS(){
     stock:parseFloat(document.getElementById('nsQty').value)||0,
     min_level:parseFloat(document.getElementById('nsMn').value)||0,
     supplier:document.getElementById('nsSup').value,
+    section:document.getElementById('nsSection').value||null,
     updated_at:new Date().toISOString(),
   };
   setSyncStatus('syncing');
@@ -2533,7 +2565,7 @@ function ordRenderStep2(){
         <div style="font-size:0.68rem;${low?'color:var(--red);font-weight:700':'color:var(--muted)'}">On hand: ${soh}${it.ml!=null?' · Min: '+it.ml:''}${low?' ⚠ LOW':''}</div>
       </div>
       <input type="number" min="0" step="1" id="oq-${i}" value="${qty}"
-        oninput="ordOrderQty[${i}]=parseFloat(this.value)||0"
+        oninput="ordOrderQty[${i}]=parseFloat(this.value)||0;refreshOrdMsg()"
         style="width:70px;border:1px solid ${qty>0?'var(--burg)':'var(--border)'};border-radius:8px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.9rem;font-weight:700;text-align:center;background:var(--cream);outline:none;-moz-appearance:textfield;${qty>0?'color:var(--burg)':''}">
     </div>`;
   }).join('');
@@ -2563,6 +2595,11 @@ function ordBuildMessage(){
   if(!lines.length) return null;
   const td=new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'});
   return `${inf.g||'Good morning'}\n\n${inf.i||'Can we please order:'}\n${lines.join('\n')}${inf.urg?'\n\n⚠️ Required today before 08:30':''}\n\nThank you, ${CU?.name||'Zavier'}\nDie Akker Koffiehuis\n(${td})`;
+}
+
+function refreshOrdMsg(){
+  const ta=document.getElementById('ordMsgEdit');
+  if(ta) ta.value=ordBuildMessage()||'';
 }
 
 function copyOrderMsg(){
@@ -5393,78 +5430,41 @@ function initAuditDates(){
 
 // ── STOCK TAKE TEMPLATE PRINT ────────────────────────────────────────────
 function printStockTemplate(){
-  const DIVS=[
-    {name:'KITCHEN — MEAT & PROTEIN', emoji:'🥩', items:[
-      'Chicken Breast Fillet','Chicken Wings','Chicken Liver',
-      'Biltong 500g','Skilpad 80g','Beef Stirfry','Patties 150g',
-      '300g Rump Steak *','200g Rump Steak *','350g T-Bene','Maalvleis 1kg',
-      'Boerewors 10x40g','Varknek 180g','Minute Steak 100g',
-      'Ribs MEA5919','Smoked Salmon','Hickory Ham','Sandwich Ham',
-      'Pork Sausage','Viennas','Cordon Bleu','Bone',
-    ]},
-    {name:'KITCHEN — PRODUCE & DAIRY', emoji:'🥦', items:[
-      'Mushrooms 5kg','Patats','Spinasie','Pampoen',
-      'Pears (each)','Apples (each)','Paw Paw (each)','Banana (pack)',
-      'Cherry Tomato (pack)','Parsley (pack)','Spring Onion (pack)',
-      'Green Pepper (each)','Red Pepper (each)','Red Onion (each)',
-      'Pineapple (each)','Red Cabbage (each)','White Cabbage (each)',
-      'Carrots (pack)','Cucumber (each)','Mixed Lettuce (each)',
-      'Lettuce (each)','Tomato (Box)','Beetroot (box)',
-      'Onions (Bag)','Potatoes (Bag)','Lemons (Box)',
-      'Avocados green','Avocados orange',
-      'Eiers','Karringmelk','Sliced Cheese','Mini Butter',
-      'Feta','Halloumi','Mozzarella','Cheddar',
-      'Meadowland','Romi','Cream Cheese 2.5kg',
-    ]},
-    {name:'KITCHEN — FROZEN & BAKERY', emoji:'🧊', items:[
-      'Cheesy Russian','Soft Serve','Battered Hake','Hash Browns',
-      'Waffle Mix','Bakels Delight','Tramezinni','English Muffins',
-      'Panini 150g','Ciabatta','Rye Bread','Wraps',
-    ]},
-    {name:'DRY STORE', emoji:'🏪', items:[
-      'Panko Crumbs','Palm Oil','Sunflower Oil',
-      'French Dressing 5Lt','Buffalo Wings Sauce 5Lt','Garlic & Lemon Sauce 5Lt',
-      'Sauce Soya','Ginger','Coconut','Salt - table','Salt - Sea coarse',
-      'Calamata Olywe','Muesli','Balsamic Vinegar','Olive Oil','Stroop',
-      'Sugar Brown 1kg','Chip White','Rys 2.5kg','Macaroni','Lasagne',
-      'Chip Spice','Cinnamon','Baked Beans','Cocoa 250g','Cream Bombs',
-      'Heuning','Chicken Spice','Chocolate Mousse','Icing Sugar',
-      'Cake Flour 12.5kg','Maizina','Baking Powder',
-      'Tobasco Green','Tobasco Red','Paprika','Garlic','Sprinkle Nuts',
-      '100s & 1000s','Hollandaise','Peanut Butter','B-Well Mayo 20L',
-      'Sweet Chilli','Chutney 6.25kg','Basil Pesto','Capers',
-      'Jalapeno','Peppadews','Tomato Puree 410g','Sundried Tomato',
-      'Jam Strawberry','Jam Apricot','Condensed Milk','Caramel Treat',
-    ]},
-    {name:'BAR — DRINKS & SPIRITS', emoji:'🍺', items:[
-      'Amstel','Heineken','Windhoek Draught','Windhoek Lager',
-      'Castle Lite','Flying Fish Lemon','Savanna Dry','Savanna Light',
-      'Hunters Dry','Hunters Gold','Corona','Bavaria Non Alc.',
-      'Amarula','Kahlua','Jack Daniels','J&B','Jameson',
-      'Pushkin Vodka','Tequila','Richelieu','Klipdrift Premium',
-      'Bacardi Rum','Gordons Gin','Bombay Sapphire Gin',
-    ]},
-    {name:'BEVERAGE STATION', emoji:'☕', items:[
-      'Salted Caramel Stroop','Caramel Stroop','Vanilla Stroop',
-      'Hazelnut Stroop','Strawberry Stroop','Pineapple Stroop',
-      'Pina Colada Stroop','Banana Stroop','Ginger & Peach Stroop',
-      'Strawberry/Orange Stroop','Pear Elderflower Stroop',
-      'Smoothie Stroop Strawberry','Smoothie Stroop Mixed Berry',
-      'Smoothie Stroop Mango Madness',
-      'Brazillian Hazelnut','Chai Tea','Vanilla Mocha',
-      'Aero Peppermint','Hot Chocolate','White Chocolate',
-      'Toffee Caramel','Rooibos Chai','Coffee Freezo','Milky Bar',
-      'Orange 5L','Guava 1.5L','Strawberry 5L','Cocktail 5L',
-      'Smoothie Berries','Smoothie Mango & Passion',
-      'Espresso Beans','Filter Coffee',
-    ]},
-  ];
+  const SECTION_ORDER=['Grillers','Orders','Soft Serve','Bakers','Cleaning','Bar','Waiters'];
+  const SECTION_EMOJI={Grillers:'🔥',Orders:'📦','Soft Serve':'🍦',Bakers:'🥐',Cleaning:'🧹',Bar:'🍺',Waiters:'🍽️'};
+
+  // Group DB items by section; skip unassigned items (show at end as "Other")
+  const grouped={};
+  SECTION_ORDER.forEach(s=>{ grouped[s]=[]; });
+  grouped['Not Assigned']=[];
+  (DB||[]).forEach(item=>{
+    const sec=item.section&&item.section.trim();
+    if(sec && grouped[sec]) grouped[sec].push(item);
+    else grouped['Not Assigned'].push(item);
+  });
+
+  // Build DIVS array — only include sections that have items
+  const DIVS=[];
+  SECTION_ORDER.forEach(sec=>{
+    if(grouped[sec]&&grouped[sec].length){
+      DIVS.push({name:sec.toUpperCase(), emoji:SECTION_EMOJI[sec]||'📋', items:grouped[sec]});
+    }
+  });
+  if(grouped['Not Assigned']&&grouped['Not Assigned'].length){
+    DIVS.push({name:'NOT ASSIGNED', emoji:'❓', items:grouped['Not Assigned']});
+  }
+
+  if(!DIVS.length){
+    showToast('No items in your stock database yet. Add items first.',true);
+    return;
+  }
+
   const DAYS=['MON','TUE','WED','THU','FRI','SAT','SUN'];
 
   const sectionHtml=DIVS.map(d=>{
     const rows=d.items.map((item,i)=>`
       <tr class="${i%2===0?'even':''}">
-        <td class="item">${item}</td>
+        <td class="item">${typeof item==='string'?item:item.name}</td>
         ${DAYS.map(()=>'<td class="day"></td>').join('')}
         <td class="notes"></td>
       </tr>`).join('');
