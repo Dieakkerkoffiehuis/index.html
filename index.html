@@ -1498,6 +1498,7 @@ ALTER TABLE payroll ADD CONSTRAINT payroll_staff_month_group_unique UNIQUE (staf
         </div>
         <div class="card" id="stockSectionSQL">
           <div class="card-title">Stock Sections Setup</div>
+          <div id="sectionColStatus" style="font-size:0.78rem;padding:0.45rem 0.7rem;border-radius:8px;margin-bottom:0.7rem;display:none"></div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this once in Supabase to add the <strong>section</strong> column and pre-assign items to their stations based on category. You can then fine-tune each item via the Stock Database.</div>
           <pre id="stockSectionSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.68rem;overflow-x:auto;white-space:pre-wrap;color:var(--text);max-height:260px">-- Add section column
 ALTER TABLE stock ADD COLUMN IF NOT EXISTS section text DEFAULT '';
@@ -1920,6 +1921,8 @@ function go(id,el){
     // Populate AI key input from localStorage
     const keyInp=document.getElementById('anthropicKeyInput');
     if(keyInp){ const k=localStorage.getItem('anthropicKey')||''; keyInp.value=k; updateAiKeyStatus(k); }
+    // Check if section column exists by seeing if any DB item has the key
+    checkSectionColStatus();
   }
   closeSb();
 }
@@ -2100,6 +2103,7 @@ async function saveNS(){
   const nm=document.getElementById('nsNm').value.trim();
   if(!nm){showToast('Enter an item name.',true);return;}
   const id=document.getElementById('nsId').value;
+  const sectionVal = document.getElementById('nsSection').value||null;
   const rec={
     name:nm,
     category:document.getElementById('nsCat').value,
@@ -2107,13 +2111,35 @@ async function saveNS(){
     stock:parseFloat(document.getElementById('nsQty').value)||0,
     min_level:parseFloat(document.getElementById('nsMn').value)||0,
     supplier:document.getElementById('nsSup').value,
-    section:document.getElementById('nsSection').value||null,
+    section:sectionVal,
     updated_at:new Date().toISOString(),
   };
   setSyncStatus('syncing');
-  if(id){ await SB.from('stock').update(rec).eq('id',parseInt(id)); showToast(`${nm} updated ✓`); }
-  else   { await SB.from('stock').insert(rec); showToast(`${nm} added ✓`); }
-  closeMo('moAddStock'); await loadAllData(); setSyncStatus('ok');
+  try{
+    let error;
+    if(id){
+      ({error}=await SB.from('stock').update(rec).eq('id',parseInt(id)));
+    } else {
+      ({error}=await SB.from('stock').insert(rec));
+    }
+    if(error){
+      // If section column missing, save without it and warn user
+      if(error.message&&error.message.toLowerCase().includes('section')){
+        const recNoSec={...rec}; delete recNoSec.section;
+        if(id){ await SB.from('stock').update(recNoSec).eq('id',parseInt(id)); }
+        else   { await SB.from('stock').insert(recNoSec); }
+        closeMo('moAddStock'); await loadAllData(); setSyncStatus('ok');
+        showToast(`${nm} saved — but section not stored yet. Run the SQL in Settings → Stock Sections Setup first.`, true);
+        return;
+      }
+      throw new Error(error.message||'Save failed');
+    }
+    showToast(`${nm} saved ✓${sectionVal?' · Section: '+sectionVal:''}`);
+    closeMo('moAddStock'); await loadAllData(); setSyncStatus('ok');
+  }catch(e){
+    setSyncStatus('err');
+    showToast('Error saving: '+e.message, true);
+  }
 }
 
 async function deleteStockItem(){
@@ -5556,6 +5582,31 @@ ${sectionHtml}
 }
 
 // ── ANTHROPIC API KEY ─────────────────────────────────────────────────────
+async function checkSectionColStatus(){
+  const el=document.getElementById('sectionColStatus');
+  if(!el) return;
+  // Check by fetching one item and seeing if 'section' key is present
+  try{
+    const {data,error}=await SB.from('stock').select('id,section').limit(1);
+    if(error||!data){ el.style.display='none'; return; }
+    const colExists = data.length===0 || 'section' in (data[0]||{});
+    const anyAssigned = (DB||[]).some(i=>i.section&&i.section.trim());
+    if(colExists && anyAssigned){
+      el.style.display='block';
+      el.style.background='var(--green-l)'; el.style.color='var(--green)'; el.style.border='1px solid var(--green-b)';
+      el.textContent='✅ Section column is active — items are assigned to stations';
+    } else if(colExists){
+      el.style.display='block';
+      el.style.background='#fff8e1'; el.style.color='#b45309'; el.style.border='1px solid #fde68a';
+      el.textContent='⚠️ Column exists but no items assigned yet — run the UPDATE part of the SQL below to pre-assign, or edit items manually';
+    } else {
+      el.style.display='block';
+      el.style.background='#fef2f2'; el.style.color='var(--red)'; el.style.border='1px solid #fecaca';
+      el.textContent='❌ Section column not found — copy and run the SQL below in Supabase first';
+    }
+  }catch(e){ el.style.display='none'; }
+}
+
 function saveAnthropicKey(){
   const inp=document.getElementById('anthropicKeyInput');
   if(!inp) return;
