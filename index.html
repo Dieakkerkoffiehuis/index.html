@@ -3739,9 +3739,11 @@ function buildPayEntry(s, rows, defaultRate){
 }
 
 function buildPayData(rows){
-  const mgrStaff  = stfD.filter(s=>s.division==='Management'||s.role==='Manager');
-  const kitStaff  = stfD.filter(s=>s.division==='Kitchen'||s.role?.startsWith('Kitchen'));
-  const barStaff  = stfD.filter(s=>s.division==='Bar'||s.role?.toLowerCase().includes('barman')||s.role?.toLowerCase().includes('bar staff'));
+  const divIs=(s,d)=>(s.division||'').toLowerCase()===d.toLowerCase();
+  const roleIs=(s,...words)=>words.some(w=>(s.role||'').toLowerCase().includes(w));
+  const mgrStaff  = stfD.filter(s=>divIs(s,'management')||roleIs(s,'manager'));
+  const kitStaff  = stfD.filter(s=>divIs(s,'kitchen')||roleIs(s,'kitchen'));
+  const barStaff  = stfD.filter(s=>divIs(s,'bar')||roleIs(s,'bar','barman','bartender','barstaff'));
   // Managers who also work waiter shifts (paid per hour)
   const waitphStaff = mgrStaff.map(s=>({...s,_grp:'waitph'}));
 
@@ -3754,12 +3756,22 @@ function buildPayData(rows){
 async function syncRosterHoursToPayroll(){
   // Pull all roster records for current month and sum hours per staff member
   const mo=new Date().toISOString().slice(0,7);
-  const monthStart=`${mo}-01`;
-  const lastDay=new Date(parseInt(mo.split('-')[0]),parseInt(mo.split('-')[1]),0).getDate();
-  const monthEnd=`${mo}-${String(lastDay).padStart(2,'0')}`;
+  const [yr,mth]=mo.split('-').map(Number);
+
+  // Month boundaries (UTC midnight so date comparisons are consistent)
+  const monthStart=new Date(Date.UTC(yr,mth-1,1));
+  const monthEnd  =new Date(Date.UTC(yr,mth,0));  // last day of month
+
+  // Extend query start back 6 days: a Mon-start week beginning on e.g. March 30
+  // still contributes April shifts — we must not miss those weeks.
+  const queryStart=new Date(monthStart);
+  queryStart.setUTCDate(queryStart.getUTCDate()-6);
+  const fmt=d=>d.toISOString().slice(0,10);
 
   try {
-    const {data}=await SB.from('roster').select('*').gte('week_start',monthStart).lte('week_start',monthEnd);
+    const {data}=await SB.from('roster').select('*')
+      .gte('week_start',fmt(queryStart))
+      .lte('week_start',fmt(monthEnd));
     if(!data||!data.length) return;
 
     // Sum effective hours, count evening shifts and total shifts per staff
@@ -3767,7 +3779,15 @@ async function syncRosterHoursToPayroll(){
     const eveningShiftsByStaff={};
     const totalShiftsByStaff={};
     data.forEach(r=>{
-      const hrs=calcEffectiveHours(r.start_time,r.end_time,r.break_hours,r.day_index,{ph:false});
+      // Compute the calendar date of this individual shift
+      const wsDate=new Date(r.week_start+'T00:00:00Z');
+      wsDate.setUTCDate(wsDate.getUTCDate()+r.day_index);
+      // Skip shifts that fall outside the current month
+      if(wsDate<monthStart||wsDate>monthEnd) return;
+
+      // Use in-memory ph/leave flags if this week is loaded, otherwise default
+      const flags=(rosterFlags[r.week_start]?.[r.staff_name]?.[r.day_index])||{ph:false};
+      const hrs=calcEffectiveHours(r.start_time,r.end_time,r.break_hours,r.day_index,flags);
       if(hrs>0){
         hoursByStaff[r.staff_name]=(hoursByStaff[r.staff_name]||0)+hrs;
         totalShiftsByStaff[r.staff_name]=(totalShiftsByStaff[r.staff_name]||0)+1;
