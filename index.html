@@ -3621,19 +3621,49 @@ function fVar(t,b){varF=t;document.querySelectorAll('#p-reports .ct').forEach(x=
 // ROSTER
 // ═══════════════════════════════════════════
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const GROUPS=['Kitchen','Bar / Waiters','Managers'];
+const GROUPS=['Kitchen','Bar / Waiters','Managers','Waiters PH'];
 function getMonday(d){const dt=new Date(d);const day=dt.getDay();const diff=day===0?-6:1-day;dt.setDate(dt.getDate()+diff);dt.setHours(0,0,0,0);return dt;}
 function getWednesday(d){const dt=new Date(d);const day=dt.getDay();// 0=Sun,3=Wed
 const diff=day===0?-4:day<=3?-(day-3):3+(7-day);dt.setDate(dt.getDate()+diff);dt.setHours(0,0,0,0);return dt;}
 const MON_DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];// always Mon-indexed, used for date→dayName lookup
 function weekKey(m){return m.toISOString().split('T')[0];}
 function weekDates(m){return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(d.getDate()+i);return d;});}
+function getWaitphRosterStaff(){
+  try{return JSON.parse(localStorage.getItem('waitphRosterStaff')||'["Jabu","Juan","Marleigh"]');}
+  catch(e){return['Jabu','Juan','Marleigh'];}
+}
+function setWaitphRosterStaff(names){localStorage.setItem('waitphRosterStaff',JSON.stringify(names));}
+function addWaitphPerson(){
+  const inp=document.getElementById('waitphAddInput');
+  if(!inp||!inp.value.trim())return;
+  const nm=inp.value.trim();
+  const names=getWaitphRosterStaff();
+  if(!names.find(n=>n.toLowerCase()===nm.toLowerCase())) names.push(nm);
+  setWaitphRosterStaff(names);
+  inp.value='';
+  renderRGrid();updRSummary();
+  showToast(`${nm} added to Waiters PH ✓`);
+}
+function removeWaitphPerson(name){
+  if(!confirm(`Remove ${name} from Waiters PH?`))return;
+  setWaitphRosterStaff(getWaitphRosterStaff().filter(n=>n.toLowerCase()!==name.toLowerCase()));
+  renderRGrid();updRSummary();
+  showToast(`${name} removed from Waiters PH`);
+}
 function staffForGroup(g){
   const div=(s,d)=>(s.division||'').toLowerCase()===d.toLowerCase();
   const role=(s,...ws)=>ws.some(w=>(s.role||'').toLowerCase().includes(w.toLowerCase()));
-  if(g==='Kitchen')     return stfD.filter(s=>div(s,'kitchen')||role(s,'kitchen'));
-  if(g==='Bar / Waiters') return stfD.filter(s=>div(s,'floor')||div(s,'waiters')||div(s,'bar')||role(s,'waiter','barman','bartender','bar person','bar staff'));
-  if(g==='Managers')    return stfD.filter(s=>div(s,'management')||role(s,'manager'));
+  // Managers have priority — they don't bleed into Kitchen or Bar tabs
+  const isMgr=(s)=>div(s,'management')||role(s,'manager');
+  if(g==='Kitchen')       return stfD.filter(s=>!isMgr(s)&&(div(s,'kitchen')||role(s,'kitchen')));
+  if(g==='Bar / Waiters') return stfD.filter(s=>!isMgr(s)&&(div(s,'floor')||div(s,'waiters')||div(s,'bar')||role(s,'waiter','barman','bartender','bar person','bar staff')));
+  if(g==='Managers')      return stfD.filter(s=>isMgr(s));
+  if(g==='Waiters PH'){
+    return getWaitphRosterStaff().map(n=>{
+      const found=stfD.find(s=>s.name.toLowerCase()===n.toLowerCase())||stfD.find(s=>s.name.toLowerCase().startsWith(n.toLowerCase()));
+      return found?{...found}:{name:n,role:'Waiter PH',division:'waiters',active:true};
+    });
+  }
   return[];
 }
 function calcShiftHours(start,end,brk){if(!start||!end)return 0;const[sh,sm]=start.split(':').map(Number);const[eh,em]=end.split(':').map(Number);if(isNaN(sh)||isNaN(eh))return 0;let mins=(eh*60+em)-(sh*60+sm)-(parseFloat(brk)||0)*60;if(mins<0)mins+=24*60;return Math.max(0,Math.round(mins/60*10)/10);}
@@ -3711,7 +3741,18 @@ function rosterWeek(d){rosterWeekOf=new Date(rosterWeekOf);rosterWeekOf.setDate(
 
 function renderRGrid(){
   const wk=weekKey(rosterWeekOf),dates=weekDates(rosterWeekOf),staff=staffForGroup(rosterGroup).filter(s=>s.active!==false);
-  if(!staff.length){document.getElementById('rosterGrid').innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No active staff in this group.</div>';return;}
+  const isWPH=rosterGroup==='Waiters PH';
+  if(!staff.length&&!isWPH){document.getElementById('rosterGrid').innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No active staff in this group.</div>';return;}
+  // build staff names datalist for autocomplete
+  const allNames=stfD.map(s=>`<option value="${s.name}">`).join('');
+  const addCard=isWPH?`<div class="card" style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap">
+    <span style="font-size:0.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">➕ Add person</span>
+    <datalist id="allStaffDL">${allNames}</datalist>
+    <input id="waitphAddInput" list="allStaffDL" placeholder="Name or pick from staff…"
+      style="flex:1;min-width:160px;border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-family:'Karla',sans-serif;font-size:0.88rem;outline:none"
+      onkeydown="if(event.key==='Enter')addWaitphPerson()">
+    <button class="btn bp bsm" onclick="addWaitphPerson()">Add</button>
+  </div>`:'';
   document.getElementById('rosterGrid').innerHTML=staff.map(s=>{
     const sk=s.name.replace(/\W/g,'_');
     const wt=Array.from({length:7},(_,i)=>{
@@ -3719,7 +3760,12 @@ function renderRGrid(){
       const flags=getShiftFlags(wk,s.name,i);
       return calcEffectiveHours(sh.start,sh.end,sh.brk,i,flags);
     }).reduce((a,b)=>a+b,0);
-    return `<div class="roster-card"><div class="roster-staff-hdr"><div class="roster-staff-av">${s.name[0]}</div><div style="flex:1"><div class="roster-staff-name">${s.name}</div><div class="roster-staff-role">${s.role}</div></div><div class="roster-hours-pill" id="rtot-${sk}">${wt>0?wt.toFixed(1)+'h':'—'}</div></div><div>
+    const nm=s.name.replace(/'/g,"\\'");
+    const removeBtn=isWPH?`<button onclick="removeWaitphPerson('${nm}')" title="Remove from Waiters PH"
+      style="background:rgba(255,255,255,0.18);border:none;border-radius:6px;cursor:pointer;color:#fff;font-size:0.75rem;padding:0.2rem 0.5rem;margin-left:0.4rem;transition:background 0.15s"
+      onmouseover="this.style.background='rgba(255,255,255,0.35)'"
+      onmouseout="this.style.background='rgba(255,255,255,0.18)'">✕</button>`:'';
+    return `<div class="roster-card"><div class="roster-staff-hdr"><div class="roster-staff-av">${s.name[0]}</div><div style="flex:1"><div class="roster-staff-name">${s.name}</div><div class="roster-staff-role">${s.role}</div></div><div class="roster-hours-pill" id="rtot-${sk}">${wt>0?wt.toFixed(1)+'h':'—'}</div>${removeBtn}</div><div>
       ${dates.map((d,i)=>{
         const sh=getShift(wk,s.name,i);
         const flags=getShiftFlags(wk,s.name,i);
@@ -3757,7 +3803,7 @@ function renderRGrid(){
           </div>
         </div>`;
       }).join('')}</div></div>`;
-  }).join('');
+  }).join('')+addCard;
 }
 
 function updRSummary(){
@@ -3778,6 +3824,7 @@ function updRSummary(){
     let pay=0,note='';
     if(rosterGroup==='Managers'){const r=payD.mgr?.find(m=>m.name===s.name)?.hourly_rate||35;pay=totalEffHrs*r;note=`R${r}/hr`;}
     else if(rosterGroup==='Kitchen'){const r=payD.kit?.find(m=>m.name===s.name)?.hourly_rate||22;pay=totalEffHrs*r;note=`R${r}/hr`;}
+    else if(rosterGroup==='Waiters PH'){const r=payD.waitph?.find(m=>m.name===s.name)?.hourly_rate||22;pay=totalEffHrs*r;note=`R${r}/hr`;}
     else{note='Tips + 3% sales';}
     const badges=[];
     if(leaveHrs>0) badges.push(`<span class="bdg" style="background:var(--gold-l);color:var(--gold);border:1px solid #f0d090">🏖 ${leaveHrs}h leave</span>`);
@@ -3840,9 +3887,8 @@ function buildPayData(rows){
   const mgrStaff  = stfD.filter(s=>divIs(s,'management')||roleIs(s,'manager'));
   const kitStaff  = stfD.filter(s=>divIs(s,'kitchen')||roleIs(s,'kitchen'));
   const barStaff  = stfD.filter(s=>divIs(s,'bar')||roleIs(s,'bar','barman','bartender','barstaff'));
-  // Fixed list of dual-role staff paid per hour (manually enter hours each month)
-  // Excluded from managers section so they only appear once
-  const WAITPH_NAMES = ['Jabu','Juan','Marleigh'];
+  // Dual-role hourly staff — driven by the editable Waiters PH roster group
+  const WAITPH_NAMES = getWaitphRosterStaff();
   const waitphStaff = WAITPH_NAMES.map(n=>{
     const found = stfD.find(s=>s.name.toLowerCase().startsWith(n.toLowerCase()));
     return found ? {...found,_grp:'waitph'} : {name:n,role:'Waiter / Manager PH',division:'waiters',_grp:'waitph'};
@@ -3903,8 +3949,8 @@ async function syncRosterHoursToPayroll(){
 
     // Update payD: hours + auto-deductions for kitchen staff
     // Taxi: R25 per evening shift | Breakage: R5 per shift
-    // waitph hours are entered manually — exclude from roster sync
-    ['mgr','kit','bar'].forEach(grp=>{
+    // Include waitph — they now have their own roster group
+    ['mgr','kit','bar','waitph'].forEach(grp=>{
       (payD[grp]||[]).forEach(s=>{
         if(hoursByStaff[s.name]!==undefined){
           s.hrs=parseFloat(hoursByStaff[s.name].toFixed(1));
