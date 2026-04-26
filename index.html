@@ -1164,7 +1164,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
         </div>
         <div class="stitle">Waiters Per Hour (PH)</div>
         <div class="card">
-          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Jabu · Juan · Marleigh — dual role (waiter + manager) · paid hourly · enter hours manually each month</div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">🔵 Blue = hourly rate (owner can edit) · Hours auto-synced from <strong>Waiters PH</strong> roster tab · manage the list there</div>
           <div id="waitphPay"></div>
           <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
             <span style="font-weight:700;color:var(--green)">Total Waiters PH Net Pay:</span>
@@ -3887,15 +3887,15 @@ function buildPayData(rows){
   const mgrStaff  = stfD.filter(s=>divIs(s,'management')||roleIs(s,'manager'));
   const kitStaff  = stfD.filter(s=>divIs(s,'kitchen')||roleIs(s,'kitchen'));
   const barStaff  = stfD.filter(s=>divIs(s,'bar')||roleIs(s,'bar','barman','bartender','barstaff'));
-  // Dual-role hourly staff — driven by the editable Waiters PH roster group
-  const WAITPH_NAMES = getWaitphRosterStaff();
-  const waitphStaff = WAITPH_NAMES.map(n=>{
-    const found = stfD.find(s=>s.name.toLowerCase().startsWith(n.toLowerCase()));
+  // Waiters PH — editable list from the Waiters PH roster group (stored in localStorage)
+  const waitphStaff = getWaitphRosterStaff().map(n=>{
+    const found = stfD.find(s=>s.name.toLowerCase()===n.toLowerCase())
+                ||stfD.find(s=>s.name.toLowerCase().startsWith(n.toLowerCase()));
     return found ? {...found,_grp:'waitph'} : {name:n,role:'Waiter / Manager PH',division:'waiters',_grp:'waitph'};
   });
-  const waitphNameSet = new Set(waitphStaff.map(s=>s.name.toLowerCase()));
 
-  payD.mgr    = mgrStaff.filter(s=>!waitphNameSet.has(s.name.toLowerCase())).map(s=>buildPayEntry({...s,_grp:'manager'}, rows, 35));
+  // Managers appear in their own section regardless of whether they're also in Waiters PH
+  payD.mgr    = mgrStaff.map(s=>buildPayEntry({...s,_grp:'manager'}, rows, 35));
   payD.kit    = kitStaff.map(s=>buildPayEntry({...s,_grp:'kitchen'}, rows, 22));
   payD.bar    = barStaff.map(s=>buildPayEntry({...s,_grp:'bar'},     rows, 22));
   payD.waitph = waitphStaff.map(s=>buildPayEntry(s, rows, 22));
