@@ -3489,9 +3489,8 @@ function renderCUHistoryCard(r){
   const tc=totalNetTips>=0?'var(--green)':'var(--red)';
   const eftc=totalToEft>=0?'#1a4a7a':'var(--red)';
 
-  const canOwnerEdit=CU?.role==='owner';
   const cacheKey=r.date+'_'+r.shift;
-  const editBtn=canOwnerEdit
+  const editBtn=canEditCashup()
     ?`<button onclick="cuLoadForEdit('${cacheKey}')"
         style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:0.25rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.3rem;white-space:nowrap">
         ✏️ Edit
@@ -3563,7 +3562,7 @@ function renderCUHistoryCard(r){
 }
 
 function cuLoadForEdit(cacheKey){
-  if(CU?.role!=='owner'){showToast('Only owners can edit cash ups.',true);return;}
+  if(!canEditCashup()){showToast('You don\'t have permission to edit saved cash ups.',true);return;}
   const r=cuHistoryCache[cacheKey];
   if(!r){showToast('Record not found — please reload the submissions list.',true);return;}
   // Load record into the entry form
@@ -3875,6 +3874,14 @@ const PAC=['#7a1528','#152438','#2d5c1a','#1a4a7a','#5c3d1a','#2d1a5c','#1a5c4a'
 const canER=()=>CU?.role==='owner';
 const canEdit=()=>CU?.role==='owner'||CU?.role==='manager';
 const isReadOnly=()=>CU?.role==='investor'||CU?.role==='employee';
+// Cash-up editing: owner + specific named staff (Marleigh, Mare)
+const CASHUP_EDIT_NAMES=['marleigh','mare'];
+function canEditCashup(){
+  if(!CU) return false;
+  if(CU.role==='owner') return true;
+  const first=(CU.name||'').toLowerCase().split(' ')[0];
+  return CASHUP_EDIT_NAMES.includes(first);
+}
 
 function buildPayEntry(s, rows, defaultRate){
   const r=rows.find(x=>x.staff_name===s.name&&x.group_type===s._grp)||rows.find(x=>x.staff_name===s.name)||{hourly_rate:defaultRate,hours:0};
