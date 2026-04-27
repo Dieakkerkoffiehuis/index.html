@@ -1122,6 +1122,35 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 
       <!-- PAYROLL -->
       <div class="pnl" id="p-payroll">
+        <!-- Payroll tab switcher -->
+        <div class="ctabs" id="payrollTabs" style="margin-bottom:0.9rem">
+          <button class="ct" onclick="switchPayrollTab('summary',this)">💳 Payout Summary</button>
+          <button class="ct act" onclick="switchPayrollTab('detail',this)">🔢 Detailed View</button>
+        </div>
+
+        <!-- PAYOUT SUMMARY TAB -->
+        <div id="payrollSummaryPane" style="display:none">
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="background:linear-gradient(135deg,var(--burg),var(--burg2));padding:1rem 1.3rem;display:flex;align-items:center;justify-content:space-between">
+              <div style="color:#fff">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.07em">Monthly Payout Summary</div>
+                <div style="font-size:0.75rem;opacity:0.8" id="payoutMonth">—</div>
+              </div>
+              <button class="btn" onclick="switchPayrollTab('detail',document.querySelector(\'#payrollTabs .ct:last-child\'))"
+                style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:0.72rem;padding:0.35rem 0.75rem">
+                View Details →
+              </button>
+            </div>
+            <div id="payoutSummaryList" style="padding:0.5rem 0"></div>
+            <div style="background:var(--navy2);padding:1rem 1.3rem;display:flex;justify-content:space-between;align-items:center">
+              <div style="color:rgba(255,255,255,0.7);font-size:0.8rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">Grand Total — All Staff</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:1.9rem;color:#fff;letter-spacing:0.05em" id="payoutGrandTotal">R 0.00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAILED VIEW TAB -->
+        <div id="payrollDetailPane">
         <!-- Payment Date Tracker -->
         <div id="payDateBanner" style="border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.8rem;border:2px solid var(--border)">
           <!-- Countdown row -->
@@ -1153,7 +1182,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
         </div>
         <div class="stitle">Managers Payroll</div>
         <div class="card">
-          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">🔵 Blue = hourly rate (owner can edit) · Hours auto-filled from Shift Roster</div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">🔵 Blue = hourly rate (owner can edit) · Enter management hours manually · Waiter shift hours are tracked separately under <strong>Waiters PH</strong></div>
           <div id="mgrPay"></div>
           <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
             <span style="font-weight:700;color:var(--green)">Total Manager Net Pay:</span>
@@ -1199,6 +1228,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
         <div class="brow" style="margin-top:0.5rem">
           <button class="btn bp" onclick="savePay()">Save Payroll</button>
         </div>
+        </div><!-- end payrollDetailPane -->
       </div>
 
       <!-- STAFF -->
@@ -3960,14 +3990,9 @@ function buildPayData(rows){
   const divIs=(s,d)=>(s.division||'').toLowerCase()===d.toLowerCase();
   const roleIs=(s,...words)=>words.some(w=>(s.role||'').toLowerCase().includes(w));
 
-  // Waiters PH list is built first — anyone on this list is EXCLUDED from Managers payroll
-  // to prevent their hours linking to both sections at once
-  const waitphNames = getWaitphRosterStaff().map(n=>n.toLowerCase());
-  const inWaitph = (s) => waitphNames.some(n=>
-    s.name.toLowerCase()===n || s.name.toLowerCase().startsWith(n));
-
-  // Managers: exclude anyone already in the Waiters PH list
-  const mgrStaff  = stfD.filter(s=>(divIs(s,'management')||roleIs(s,'manager')) && !inWaitph(s));
+  // All managers appear in Managers payroll — hours for those also in Waiters PH
+  // are NOT auto-synced from roster (stays manual) to avoid double-counting.
+  const mgrStaff  = stfD.filter(s=>divIs(s,'management')||roleIs(s,'manager'));
   const kitStaff  = stfD.filter(s=>divIs(s,'kitchen')||roleIs(s,'kitchen'));
   const barStaff  = stfD.filter(s=>divIs(s,'bar')||roleIs(s,'bar','barman','bartender','barstaff'));
 
@@ -4030,11 +4055,21 @@ async function syncRosterHoursToPayroll(){
       }
     });
 
+    // People on the Waiters PH list get roster hours synced to waitph ONLY.
+    // Their manager entry keeps manually-entered hours to avoid double-counting.
+    const waitphNameSet=new Set(getWaitphRosterStaff().map(n=>n.toLowerCase()));
+    const inWaitphList=(name)=>{
+      const nl=name.toLowerCase();
+      return waitphNameSet.has(nl)||[...waitphNameSet].some(n=>nl.startsWith(n)||n.startsWith(nl));
+    };
+
     // Update payD: hours + auto-deductions for kitchen staff
     // Taxi: R25 per evening shift | Breakage: R5 per shift
-    // Include waitph — they now have their own roster group
     ['mgr','kit','bar','waitph'].forEach(grp=>{
       (payD[grp]||[]).forEach(s=>{
+        // For managers who are also on the Waiters PH list, skip auto-sync
+        // so their manager hours remain manually set (roster sync goes to waitph only)
+        if(grp==='mgr' && inWaitphList(s.name)) return;
         if(hoursByStaff[s.name]!==undefined){
           s.hrs=parseFloat(hoursByStaff[s.name].toFixed(1));
         }
@@ -4263,6 +4298,84 @@ function renderPay(){
   renderPaySec(payD.bar||[],'barPay','barTot');
   renderWaiterPay();
   renderPaySec(payD.waitph||[],'waitphPay','waitphTot');
+  renderPayoutSummary();
+}
+
+function switchPayrollTab(tab, btn){
+  document.querySelectorAll('#payrollTabs .ct').forEach(b=>b.classList.remove('act'));
+  if(btn) btn.classList.add('act');
+  document.getElementById('payrollSummaryPane').style.display = tab==='summary' ? '' : 'none';
+  document.getElementById('payrollDetailPane').style.display  = tab==='detail'  ? '' : 'none';
+  if(tab==='summary') renderPayoutSummary();
+}
+
+function calcNetForEntry(s, grp){
+  // Returns the net pay amount for a single payroll entry
+  if(grp==='waiter'){
+    const comm = Math.round((s.sales||0)*0.03*100)/100;
+    const tips  = s.tips||0;
+    const gross = comm + tips;
+    return Math.max(0, gross - (s.breakage||0) - (s.borrowed||0) - (s.saccawu||0));
+  }
+  // Hourly groups (mgr, kit, bar, waitph)
+  const gross = (s.hrs||0)*(s.hourly_rate||0);
+  const uif   = parseFloat((gross*0.01).toFixed(2));
+  const deductions = uif + (s.taxi||0) + (s.lening||0) + (s.saccawu||0) + (s.breakage||0);
+  return Math.max(0, gross - deductions);
+}
+
+function renderPayoutSummary(){
+  const now = new Date();
+  const monthLabel = now.toLocaleDateString('en-ZA',{month:'long',year:'numeric'});
+  const el = document.getElementById('payoutMonth');
+  if(el) el.textContent = monthLabel;
+
+  // Build rows grouped by section
+  const sections = [
+    {label:'Managers',      color:'var(--burg)',  icon:'👔', entries: payD.mgr||[],     grp:'manager'},
+    {label:'Kitchen Staff', color:'var(--orange)',icon:'🍳', entries: payD.kit||[],     grp:'kitchen'},
+    {label:'Bar Staff',     color:'var(--blue)',  icon:'🍺', entries: payD.bar||[],     grp:'bar'},
+    {label:'Waiters',       color:'var(--green)', icon:'🤝', entries: payD.waiters||[], grp:'waiter'},
+    {label:'Waiters PH',    color:'#7b3fa0',      icon:'⏱️', entries: payD.waitph||[],  grp:'waitph'},
+  ];
+
+  let grandTotal = 0;
+  let html = '';
+
+  sections.forEach(sec=>{
+    const active = sec.entries.filter(s=>s.name);
+    if(!active.length) return;
+
+    html += `<div style="padding:0.55rem 1.3rem 0.2rem;background:var(--surface);border-bottom:1px solid var(--border)">
+      <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)">${sec.icon} ${sec.label}</div>
+    </div>`;
+
+    active.forEach(s=>{
+      const net = calcNetForEntry(s, sec.grp);
+      grandTotal += net;
+      const initials = (s.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      html += `<div style="display:flex;align-items:center;padding:0.78rem 1.3rem;border-bottom:1px solid var(--border-s);gap:0.9rem">
+        <div style="width:36px;height:36px;border-radius:50%;background:${sec.color};display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:0.95rem">${s.name}</div>
+          <div style="font-size:0.72rem;color:var(--muted)">${s.role||sec.label}${s.hrs?` · ${s.hrs} hrs`:''}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.45rem;color:${net>0?'var(--green)':'var(--muted)'}">R ${net.toFixed(2)}</div>
+          <div style="font-size:0.68rem;color:var(--muted)">net pay</div>
+        </div>
+      </div>`;
+    });
+  });
+
+  if(!html){
+    html = '<div style="text-align:center;padding:2.5rem;color:var(--muted);font-size:0.88rem">No payroll data yet — add hours and rates in Detailed View.</div>';
+  }
+
+  const listEl = document.getElementById('payoutSummaryList');
+  const totEl  = document.getElementById('payoutGrandTotal');
+  if(listEl) listEl.innerHTML = html;
+  if(totEl)  totEl.textContent = `R ${grandTotal.toFixed(2)}`;
 }
 
 // ═══════════════════════════════════════════
