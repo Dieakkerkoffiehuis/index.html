@@ -3959,9 +3959,18 @@ function buildPayEntry(s, rows, defaultRate){
 function buildPayData(rows){
   const divIs=(s,d)=>(s.division||'').toLowerCase()===d.toLowerCase();
   const roleIs=(s,...words)=>words.some(w=>(s.role||'').toLowerCase().includes(w));
-  const mgrStaff  = stfD.filter(s=>divIs(s,'management')||roleIs(s,'manager'));
+
+  // Waiters PH list is built first — anyone on this list is EXCLUDED from Managers payroll
+  // to prevent their hours linking to both sections at once
+  const waitphNames = getWaitphRosterStaff().map(n=>n.toLowerCase());
+  const inWaitph = (s) => waitphNames.some(n=>
+    s.name.toLowerCase()===n || s.name.toLowerCase().startsWith(n));
+
+  // Managers: exclude anyone already in the Waiters PH list
+  const mgrStaff  = stfD.filter(s=>(divIs(s,'management')||roleIs(s,'manager')) && !inWaitph(s));
   const kitStaff  = stfD.filter(s=>divIs(s,'kitchen')||roleIs(s,'kitchen'));
   const barStaff  = stfD.filter(s=>divIs(s,'bar')||roleIs(s,'bar','barman','bartender','barstaff'));
+
   // Waiters PH — editable list from the Waiters PH roster group (stored in localStorage)
   const waitphStaff = getWaitphRosterStaff().map(n=>{
     const found = stfD.find(s=>s.name.toLowerCase()===n.toLowerCase())
@@ -3969,7 +3978,6 @@ function buildPayData(rows){
     return found ? {...found,_grp:'waitph'} : {name:n,role:'Waiter / Manager PH',division:'waiters',_grp:'waitph'};
   });
 
-  // Managers appear in their own section regardless of whether they're also in Waiters PH
   payD.mgr    = mgrStaff.map(s=>buildPayEntry({...s,_grp:'manager'}, rows, 35));
   payD.kit    = kitStaff.map(s=>buildPayEntry({...s,_grp:'kitchen'}, rows, 22));
   payD.bar    = barStaff.map(s=>buildPayEntry({...s,_grp:'bar'},     rows, 22));
