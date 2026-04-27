@@ -4013,7 +4013,7 @@ function canEditCashup(){
 
 function buildPayEntry(s, rows, defaultRate){
   const r=rows.find(x=>x.staff_name===s.name&&x.group_type===s._grp)||rows.find(x=>x.staff_name===s.name)||{hourly_rate:defaultRate,hours:0};
-  return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||defaultRate,hrs:r.hours||0,taxi:r.taxi||0,lening:r.lening||0,borrowed:r.borrowed||0,saccawu:r.saccawu||0,breakage:r.breakage||0};
+  return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||defaultRate,hrs:r.hours||0,taxi:r.taxi||0,borrowed:r.borrowed||0,saccawu:r.saccawu||0,breakage:r.breakage||0};
 }
 
 function buildPayData(rows){
@@ -4350,7 +4350,7 @@ function calcNetForEntry(s, grp){
   // Hourly groups (mgr, kit, bar, waitph)
   const gross = (s.hrs||0)*(s.hourly_rate||0);
   const uif   = parseFloat((gross*0.01).toFixed(2));
-  const deductions = uif + (s.taxi||0) + (s.lening||0) + (s.saccawu||0) + (s.breakage||0);
+  const deductions = uif + (s.taxi||0) + (s.borrowed||0) + (s.saccawu||0) + (s.breakage||0);
   return Math.max(0, gross - deductions);
 }
 
