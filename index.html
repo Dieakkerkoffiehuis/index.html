@@ -1268,14 +1268,19 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
           <div style="font-size:0.82rem;color:var(--muted)">Kitchen staff leave tracking — annual &amp; sick leave balances.</div>
           <button class="btn bp bsm" id="recordLeaveBtn" onclick="openLeaveModal(null)">+ Record Leave</button>
         </div>
-        <!-- Sick Leave Cycle Banner -->
-        <div id="sickCycleCard" style="background:linear-gradient(135deg,#fff8f0,#fff3e8);border:1px solid #f0c898;border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.9rem">
-          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem">
-            <span style="font-size:1rem">🤒</span>
-            <div style="font-weight:700;font-size:0.88rem;color:var(--burg)">Sick Leave Cycle: 1 Jul 2024 – 30 Jun 2027</div>
-            <span style="font-size:0.7rem;background:var(--gold-l);color:#7a5010;border:1px solid #f0d090;padding:0.15rem 0.55rem;border-radius:20px;font-weight:700;margin-left:auto">30 days / 3 years</span>
+        <!-- Leave Balance Overview -->
+        <div id="sickCycleCard" style="background:linear-gradient(135deg,var(--white),var(--surface));border:1px solid var(--border);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.9rem">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap">
+            <span style="font-size:1rem">📊</span>
+            <div style="font-weight:700;font-size:0.92rem;color:var(--burg);flex:1" id="leaveBalanceTitle">Leave Balances — 2026</div>
+            <div style="display:flex;gap:0.5rem;font-size:0.7rem;font-weight:700">
+              <span style="background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;padding:0.15rem 0.55rem;border-radius:20px">🏖️ Annual: 15 days/yr</span>
+              <span style="background:var(--red-l);color:var(--red);border:1px solid var(--red-b);padding:0.15rem 0.55rem;border-radius:20px">🤒 Sick: 10 days/yr</span>
+              <span style="background:var(--green-l);color:var(--green);border:1px solid var(--green-b);padding:0.15rem 0.55rem;border-radius:20px">👨‍👩‍👧 Family: 3 days/yr</span>
+            </div>
           </div>
-          <div id="sickCycleGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.5rem"></div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.6rem">Unused annual leave carries over for 6 months (expires 30 June of the following year)</div>
+          <div id="sickCycleGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.6rem"></div>
         </div>
         <!-- Annual leave year filter -->
         <div class="card" style="padding:0.65rem 1rem;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.7rem;flex-wrap:wrap">
@@ -1783,7 +1788,7 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
 <div class="mo" id="moLeave">
   <div class="md">
     <button class="md-close" onclick="closeMo('moLeave')">✕</button>
-    <div class="md-title">Record Leave</div>
+    <div class="md-title" id="moLeaveTitle">Record Leave</div>
     <input type="hidden" id="leaveEditId">
     <div class="fg"><label>Staff Member</label><select id="leaveStaff" style="width:100%"></select></div>
     <div class="fg"><label>Leave Type</label>
@@ -4690,54 +4695,89 @@ async function deleteStf(id,name){
 // ═══════════════════════════════════════════
 const LEAVE_CFG={'Annual':{cls:'lp-annual',icon:'🏖️'},'Sick':{cls:'lp-sick',icon:'🤒'},'Family':{cls:'lp-family',icon:'👨‍👩‍👧'},'Unpaid':{cls:'lp-unpaid',icon:'💸'},'Sick — Unplanned':{cls:'lp-sick',icon:'🤒'},'Other':{cls:'lp-unpaid',icon:'📋'}};
 const STATUS_CFG={'Approved':'bgg','Pending':'bgo','Sick — Unplanned':'bgr','Rejected':'bgr'};
-// Sick leave cycles (30 days per 3-year cycle)
-const SICK_CYCLES=[
-  {label:'Jul 2009 – Jun 2012',start:'2009-07-01',end:'2012-06-30'},
-  {label:'Jul 2012 – Jun 2015',start:'2012-07-01',end:'2015-06-30'},
-  {label:'Jul 2015 – Jun 2018',start:'2015-07-01',end:'2018-06-30'},
-  {label:'Jul 2018 – Jun 2021',start:'2018-07-01',end:'2021-06-30'},
-  {label:'Jul 2021 – Jun 2024',start:'2021-07-01',end:'2024-06-30'},
-  {label:'Jul 2024 – Jun 2027',start:'2024-07-01',end:'2027-06-30'},
-];
-const SICK_ALLOWANCE=30;
+// ── LEAVE ALLOWANCES (annual, year = Jan–Dec) ───────────────────────────────
+const ANNUAL_LEAVE_ALLOWANCE = 15; // days per leave year
+const SICK_LEAVE_ALLOWANCE   = 10; // days per leave year
+const FAMILY_LEAVE_ALLOWANCE =  3; // days per leave year
 let leaveFilter='all';
 function kitchenStaff(){return stfD.filter(s=>s.active!==false && (s.division==='Kitchen'||s.role.startsWith('Kitchen')));}
 function leaveDays(l){if(!l.start_date||!l.end_date)return 0;const s=new Date(l.start_date),e=new Date(l.end_date);return Math.max(1,Math.round((e-s)/(1000*60*60*24))+1);}
 
-function getCurrentSickCycle(){
-  const today=new Date().toISOString().split('T')[0];
-  return SICK_CYCLES.find(c=>today>=c.start&&today<=c.end)||SICK_CYCLES[SICK_CYCLES.length-1];
+function getActiveLeaveYear(){
+  const v=document.getElementById('leaveYearFilter')?.value;
+  return (v&&v!=='all')?parseInt(v):new Date().getFullYear();
 }
 
-function getSickUsedInCycle(staffName,cycle){
+function getLeaveTaken(staffName, year, types){
+  const y=String(year);
   return leaveData.filter(l=>
-    l.staff_name===staffName&&
-    (l.leave_type==='Sick'||l.leave_type==='Sick — Unplanned')&&
-    l.start_date>=cycle.start&&l.start_date<=cycle.end
-  ).reduce((sum,l)=>sum+leaveDays(l),0);
+    l.staff_name===staffName &&
+    types.includes(l.leave_type) &&
+    l.status==='Approved' &&
+    (l.start_date||'').startsWith(y)
+  ).reduce((s,l)=>s+leaveDays(l),0);
 }
+
+// Unused annual leave from previous year, valid until Jun 30 of current year
+function getCarryOver(staffName, year){
+  const today=new Date().toISOString().split('T')[0];
+  const expiry=`${year}-06-30`;
+  if(today>expiry) return 0; // carry-over window expired
+  const prevTaken=getLeaveTaken(staffName, year-1, ['Annual']);
+  return Math.max(0, ANNUAL_LEAVE_ALLOWANCE - prevTaken);
+}
+
+function getLeaveBalance(staffName, year){
+  const annTaken   = getLeaveTaken(staffName, year, ['Annual']);
+  const sickTaken  = getLeaveTaken(staffName, year, ['Sick','Sick — Unplanned']);
+  const famTaken   = getLeaveTaken(staffName, year, ['Family']);
+  const carryOver  = getCarryOver(staffName, year);
+  return {
+    annTaken, sickTaken, famTaken, carryOver,
+    annRem  : Math.max(0, ANNUAL_LEAVE_ALLOWANCE + carryOver - annTaken),
+    sickRem : Math.max(0, SICK_LEAVE_ALLOWANCE   - sickTaken),
+    famRem  : Math.max(0, FAMILY_LEAVE_ALLOWANCE - famTaken),
+  };
+}
+
+// Legacy helpers kept for compatibility
+function getCurrentSickCycle(){ return {label:String(new Date().getFullYear()),start:`${new Date().getFullYear()}-01-01`,end:`${new Date().getFullYear()}-12-31`}; }
+function getSickUsedInCycle(staffName,cycle){ return getLeaveTaken(staffName, parseInt(cycle.label)||new Date().getFullYear(), ['Sick','Sick — Unplanned']); }
+const SICK_ALLOWANCE = SICK_LEAVE_ALLOWANCE;
 
 function renderSickCycleGrid(){
   const el=document.getElementById('sickCycleGrid');
   if(!el)return;
   const kit=kitchenStaff();
-  const cycle=getCurrentSickCycle();
-  if(!kit.length){el.innerHTML='<div style="font-size:0.78rem;color:var(--muted)">No kitchen staff found.</div>';return;}
+  const year=getActiveLeaveYear();
+  if(!kit.length){el.innerHTML='<div style="font-size:0.78rem;color:var(--muted)">No staff found.</div>';return;}
   el.innerHTML=kit.map(s=>{
-    const used=getSickUsedInCycle(s.name,cycle);
-    const remaining=Math.max(0,SICK_ALLOWANCE-used);
-    const pct=Math.min(100,Math.round(used/SICK_ALLOWANCE*100));
-    const col=pct>=80?'var(--red)':pct>=50?'var(--orange)':'var(--green)';
-    return `<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.65rem 0.8rem">
-      <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.35rem">
-        <div style="width:22px;height:22px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
-        <div style="font-weight:700;font-size:0.78rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
-        <div style="font-size:0.7rem;font-weight:700;color:${col}">${used}/${SICK_ALLOWANCE}</div>
+    const b=getLeaveBalance(s.name, year);
+    const sickPct=Math.min(100,Math.round(b.sickTaken/SICK_LEAVE_ALLOWANCE*100));
+    const annPct =Math.min(100,Math.round(b.annTaken/(ANNUAL_LEAVE_ALLOWANCE+(b.carryOver||0))*100));
+    const sickCol=sickPct>=80?'var(--red)':sickPct>=50?'var(--orange)':'var(--green)';
+    const annCol =b.annRem<=2?'var(--red)':b.annRem<=5?'var(--orange)':'var(--blue)';
+    const carryStr=b.carryOver>0?`<span style="font-size:0.62rem;background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;padding:0.1rem 0.4rem;border-radius:20px;font-weight:700">+${b.carryOver} carry</span>`:'';
+    return `<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.75rem 0.9rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+        <div style="width:26px;height:26px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
+        <div style="font-weight:700;font-size:0.82rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
       </div>
-      <div style="background:var(--surface);border-radius:4px;height:5px;overflow:hidden">
-        <div style="background:${col};height:100%;width:${pct}%;border-radius:4px;transition:width 0.3s"></div>
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:70px;background:var(--surface);border-radius:7px;padding:0.35rem 0.5rem;text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${annCol};line-height:1">${b.annRem}</div>
+          <div style="font-size:0.6rem;color:var(--muted);font-weight:700;text-transform:uppercase">Annual</div>
+          ${carryStr}
+        </div>
+        <div style="flex:1;min-width:70px;background:var(--surface);border-radius:7px;padding:0.35rem 0.5rem;text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${sickCol};line-height:1">${b.sickRem}</div>
+          <div style="font-size:0.6rem;color:var(--muted);font-weight:700;text-transform:uppercase">Sick</div>
+        </div>
+        <div style="flex:1;min-width:70px;background:var(--surface);border-radius:7px;padding:0.35rem 0.5rem;text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--green);line-height:1">${b.famRem}</div>
+          <div style="font-size:0.6rem;color:var(--muted);font-weight:700;text-transform:uppercase">Family</div>
+        </div>
       </div>
-      <div style="font-size:0.65rem;color:var(--muted);margin-top:0.25rem">${remaining} day${remaining!==1?'s':''} remaining</div>
     </div>`;
   }).join('');
 }
@@ -4762,43 +4802,49 @@ function renderLeave(){
   }
   const yearFilter=yrSel?yrSel.value:'all';
 
-  // Sick cycle grid
+  // Update balance overview title with active year
+  const activeYear=getActiveLeaveYear();
+  const titleEl=document.getElementById('leaveBalanceTitle');
+  if(titleEl) titleEl.textContent=`Leave Balances — ${yearFilter==='all'?activeYear:yearFilter}`;
   renderSickCycleGrid();
 
   document.getElementById('leaveTabs').innerHTML=`<button class="ct ${leaveFilter==='all'?'act':''}" onclick="filterLeave('all',this)">All Staff</button>`+kit.map(s=>`<button class="ct ${leaveFilter===s.name?'act':''}" onclick="filterLeave('${s.name.replace(/'/g,"\\'")}',this)">${s.name}</button>`).join('');
   const filt=leaveFilter==='all'?kit:kit.filter(s=>s.name===leaveFilter);
-  const cycle=getCurrentSickCycle();
+  const displayYear=yearFilter==='all'?activeYear:parseInt(yearFilter);
   document.getElementById('leaveCards').innerHTML=filt.map(s=>{
-    const allRecs=leaveData.filter(l=>l.staff_name===s.name);
-    const yearRecs=yearFilter==='all'?allRecs:allRecs.filter(l=>l.start_date&&l.start_date.startsWith(yearFilter));
-    const ann=yearRecs.filter(l=>l.leave_type==='Annual').reduce((sum,l)=>sum+leaveDays(l),0);
-    const sick=yearRecs.filter(l=>l.leave_type==='Sick'||l.leave_type==='Sick — Unplanned').reduce((sum,l)=>sum+leaveDays(l),0);
-    const unpaid=yearRecs.filter(l=>l.leave_type==='Unpaid').reduce((sum,l)=>sum+leaveDays(l),0);
-    const cycleUsed=getSickUsedInCycle(s.name,cycle);
-    const cycleRem=Math.max(0,SICK_ALLOWANCE-cycleUsed);
-    const cyclePct=Math.min(100,Math.round(cycleUsed/SICK_ALLOWANCE*100));
-    const cycleCol=cyclePct>=80?'var(--red)':cyclePct>=50?'var(--orange)':'var(--green)';
+    const b=getLeaveBalance(s.name, displayYear);
+    const unpaid=getLeaveTaken(s.name, displayYear, ['Unpaid']);
+    const annCol =b.annRem<=2?'var(--red)':b.annRem<=5?'var(--orange)':'var(--blue)';
+    const sickCol=b.sickRem<=2?'var(--red)':b.sickRem<=5?'var(--orange)':'var(--green)';
     const addBtn=isReadOnly()?'':'<button class="btn bp bsm" onclick="openLeaveModal(\''+s.name.replace(/'/g,"\\'")+'\')" >+ Add</button>';
+    const carryBadge=b.carryOver>0?`<span style="font-size:0.7rem;background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;padding:0.15rem 0.5rem;border-radius:20px;font-weight:700">+${b.carryOver} days carry-over (exp. 30 Jun)</span>`:'';
     return `<div class="leave-summary">
-      <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.6rem">
-        <div style="width:30px;height:30px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
-        <div style="font-weight:700;font-size:0.92rem;flex:1">${s.name}</div>
+      <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.7rem">
+        <div style="width:32px;height:32px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:0.95rem">${s.name}</div>
+          ${carryBadge}
+        </div>
         ${addBtn}
       </div>
-      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.55rem">
-        <span style="font-size:0.72rem;background:#e8f0f8;color:var(--blue);border:1px solid #b8cfe8;padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">🏖️ Annual${yearFilter!=='all'?' ('+yearFilter+')':''}: ${ann} day${ann!==1?'s':''}</span>
-        <span style="font-size:0.72rem;background:var(--red-l);color:var(--red);border:1px solid var(--red-b);padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">🤒 Sick${yearFilter!=='all'?' ('+yearFilter+')':''}: ${sick} day${sick!==1?'s':''}</span>
-        ${unpaid>0?`<span style="font-size:0.72rem;background:var(--surface);color:var(--muted);border:1px solid var(--border);padding:0.2rem 0.6rem;border-radius:20px;font-weight:700">💸 Unpaid: ${unpaid} day${unpaid!==1?'s':''}</span>`:''}
-      </div>
-      <div style="background:var(--surface);border-radius:8px;padding:0.5rem 0.7rem">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
-          <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)">Sick Cycle Balance (${cycle.label})</span>
-          <span style="font-size:0.72rem;font-weight:700;color:${cycleCol}">${cycleUsed}/${SICK_ALLOWANCE} used · ${cycleRem} left</span>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:0.5rem">
+        <div style="background:var(--blue-l);border:1px solid #b8cfe8;border-radius:8px;padding:0.5rem 0.6rem;text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;line-height:1;color:${annCol}">${b.annRem}</div>
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--blue);margin-top:0.1rem">Annual left</div>
+          <div style="font-size:0.62rem;color:var(--muted)">${b.annTaken} taken</div>
         </div>
-        <div style="background:var(--border);border-radius:4px;height:6px;overflow:hidden">
-          <div style="background:${cycleCol};height:100%;width:${cyclePct}%;border-radius:4px;transition:width 0.3s"></div>
+        <div style="background:var(--red-l);border:1px solid var(--red-b);border-radius:8px;padding:0.5rem 0.6rem;text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;line-height:1;color:${sickCol}">${b.sickRem}</div>
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--red);margin-top:0.1rem">Sick left</div>
+          <div style="font-size:0.62rem;color:var(--muted)">${b.sickTaken} taken</div>
+        </div>
+        <div style="background:var(--green-l);border:1px solid var(--green-b);border-radius:8px;padding:0.5rem 0.6rem;text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;line-height:1;color:var(--green)">${b.famRem}</div>
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--green);margin-top:0.1rem">Family left</div>
+          <div style="font-size:0.62rem;color:var(--muted)">${b.famTaken} taken</div>
         </div>
       </div>
+      ${unpaid>0?`<div style="font-size:0.72rem;background:var(--surface);color:var(--muted);border:1px solid var(--border);padding:0.25rem 0.7rem;border-radius:20px;display:inline-block">💸 Unpaid: ${unpaid} day${unpaid!==1?'s':''}</div>`:''}
     </div>`;
   }).join('');
 
@@ -4817,27 +4863,54 @@ function renderLeave(){
       style="background:var(--green-l);border:1px solid var(--green-b);color:var(--green);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.28rem 0.7rem;border-radius:6px;display:inline-flex;align-items:center;gap:0.25rem">✅ Approve</button>`:'';
     const rejectBtn=canAct&&isPending?`<button onclick="rejectLeave('${l.id}')"
       style="background:var(--red-l);border:1px solid var(--red-b);color:var(--red);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.28rem 0.7rem;border-radius:6px;display:inline-flex;align-items:center;gap:0.25rem">❌ Reject</button>`:'';
+    const editBtn=isReadOnly()?'':'<button onclick="editLeave(\''+l.id+'\')" style="background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:6px;color:var(--ink)">✏️ Edit</button>';
     const delBtn=isReadOnly()?'':'<button onclick="deleteLeave(\''+l.id+'\')" style="background:none;border:none;cursor:pointer;font-size:0.9rem;color:var(--muted)">🗑</button>';
     const pendingBanner=isPending?`<div style="background:#fff8e6;border:1px solid #f0d090;border-radius:6px;padding:0.45rem 0.75rem;margin-bottom:0.4rem;font-size:0.78rem;color:var(--gold);font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap">
       <span>⏳ Awaiting approval — will sync to shift roster once approved</span>
       <div style="display:flex;gap:0.4rem">${approveBtn}${rejectBtn}</div>
     </div>`:'';
-    return `<div class="leave-row"><div class="leave-row-hdr"><div><span style="font-size:0.72rem;background:var(--surface);padding:0.1rem 0.5rem;border-radius:4px;font-weight:600;margin-right:0.4rem">${l.staff_name}</span><span style="font-size:0.72rem;padding:0.18rem 0.55rem;border-radius:20px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase" class="${cfg.cls}">${cfg.icon} ${l.leave_type}</span></div><div style="display:flex;align-items:center;gap:0.4rem"><span class="bdg ${STATUS_CFG[l.status]||'bgm'}">${l.status}</span><button onclick="printLeaveForm('${l.id}')" style="background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:6px;color:var(--ink)">🖨️ Form</button>${delBtn}</div></div>${pendingBanner}<div class="leave-row-meta">${l.start_date} → ${l.end_date} · <strong>${days} day${days!==1?'s':''}</strong></div>${l.notes?`<div style="font-size:0.75rem;color:var(--muted);font-style:italic;margin-top:0.3rem;padding-top:0.3rem;border-top:1px solid var(--surface)">${l.notes}</div>`:''}</div>`;
+    return `<div class="leave-row"><div class="leave-row-hdr"><div><span style="font-size:0.72rem;background:var(--surface);padding:0.1rem 0.5rem;border-radius:4px;font-weight:600;margin-right:0.4rem">${l.staff_name}</span><span style="font-size:0.72rem;padding:0.18rem 0.55rem;border-radius:20px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase" class="${cfg.cls}">${cfg.icon} ${l.leave_type}</span></div><div style="display:flex;align-items:center;gap:0.4rem"><span class="bdg ${STATUS_CFG[l.status]||'bgm'}">${l.status}</span><button onclick="printLeaveForm('${l.id}')" style="background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:6px;color:var(--ink)">🖨️ Form</button>${editBtn}${delBtn}</div></div>${pendingBanner}<div class="leave-row-meta">${l.start_date} → ${l.end_date} · <strong>${days} day${days!==1?'s':''}</strong></div>${l.notes?`<div style="font-size:0.75rem;color:var(--muted);font-style:italic;margin-top:0.3rem;padding-top:0.3rem;border-top:1px solid var(--surface)">${l.notes}</div>`:''}</div>`;
   }).join('');
 }
 function filterLeave(n,b){leaveFilter=n;renderLeave();}
 function openLeaveModal(nm){
   const kit=kitchenStaff();document.getElementById('leaveStaff').innerHTML=kit.map(s=>`<option value="${s.name}" ${nm===s.name?'selected':''}>${s.name}</option>`).join('');
-  document.getElementById('leaveEditId').value='';document.getElementById('leaveStart').value=new Date().toISOString().split('T')[0];document.getElementById('leaveEnd').value=new Date().toISOString().split('T')[0];document.getElementById('leaveNotes').value='';document.getElementById('leaveStatus').value='Pending';openMo('moLeave');
+  document.getElementById('leaveEditId').value='';document.getElementById('leaveStart').value=new Date().toISOString().split('T')[0];document.getElementById('leaveEnd').value=new Date().toISOString().split('T')[0];document.getElementById('leaveNotes').value='';document.getElementById('leaveStatus').value='Pending';document.getElementById('moLeaveTitle').textContent='Record Leave';openMo('moLeave');
 }
+function editLeave(id){
+  const l=leaveData.find(x=>x.id===id);if(!l)return;
+  const kit=kitchenStaff();
+  document.getElementById('leaveStaff').innerHTML=kit.map(s=>`<option value="${s.name}" ${s.name===l.staff_name?'selected':''}>${s.name}</option>`).join('');
+  document.getElementById('leaveEditId').value=id;
+  document.getElementById('leaveType').value=l.leave_type||'Annual';
+  document.getElementById('leaveStart').value=l.start_date||'';
+  document.getElementById('leaveEnd').value=l.end_date||'';
+  document.getElementById('leaveStatus').value=l.status||'Pending';
+  document.getElementById('leaveNotes').value=l.notes||'';
+  document.getElementById('moLeaveTitle').textContent='Edit Leave Record';
+  openMo('moLeave');
+}
+
 async function saveLeave(){
+  const editId=document.getElementById('leaveEditId').value;
   const staff=document.getElementById('leaveStaff').value,type=document.getElementById('leaveType').value,start=document.getElementById('leaveStart').value,end=document.getElementById('leaveEnd').value,status=document.getElementById('leaveStatus').value,notes=document.getElementById('leaveNotes').value.trim();
   if(!staff||!start||!end){showToast('Fill in all fields.',true);return;}
   if(new Date(end)<new Date(start)){showToast('End date must be after start date.',true);return;}
+  // Warn if date range looks suspiciously long (>30 days)
+  const dayCount=Math.round((new Date(end)-new Date(start))/(1000*60*60*24))+1;
+  if(dayCount>30&&!confirm(`This leave spans ${dayCount} days — is that correct?`))return;
   setSyncStatus('syncing');
-  const{error}=await SB.from('leave_records').insert({staff_name:staff,leave_type:type,start_date:start,end_date:end,status,notes});
+  let error;
+  if(editId){
+    ({error}=await SB.from('leave_records').update({staff_name:staff,leave_type:type,start_date:start,end_date:end,status,notes}).eq('id',editId));
+  } else {
+    ({error}=await SB.from('leave_records').insert({staff_name:staff,leave_type:type,start_date:start,end_date:end,status,notes}));
+  }
   if(error){setSyncStatus('err');showToast('Error saving leave.',true);return;}
-  closeMo('moLeave');const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});leaveData=leaveR.data||[];renderLeave();setSyncStatus('ok');showToast(`Leave recorded for ${staff} ✓`);
+  closeMo('moLeave');
+  const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});
+  leaveData=leaveR.data||[];renderLeave();setSyncStatus('ok');
+  showToast(editId?`Leave updated for ${staff} ✓`:`Leave recorded for ${staff} ✓`);
 }
 async function deleteLeave(id){
   if(!confirm('Delete this leave record?'))return;
