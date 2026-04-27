@@ -442,6 +442,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .roster-flag-btn.active-ph{background:var(--red-l);border-color:var(--red-b);opacity:1;}
 .roster-day.leave-day{background:#fffbef!important;border-left:3px solid var(--gold);}
 .roster-day.ph-day{background:#fff5f5!important;border-left:3px solid var(--red);}
+.roster-day.pending-leave-day{background:#fffdf0!important;border-left:3px dashed #f0d090;opacity:0.85;}
 
 /* ── WAITER LOG ── */
 .wl-summary-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);padding:0.9rem 1rem;margin-bottom:0.6rem;box-shadow:var(--sh);}
@@ -3765,6 +3766,18 @@ function staffForGroup(g){
 }
 function calcShiftHours(start,end,brk){if(!start||!end)return 0;const[sh,sm]=start.split(':').map(Number);const[eh,em]=end.split(':').map(Number);if(isNaN(sh)||isNaN(eh))return 0;let mins=(eh*60+em)-(sh*60+sm)-(parseFloat(brk)||0)*60;if(mins<0)mins+=24*60;return Math.max(0,Math.round(mins/60*10)/10);}
 function getShift(wk,nm,di){return(rosterData[wk]?.[nm]?.[di])||{start:'',end:'',brk:''};}
+// ── LEAVE ↔ ROSTER HELPERS ──────────────────────────────────────────────────
+// Check if a staff member has APPROVED leave covering a given date object
+function isOnApprovedLeave(staffName, dateObj){
+  const ds=dateObj.toISOString().split('T')[0];
+  return leaveData.some(l=>l.staff_name===staffName&&l.status==='Approved'&&l.start_date<=ds&&l.end_date>=ds);
+}
+// Check if a staff member has PENDING leave covering a given date (shows hint)
+function isOnPendingLeave(staffName, dateObj){
+  const ds=dateObj.toISOString().split('T')[0];
+  return leaveData.some(l=>l.staff_name===staffName&&l.status==='Pending'&&l.start_date<=ds&&l.end_date>=ds);
+}
+// ────────────────────────────────────────────────────────────────────────────
 function getShiftFlags(wk,nm,di){return(rosterFlags[wk]?.[nm]?.[di])||{leave:false,ph:false};}
 function setShiftFlag(wk,nm,di,flag,val){
   if(!rosterFlags[wk]) rosterFlags[wk]={};
@@ -3867,19 +3880,28 @@ function renderRGrid(){
         const sh=getShift(wk,s.name,i);
         const flags=getShiftFlags(wk,s.name,i);
         const rawHrs=calcShiftHours(sh.start,sh.end,sh.brk);
-        const effHrs=calcEffectiveHours(sh.start,sh.end,sh.brk,i,flags);
+        // Merge manual leave flag with auto-derived approved leave from leaveData
+        const autoLeave=isOnApprovedLeave(s.name, d);
+        const pendingLeave=!autoLeave&&!flags.leave&&isOnPendingLeave(s.name, d);
+        const mergedFlags={...flags, leave: flags.leave||autoLeave};
+        const effHrs=calcEffectiveHours(sh.start,sh.end,sh.brk,i,mergedFlags);
         const isSun=i===6;
-        const isPH=flags.ph;
-        const isLeave=flags.leave;
+        const isPH=mergedFlags.ph;
+        const isLeave=mergedFlags.leave;
         const isWE=i>=5;
         const multiplier=isPH?2:isSun?1.5:1;
         const multLabel=isPH?'2×PH':isSun?'1.5×SUN':'';
-        return `<div class="roster-day ${isWE?'weekend':''} ${isPH?'ph-day':''} ${isLeave?'leave-day':''}">
+        return `<div class="roster-day ${isWE?'weekend':''} ${isPH?'ph-day':''} ${isLeave?'leave-day':''} ${pendingLeave?'pending-leave-day':''}">
           <div class="roster-day-label">${DAYS[i]}</div>
           <div class="roster-day-date">${d.getDate()}</div>
-          ${isLeave?`
+          ${pendingLeave?`
             <div style="display:flex;flex-direction:column;align-items:center;padding:0.3rem 0;gap:0.3rem">
-              <div style="background:var(--gold-l);border:1px solid #f0d090;border-radius:6px;padding:0.25rem 0.5rem;font-size:0.68rem;font-weight:700;color:var(--gold)">🏖 LEAVE</div>
+              <div style="background:#fff8e6;border:1px solid #f0d090;border-radius:6px;padding:0.25rem 0.5rem;font-size:0.65rem;font-weight:700;color:var(--gold)">⏳ PENDING</div>
+              <div style="font-size:0.65rem;color:var(--muted)">awaiting approval</div>
+            </div>
+          `:isLeave?`
+            <div style="display:flex;flex-direction:column;align-items:center;padding:0.3rem 0;gap:0.3rem">
+              <div style="background:var(--gold-l);border:1px solid #f0d090;border-radius:6px;padding:0.25rem 0.5rem;font-size:0.68rem;font-weight:700;color:var(--gold)">🏖 LEAVE${autoLeave?' ✓':''}</div>
               <div style="font-size:0.7rem;color:var(--muted)">${rawHrs>0?rawHrs+'h':''}</div>
             </div>
           `:`
@@ -3907,12 +3929,15 @@ function updRSummary(){
   const wk=weekKey(rosterWeekOf),staff=staffForGroup(rosterGroup).filter(s=>s.active!==false);
   const rows=staff.map(s=>{
     let normalHrs=0,sunHrs=0,phHrs=0,leaveHrs=0;
+    const wkDates=weekDates(rosterWeekOf);
     for(let i=0;i<7;i++){
       const sh=getShift(wk,s.name,i);
       const flags=getShiftFlags(wk,s.name,i);
+      const autoLeave=isOnApprovedLeave(s.name,wkDates[i]);
+      const mergedLeave=flags.leave||autoLeave;
       const raw=calcShiftHours(sh.start,sh.end,sh.brk);
       if(!raw) continue;
-      if(flags.leave){ leaveHrs+=raw; }
+      if(mergedLeave){ leaveHrs+=raw; }
       else if(flags.ph){ phHrs+=raw*2; }
       else if(i===6){ sunHrs+=raw*1.5; }
       else { normalHrs+=raw; }
@@ -4786,14 +4811,24 @@ function renderLeave(){
   el.innerHTML=logs.map(l=>{
     const cfg=LEAVE_CFG[l.leave_type]||{cls:'lp-unpaid',icon:'📋'};
     const days=leaveDays(l);
+    const isPending=l.status==='Pending';
+    const canAct=!isReadOnly()&&CU?.role==='owner'||CU?.role==='manager';
+    const approveBtn=canAct&&isPending?`<button onclick="approveLeave('${l.id}')"
+      style="background:var(--green-l);border:1px solid var(--green-b);color:var(--green);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.28rem 0.7rem;border-radius:6px;display:inline-flex;align-items:center;gap:0.25rem">✅ Approve</button>`:'';
+    const rejectBtn=canAct&&isPending?`<button onclick="rejectLeave('${l.id}')"
+      style="background:var(--red-l);border:1px solid var(--red-b);color:var(--red);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.28rem 0.7rem;border-radius:6px;display:inline-flex;align-items:center;gap:0.25rem">❌ Reject</button>`:'';
     const delBtn=isReadOnly()?'':'<button onclick="deleteLeave(\''+l.id+'\')" style="background:none;border:none;cursor:pointer;font-size:0.9rem;color:var(--muted)">🗑</button>';
-    return `<div class="leave-row"><div class="leave-row-hdr"><div><span style="font-size:0.72rem;background:var(--surface);padding:0.1rem 0.5rem;border-radius:4px;font-weight:600;margin-right:0.4rem">${l.staff_name}</span><span style="font-size:0.72rem;padding:0.18rem 0.55rem;border-radius:20px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase" class="${cfg.cls}">${cfg.icon} ${l.leave_type}</span></div><div style="display:flex;align-items:center;gap:0.4rem"><span class="bdg ${STATUS_CFG[l.status]||'bgm'}">${l.status}</span><button onclick="printLeaveForm('${l.id}')" style="background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:6px;color:var(--ink)">🖨️ Form</button>${delBtn}</div></div><div class="leave-row-meta">${l.start_date} → ${l.end_date} · <strong>${days} day${days!==1?'s':''}</strong></div>${l.notes?`<div style="font-size:0.75rem;color:var(--muted);font-style:italic;margin-top:0.3rem;padding-top:0.3rem;border-top:1px solid var(--surface)">${l.notes}</div>`:''}</div>`;
+    const pendingBanner=isPending?`<div style="background:#fff8e6;border:1px solid #f0d090;border-radius:6px;padding:0.45rem 0.75rem;margin-bottom:0.4rem;font-size:0.78rem;color:var(--gold);font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap">
+      <span>⏳ Awaiting approval — will sync to shift roster once approved</span>
+      <div style="display:flex;gap:0.4rem">${approveBtn}${rejectBtn}</div>
+    </div>`:'';
+    return `<div class="leave-row"><div class="leave-row-hdr"><div><span style="font-size:0.72rem;background:var(--surface);padding:0.1rem 0.5rem;border-radius:4px;font-weight:600;margin-right:0.4rem">${l.staff_name}</span><span style="font-size:0.72rem;padding:0.18rem 0.55rem;border-radius:20px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase" class="${cfg.cls}">${cfg.icon} ${l.leave_type}</span></div><div style="display:flex;align-items:center;gap:0.4rem"><span class="bdg ${STATUS_CFG[l.status]||'bgm'}">${l.status}</span><button onclick="printLeaveForm('${l.id}')" style="background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:6px;color:var(--ink)">🖨️ Form</button>${delBtn}</div></div>${pendingBanner}<div class="leave-row-meta">${l.start_date} → ${l.end_date} · <strong>${days} day${days!==1?'s':''}</strong></div>${l.notes?`<div style="font-size:0.75rem;color:var(--muted);font-style:italic;margin-top:0.3rem;padding-top:0.3rem;border-top:1px solid var(--surface)">${l.notes}</div>`:''}</div>`;
   }).join('');
 }
 function filterLeave(n,b){leaveFilter=n;renderLeave();}
 function openLeaveModal(nm){
   const kit=kitchenStaff();document.getElementById('leaveStaff').innerHTML=kit.map(s=>`<option value="${s.name}" ${nm===s.name?'selected':''}>${s.name}</option>`).join('');
-  document.getElementById('leaveEditId').value='';document.getElementById('leaveStart').value=new Date().toISOString().split('T')[0];document.getElementById('leaveEnd').value=new Date().toISOString().split('T')[0];document.getElementById('leaveNotes').value='';document.getElementById('leaveStatus').value='Approved';openMo('moLeave');
+  document.getElementById('leaveEditId').value='';document.getElementById('leaveStart').value=new Date().toISOString().split('T')[0];document.getElementById('leaveEnd').value=new Date().toISOString().split('T')[0];document.getElementById('leaveNotes').value='';document.getElementById('leaveStatus').value='Pending';openMo('moLeave');
 }
 async function saveLeave(){
   const staff=document.getElementById('leaveStaff').value,type=document.getElementById('leaveType').value,start=document.getElementById('leaveStart').value,end=document.getElementById('leaveEnd').value,status=document.getElementById('leaveStatus').value,notes=document.getElementById('leaveNotes').value.trim();
@@ -4807,6 +4842,34 @@ async function saveLeave(){
 async function deleteLeave(id){
   if(!confirm('Delete this leave record?'))return;
   setSyncStatus('syncing');await SB.from('leave_records').delete().eq('id',id);const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});leaveData=leaveR.data||[];renderLeave();setSyncStatus('ok');showToast('Deleted.');
+}
+
+async function approveLeave(id){
+  if(!confirm('Approve this leave request? It will automatically mark those days as leave on the shift roster.'))return;
+  setSyncStatus('syncing');
+  const{error}=await SB.from('leave_records').update({status:'Approved'}).eq('id',id);
+  if(error){setSyncStatus('err');showToast('Error approving leave.',true);return;}
+  const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});
+  leaveData=leaveR.data||[];
+  renderLeave();
+  // Refresh roster view if it's open so leave days appear immediately
+  if(document.getElementById('p-roster')?.classList.contains('act')) renderRGrid();
+  setSyncStatus('ok');
+  const rec=leaveData.find(l=>l.id===id);
+  showToast(`✅ Leave approved for ${rec?.staff_name||'staff member'} — roster updated ✓`);
+}
+
+async function rejectLeave(id){
+  if(!confirm('Reject this leave request?'))return;
+  setSyncStatus('syncing');
+  const{error}=await SB.from('leave_records').update({status:'Rejected'}).eq('id',id);
+  if(error){setSyncStatus('err');showToast('Error rejecting leave.',true);return;}
+  const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});
+  leaveData=leaveR.data||[];
+  renderLeave();
+  if(document.getElementById('p-roster')?.classList.contains('act')) renderRGrid();
+  setSyncStatus('ok');
+  showToast('Leave request rejected.');
 }
 
 function printLeaveForm(id){
