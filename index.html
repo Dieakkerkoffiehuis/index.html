@@ -1846,7 +1846,7 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
         <select id="newDocType" onchange="toggleWarningFields()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
           <option>Employment Contract</option><option>ID Copy</option><option>Proof of Residence</option>
           <option>Bank Details</option><option>Verbal Warning</option><option>Written Warning</option>
-          <option>Final Warning</option><option>Sick Note</option><option>Medical Certificate</option>
+          <option>Final Warning</option><option>Incident Report</option><option>Sick Note</option><option>Medical Certificate</option>
           <option>Performance Review</option><option>Other</option>
         </select>
       </div>
@@ -1865,6 +1865,35 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
           </div>
           <div class="fg"><label>Witness Name <span style="color:var(--red)">*</span></label>
             <input type="text" id="newDocWitness" placeholder="Full name of witness"></div>
+        </div>
+      </div>
+      <!-- Incident-specific fields — shown only for Incident Report -->
+      <div id="incidentFields" style="display:none;background:#fff8f0;border:1px solid #f0c080;border-radius:10px;padding:0.9rem 1rem;margin-top:0.5rem">
+        <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#b85c00;margin-bottom:0.7rem">🚑 Incident Details</div>
+        <div class="fg2">
+          <div class="fg"><label>Date &amp; Time of Incident <span style="color:var(--red)">*</span></label>
+            <input type="datetime-local" id="incidentDateTime" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
+          <div class="fg"><label>Date Management Informed <span style="color:var(--red)">*</span></label>
+            <input type="date" id="incidentDateInformed" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
+        </div>
+        <div class="fg2">
+          <div class="fg"><label>Date Reports Submitted</label>
+            <input type="date" id="incidentDateSubmitted" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
+          <div class="fg"><label>Persons Involved</label>
+            <input type="text" id="incidentPersons" placeholder="Names of all parties involved" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
+        </div>
+        <div class="fg"><label>Nature of Incident <span style="color:var(--red)">*</span></label>
+          <textarea id="incidentDescription" rows="3" placeholder="Describe what happened, where it occurred, and any immediate actions taken..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none;resize:vertical;box-sizing:border-box"></textarea>
+        </div>
+        <div class="fg"><label>Next Steps / Follow-up Actions</label>
+          <textarea id="incidentNextSteps" rows="3" placeholder="e.g. Refer to DoL, schedule medical, complete IOD form, legal consultation..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none;resize:vertical;box-sizing:border-box"></textarea>
+        </div>
+        <div class="fg2">
+          <div class="fg"><label>Reported By (Manager)</label>
+            <select id="incidentManager" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></select>
+          </div>
+          <div class="fg"><label>Witness</label>
+            <input type="text" id="incidentWitness" placeholder="Witness name" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
         </div>
       </div>
       <div class="fg"><label>Upload File (optional)</label><input type="file" id="newDocFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.82rem;width:100%"></div>
@@ -3760,7 +3789,11 @@ function staffForGroup(g){
   const isMgr=(s)=>div(s,'management')||role(s,'manager');
   if(g==='Kitchen')       return stfD.filter(s=>!isMgr(s)&&(div(s,'kitchen')||role(s,'kitchen')));
   if(g==='Bar / Waiters') return stfD.filter(s=>!isMgr(s)&&(div(s,'floor')||div(s,'waiters')||div(s,'bar')||role(s,'waiter','barman','bartender','bar person','bar staff')));
-  if(g==='Managers')      return stfD.filter(s=>isMgr(s));
+  // Managers who are also on the Waiters PH list have their shifts tracked there —
+  // exclude them from the Managers roster tab to avoid the same shift showing in two places.
+  const waitphSet=new Set(getWaitphRosterStaff().map(n=>n.toLowerCase()));
+  const inWaitph=(s)=>waitphSet.has(s.name.toLowerCase())||[...waitphSet].some(n=>s.name.toLowerCase().startsWith(n)||n.startsWith(s.name.toLowerCase()));
+  if(g==='Managers')      return stfD.filter(s=>isMgr(s)&&!inWaitph(s));
   if(g==='Waiters PH'){
     return getWaitphRosterStaff().map(n=>{
       const found=stfD.find(s=>s.name.toLowerCase()===n.toLowerCase())||stfD.find(s=>s.name.toLowerCase().startsWith(n.toLowerCase()));
@@ -5269,7 +5302,7 @@ function switchKpiTab(tab,btn){
 // DOCS
 // ═══════════════════════════════════════════
 const DOC_REQ=['Employment Contract','ID Copy','Proof of Residence','Bank Details'];
-const DOC_ICONS={'Employment Contract':'📄','ID Copy':'🪪','Proof of Residence':'🏠','Bank Details':'🏦','Verbal Warning':'⚠️','Written Warning':'⚠️','Final Warning':'🚨','Sick Note':'🏥','Medical Certificate':'🏥','Performance Review':'📊','Other':'📋'};
+const DOC_ICONS={'Employment Contract':'📄','ID Copy':'🪪','Proof of Residence':'🏠','Bank Details':'🏦','Verbal Warning':'⚠️','Written Warning':'⚠️','Final Warning':'🚨','Incident Report':'🚑','Sick Note':'🏥','Medical Certificate':'🏥','Performance Review':'📊','Other':'📋'};
 
 function renderDocs(){
   const q=document.getElementById('docSearch').value.toLowerCase();
@@ -5312,8 +5345,19 @@ function openDocModal(nm){
 function toggleWarningFields(){
   const type=document.getElementById('newDocType')?.value||'';
   const isWarning=['Verbal Warning','Written Warning','Final Warning'].includes(type);
+  const isIncident=type==='Incident Report';
   const wf=document.getElementById('warningFields');
+  const inf=document.getElementById('incidentFields');
   if(wf) wf.style.display=isWarning?'block':'none';
+  if(inf) inf.style.display=isIncident?'block':'none';
+  // Populate incident manager dropdown if needed
+  if(isIncident){
+    const sel=document.getElementById('incidentManager');
+    if(sel&&!sel.options.length){
+      const mgrs=stfD.filter(s=>s.active!==false&&((s.division||'').toLowerCase()==='management'||(s.role||'').toLowerCase().includes('manager')));
+      sel.innerHTML=mgrs.map(m=>`<option>${m.name}</option>`).join('')||'<option>Zavier</option>';
+    }
+  }
 }
 
 function renderDocChecklist(nm){
@@ -5327,16 +5371,33 @@ function renderDocLog(nm){
   if(!docs.length){el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--muted);font-size:0.82rem">No documents logged yet</div>';return;}
   el.innerHTML=docs.map(d=>{
     const isWarning=['Verbal Warning','Written Warning','Final Warning'].includes(d.doc_type);
-    const notesStr=d.notes?` · ${d.notes}`:'';
-    const mgrStr=d.manager_on_duty?`<div style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;display:flex;gap:1rem;flex-wrap:wrap"><span>👔 <strong>${d.manager_on_duty}</strong></span>${d.witness?`<span>👁 Witness: <strong>${d.witness}</strong></span>`:''}</div>`:'';
-    const reasonStr=d.reason?`<div style="font-size:0.8rem;color:var(--text);background:var(--red-l);border-left:3px solid var(--red);border-radius:0 6px 6px 0;padding:0.5rem 0.7rem;margin:0.4rem 0;white-space:pre-wrap">${d.reason}</div>`:'';
-    return `<div class="doc-log-item" style="${isWarning?'border-left:3px solid var(--red);padding-left:0.7rem':''}">
+    const isIncident=d.doc_type==='Incident Report';
+    // Try parsing incident JSON from notes
+    let incidentData=null;
+    if(isIncident&&d.notes){try{incidentData=JSON.parse(d.notes);}catch(e){}}
+    const notesStr=(!isIncident&&d.notes)?` · ${d.notes}`:(incidentData?.user_notes?` · ${incidentData.user_notes}`:'');
+    const mgrStr=d.manager_on_duty&&!isIncident?`<div style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;display:flex;gap:1rem;flex-wrap:wrap"><span>👔 <strong>${d.manager_on_duty}</strong></span>${d.witness?`<span>👁 Witness: <strong>${d.witness}</strong></span>`:''}</div>`:'';
+    const reasonStr=d.reason&&!isIncident?`<div style="font-size:0.8rem;color:var(--text);background:var(--red-l);border-left:3px solid var(--red);border-radius:0 6px 6px 0;padding:0.5rem 0.7rem;margin:0.4rem 0;white-space:pre-wrap">${d.reason}</div>`:'';
+    // Incident-specific expanded view
+    const incidentBlock=isIncident?`
+      <div style="margin-top:0.6rem">
+        ${d.reason?`<div style="font-size:0.8rem;color:var(--text);background:#fff8f0;border-left:3px solid #e07000;border-radius:0 6px 6px 0;padding:0.5rem 0.7rem;margin-bottom:0.5rem;white-space:pre-wrap"><strong>Description:</strong> ${d.reason}</div>`:''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.35rem 1rem;font-size:0.75rem;margin-bottom:0.4rem">
+          ${incidentData?.incident_datetime?`<div style="color:var(--muted)">🕐 Incident</div><div style="font-weight:700">${incidentData.incident_datetime.replace('T',' ')}</div>`:''}
+          ${incidentData?.date_informed?`<div style="color:var(--muted)">📣 Management Informed</div><div style="font-weight:700">${incidentData.date_informed}</div>`:''}
+          ${incidentData?.date_submitted?`<div style="color:var(--muted)">📋 Reports Submitted</div><div style="font-weight:700">${incidentData.date_submitted}</div>`:''}
+          ${incidentData?.persons_involved?`<div style="color:var(--muted)">👥 Persons Involved</div><div style="font-weight:700">${incidentData.persons_involved}</div>`:''}
+        </div>
+        ${d.manager_on_duty||d.witness?`<div style="font-size:0.72rem;color:var(--muted);display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.4rem">${d.manager_on_duty?`<span>👔 Reported by: <strong>${d.manager_on_duty}</strong></span>`:''}${d.witness?`<span>👁 Witness: <strong>${d.witness}</strong></span>`:''}</div>`:''}
+        ${incidentData?.next_steps?`<div style="font-size:0.78rem;background:#f0f8ff;border:1px solid #b0d4f0;border-radius:6px;padding:0.5rem 0.7rem;margin-top:0.3rem"><div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#2060a0;margin-bottom:0.25rem">📌 Next Steps</div><div style="white-space:pre-wrap;color:var(--text)">${incidentData.next_steps}</div></div>`:''}
+      </div>`:'';
+    return `<div class="doc-log-item" style="${isWarning?'border-left:3px solid var(--red);padding-left:0.7rem':isIncident?'border-left:3px solid #e07000;padding-left:0.7rem':''}">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div class="doc-log-type">${DOC_ICONS[d.doc_type]||'📋'} ${d.doc_type}</div>
         <button onclick="deleteDoc('${d.id}','${nm.replace(/'/g,"\\'")}','${d.doc_type}')" style="background:none;border:none;cursor:pointer;font-size:0.85rem;color:var(--muted)">🗑</button>
       </div>
       <div class="doc-log-meta">📅 ${d.date_received}${notesStr}</div>
-      ${reasonStr}${mgrStr}
+      ${reasonStr}${mgrStr}${incidentBlock}
       ${d.file_name?`<div style="font-size:0.72rem;color:var(--blue);font-weight:600;margin-top:0.3rem">📎 ${d.file_name}${d.file_data?` <a href="${d.file_data}" download="${d.file_name}" style="color:var(--blue);text-decoration:none">↓ Download</a>`:''}</div>`:''}
     </div>`;
   }).join('');
@@ -5349,18 +5410,39 @@ async function saveDoc(){
   const notes=document.getElementById('newDocNotes').value.trim();
   if(!date){showToast('Select a date.',true);return;}
   const isWarning=['Verbal Warning','Written Warning','Final Warning'].includes(type);
-  const manager_on_duty=isWarning?document.getElementById('newDocManager')?.value||'':null;
-  const witness=isWarning?document.getElementById('newDocWitness')?.value.trim()||'':null;
-  const reason=isWarning?document.getElementById('newDocReason')?.value.trim()||'':null;
+  const isIncident=type==='Incident Report';
+  const manager_on_duty=isWarning?document.getElementById('newDocManager')?.value||''
+                       :isIncident?document.getElementById('incidentManager')?.value||'':null;
+  const witness=isWarning?document.getElementById('newDocWitness')?.value.trim()||''
+               :isIncident?document.getElementById('incidentWitness')?.value.trim()||'':null;
+  const reason=isWarning?document.getElementById('newDocReason')?.value.trim()||''
+              :isIncident?document.getElementById('incidentDescription')?.value.trim()||'':null;
   if(isWarning){
     if(!reason){showToast('Please describe the offence.',true);document.getElementById('newDocReason').focus();return;}
     if(!witness){showToast('Please enter a witness name.',true);document.getElementById('newDocWitness').focus();return;}
   }
+  if(isIncident){
+    if(!document.getElementById('incidentDateTime')?.value){showToast('Please enter the date and time of the incident.',true);return;}
+    if(!document.getElementById('incidentDateInformed')?.value){showToast('Please enter the date management was informed.',true);return;}
+    if(!reason){showToast('Please describe the incident.',true);document.getElementById('incidentDescription').focus();return;}
+  }
+  // For incidents, pack extra fields as JSON into notes
+  let notesVal=notes;
+  if(isIncident){
+    notesVal=JSON.stringify({
+      incident_datetime:document.getElementById('incidentDateTime').value,
+      date_informed:document.getElementById('incidentDateInformed').value,
+      date_submitted:document.getElementById('incidentDateSubmitted').value||'',
+      persons_involved:document.getElementById('incidentPersons').value.trim()||'',
+      next_steps:document.getElementById('incidentNextSteps').value.trim()||'',
+      user_notes:notes
+    });
+  }
   const fileInput=document.getElementById('newDocFile');
   const doSave=async(fn,fd)=>{
     setSyncStatus('syncing');
-    const rec={staff_name:nm,doc_type:type,date_received:date,notes,file_name:fn||'',file_data:fd||''};
-    if(isWarning){rec.manager_on_duty=manager_on_duty;rec.witness=witness;rec.reason=reason;}
+    const rec={staff_name:nm,doc_type:type,date_received:date,notes:notesVal,file_name:fn||'',file_data:fd||''};
+    if(isWarning||isIncident){rec.manager_on_duty=manager_on_duty;rec.witness=witness;rec.reason=reason;}
     const{error}=await SB.from('staff_documents').insert(rec);
     if(error){setSyncStatus('err');showToast('Error saving document.',true);return;}
     const docsR=await SB.from('staff_documents').select('*').order('added_at',{ascending:false});
@@ -5370,6 +5452,10 @@ async function saveDoc(){
     document.getElementById('newDocNotes').value='';
     document.getElementById('newDocFile').value='';
     if(isWarning){document.getElementById('newDocWitness').value='';document.getElementById('newDocReason').value='';document.getElementById('newDocManager').selectedIndex=0;}
+    if(isIncident){
+      ['incidentDateTime','incidentDateInformed','incidentDateSubmitted','incidentPersons','incidentDescription','incidentNextSteps','incidentWitness'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+      document.getElementById('incidentManager').selectedIndex=0;
+    }
   };
   if(fileInput.files&&fileInput.files[0]){const f=fileInput.files[0];const r=new FileReader();r.onload=e=>doSave(f.name,e.target.result);r.readAsDataURL(f);}
   else doSave('','');
