@@ -1646,6 +1646,14 @@ ALTER TABLE payroll DROP CONSTRAINT IF EXISTS payroll_pkey;
 ALTER TABLE payroll ADD CONSTRAINT payroll_staff_month_group_unique UNIQUE (staff_name, month, group_type);</pre>
           <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('payrollColsSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
+        <div class="card" id="staffDocsSQL">
+          <div class="card-title">Staff Documents Table — Required Updates</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this once in Supabase to add the columns needed for warnings and incident reports (manager on duty, witness, reason/description):</div>
+          <pre id="staffDocsSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">ALTER TABLE staff_documents ADD COLUMN IF NOT EXISTS manager_on_duty text DEFAULT '';
+ALTER TABLE staff_documents ADD COLUMN IF NOT EXISTS witness text DEFAULT '';
+ALTER TABLE staff_documents ADD COLUMN IF NOT EXISTS reason text DEFAULT '';</pre>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('staffDocsSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
         <div class="card" id="stockSectionSQL">
           <div class="card-title">Stock Sections Setup</div>
           <div id="sectionColStatus" style="font-size:0.78rem;padding:0.45rem 0.7rem;border-radius:8px;margin-bottom:0.7rem;display:none"></div>
@@ -5445,7 +5453,7 @@ async function saveDoc(){
     const rec={staff_name:nm,doc_type:type,date_received:date,notes:notesVal,file_name:fn||'',file_data:fd||''};
     if(isWarning||isIncident){rec.manager_on_duty=manager_on_duty;rec.witness=witness;rec.reason=reason;}
     const{error}=await SB.from('staff_documents').insert(rec);
-    if(error){setSyncStatus('err');showToast('Error saving document.',true);return;}
+    if(error){setSyncStatus('err');console.error('staff_documents insert error:',error);showToast('DB error: '+(error.message||error.code||'unknown'),true);return;}
     const docsR=await SB.from('staff_documents').select('*').order('added_at',{ascending:false});
     docsData={};(docsR.data||[]).forEach(d=>{if(!docsData[d.staff_name])docsData[d.staff_name]=[];docsData[d.staff_name].push(d);});
     renderDocChecklist(nm);renderDocLog(nm);renderDocs();setSyncStatus('ok');
