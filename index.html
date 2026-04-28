@@ -1646,6 +1646,20 @@ ALTER TABLE payroll DROP CONSTRAINT IF EXISTS payroll_pkey;
 ALTER TABLE payroll ADD CONSTRAINT payroll_staff_month_group_unique UNIQUE (staff_name, month, group_type);</pre>
           <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('payrollColsSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
+        <div class="card" id="rosterGroupSQL">
+          <div class="card-title">Roster Table — Group Type Update <span style="font-size:0.72rem;color:var(--red);font-weight:700">⚠️ Required</span></div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this once in Supabase to add the <strong>group_type</strong> column. This allows Jabulani, Juan and Marleigh to have separate manager shifts and waiter PH shifts tracked independently:</div>
+          <pre id="rosterGroupSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">-- Add group_type column to roster table
+ALTER TABLE roster ADD COLUMN IF NOT EXISTS group_type text DEFAULT '';
+
+-- Update unique constraint to include group_type
+-- (allows same person to have separate manager + waiter PH shifts)
+ALTER TABLE roster DROP CONSTRAINT IF EXISTS roster_staff_name_week_start_day_index_key;
+ALTER TABLE roster DROP CONSTRAINT IF EXISTS roster_pkey;
+ALTER TABLE roster ADD CONSTRAINT roster_group_staff_week_day_unique
+  UNIQUE (group_type, staff_name, week_start, day_index);</pre>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('rosterGroupSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
         <div class="card" id="staffDocsSQL">
           <div class="card-title">Staff Documents Table — Required Updates</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this once in Supabase to add the columns needed for warnings and incident reports (manager on duty, witness, reason/description):</div>
@@ -3807,7 +3821,7 @@ function staffForGroup(g){
   return[];
 }
 function calcShiftHours(start,end,brk){if(!start||!end)return 0;const[sh,sm]=start.split(':').map(Number);const[eh,em]=end.split(':').map(Number);if(isNaN(sh)||isNaN(eh))return 0;let mins=(eh*60+em)-(sh*60+sm)-(parseFloat(brk)||0)*60;if(mins<0)mins+=24*60;return Math.max(0,Math.round(mins/60*10)/10);}
-function getShift(wk,nm,di){return(rosterData[wk]?.[nm]?.[di])||{start:'',end:'',brk:''};}
+function getShift(wk,grp,nm,di){return(rosterData[wk]?.[grp]?.[nm]?.[di])||{start:'',end:'',brk:''};}
 // ── LEAVE ↔ ROSTER HELPERS ──────────────────────────────────────────────────
 // Check if a staff member has APPROVED leave covering a given date object
 function isOnApprovedLeave(staffName, dateObj){
@@ -3820,27 +3834,28 @@ function isOnPendingLeave(staffName, dateObj){
   return leaveData.some(l=>l.staff_name===staffName&&l.status==='Pending'&&l.start_date<=ds&&l.end_date>=ds);
 }
 // ────────────────────────────────────────────────────────────────────────────
-function getShiftFlags(wk,nm,di){return(rosterFlags[wk]?.[nm]?.[di])||{leave:false,ph:false};}
-function setShiftFlag(wk,nm,di,flag,val){
+function getShiftFlags(wk,grp,nm,di){return(rosterFlags[wk]?.[grp]?.[nm]?.[di])||{leave:false,ph:false};}
+function setShiftFlag(wk,grp,nm,di,flag,val){
   if(!rosterFlags[wk]) rosterFlags[wk]={};
-  if(!rosterFlags[wk][nm]) rosterFlags[wk][nm]={};
-  if(!rosterFlags[wk][nm][di]) rosterFlags[wk][nm][di]={leave:false,ph:false};
-  rosterFlags[wk][nm][di][flag]=val;
+  if(!rosterFlags[wk][grp]) rosterFlags[wk][grp]={};
+  if(!rosterFlags[wk][grp][nm]) rosterFlags[wk][grp][nm]={};
+  if(!rosterFlags[wk][grp][nm][di]) rosterFlags[wk][grp][nm][di]={leave:false,ph:false};
+  rosterFlags[wk][grp][nm][di][flag]=val;
 }
-function toggleFlag(wk,nm,di,flag){
-  const cur=getShiftFlags(wk,nm,di)[flag];
-  setShiftFlag(wk,nm,di,flag,!cur);
+function toggleFlag(wk,grp,nm,di,flag){
+  const cur=getShiftFlags(wk,grp,nm,di)[flag];
+  setShiftFlag(wk,grp,nm,di,flag,!cur);
   // If marking leave AND no shift set, try to copy from a typical day
   if(flag==='leave'&&!cur){
-    const sh=getShift(wk,nm,di);
+    const sh=getShift(wk,grp,nm,di);
     if(!sh.start&&!sh.end){
-      // Find any filled day this week for this person as reference
       for(let d=0;d<7;d++){
-        const s2=getShift(wk,nm,d);
+        const s2=getShift(wk,grp,nm,d);
         if(s2.start&&s2.end){
           if(!rosterData[wk]) rosterData[wk]={};
-          if(!rosterData[wk][nm]) rosterData[wk][nm]={};
-          rosterData[wk][nm][di]={start:s2.start,end:s2.end,brk:s2.brk};
+          if(!rosterData[wk][grp]) rosterData[wk][grp]={};
+          if(!rosterData[wk][grp][nm]) rosterData[wk][grp][nm]={};
+          rosterData[wk][grp][nm][di]={start:s2.start,end:s2.end,brk:s2.brk};
           break;
         }
       }
@@ -3856,22 +3871,23 @@ function calcEffectiveHours(start,end,brk,dayIndex,flags){
   if(dayIndex===6) return raw*1.5; // Sunday
   return raw;
 }
-function setShift(wk,nm,di,f,v){
+function setShift(wk,grp,nm,di,f,v){
   if(!rosterData[wk])rosterData[wk]={};
-  if(!rosterData[wk][nm])rosterData[wk][nm]={};
-  if(!rosterData[wk][nm][di])rosterData[wk][nm][di]={start:'',end:'',brk:''};
-  rosterData[wk][nm][di][f]=v;
-  const sh=rosterData[wk][nm][di];
-  const flags=getShiftFlags(wk,nm,di);
+  if(!rosterData[wk][grp])rosterData[wk][grp]={};
+  if(!rosterData[wk][grp][nm])rosterData[wk][grp][nm]={};
+  if(!rosterData[wk][grp][nm][di])rosterData[wk][grp][nm][di]={start:'',end:'',brk:''};
+  rosterData[wk][grp][nm][di][f]=v;
+  const sh=rosterData[wk][grp][nm][di];
+  const flags=getShiftFlags(wk,grp,nm,di);
   const effHrs=calcEffectiveHours(sh.start,sh.end,sh.brk,di,flags);
   const hEl=document.getElementById(`rh-${nm.replace(/\W/g,'_')}-${di}`);
   if(hEl){hEl.textContent=effHrs>0?effHrs.toFixed(1)+'h':'';hEl.className='roster-day-hrs'+(effHrs>0?'':' zero');}
-  updRTot(wk,nm);updRSummary();
+  updRTot(wk,grp,nm);updRSummary();
 }
-function updRTot(wk,nm){
+function updRTot(wk,grp,nm){
   const t=Array.from({length:7},(_,i)=>{
-    const sh=getShift(wk,nm,i);
-    const flags=getShiftFlags(wk,nm,i);
+    const sh=getShift(wk,grp,nm,i);
+    const flags=getShiftFlags(wk,grp,nm,i);
     return calcEffectiveHours(sh.start,sh.end,sh.brk,i,flags);
   }).reduce((a,b)=>a+b,0);
   const e=document.getElementById(`rtot-${nm.replace(/\W/g,'_')}`);
@@ -3913,8 +3929,8 @@ function renderRGrid(){
   document.getElementById('rosterGrid').innerHTML=staff.map(s=>{
     const sk=s.name.replace(/\W/g,'_');
     const wt=Array.from({length:7},(_,i)=>{
-      const sh=getShift(wk,s.name,i);
-      const flags=getShiftFlags(wk,s.name,i);
+      const sh=getShift(wk,rosterGroup,s.name,i);
+      const flags=getShiftFlags(wk,rosterGroup,s.name,i);
       return calcEffectiveHours(sh.start,sh.end,sh.brk,i,flags);
     }).reduce((a,b)=>a+b,0);
     const nm=s.name.replace(/'/g,"\\'");
@@ -3924,8 +3940,8 @@ function renderRGrid(){
       onmouseout="this.style.background='rgba(255,255,255,0.18)'">✕</button>`:'';
     return `<div class="roster-card"><div class="roster-staff-hdr"><div class="roster-staff-av">${s.name[0]}</div><div style="flex:1"><div class="roster-staff-name">${s.name}</div><div class="roster-staff-role">${s.role}</div></div><div class="roster-hours-pill" id="rtot-${sk}">${wt>0?wt.toFixed(1)+'h':'—'}</div>${removeBtn}</div><div>
       ${dates.map((d,i)=>{
-        const sh=getShift(wk,s.name,i);
-        const flags=getShiftFlags(wk,s.name,i);
+        const sh=getShift(wk,rosterGroup,s.name,i);
+        const flags=getShiftFlags(wk,rosterGroup,s.name,i);
         const rawHrs=calcShiftHours(sh.start,sh.end,sh.brk);
         // Merge manual leave flag with auto-derived approved leave from leaveData
         const autoLeave=isOnApprovedLeave(s.name, d);
@@ -3953,10 +3969,10 @@ function renderRGrid(){
             </div>
           `:`
             <div class="roster-time-group">
-              <div style="display:flex;flex-direction:column;align-items:center"><input type="time" class="rtime" value="${sh.start}" oninput="setShift('${wk}','${s.name}',${i},'start',this.value)"><span class="rt-lbl">START</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center"><input type="time" class="rtime" value="${sh.start}" oninput="setShift('${wk}','${rosterGroup}','${s.name}',${i},'start',this.value)"><span class="rt-lbl">START</span></div>
               <div style="color:var(--muted);font-size:0.8rem;padding-top:2px">→</div>
-              <div style="display:flex;flex-direction:column;align-items:center"><input type="time" class="rtime" value="${sh.end}" oninput="setShift('${wk}','${s.name}',${i},'end',this.value)"><span class="rt-lbl">END</span></div>
-              <div style="display:flex;flex-direction:column;align-items:center"><input type="number" class="rbreak" value="${sh.brk}" placeholder="0" min="0" step="0.5" oninput="setShift('${wk}','${s.name}',${i},'brk',this.value)"><span class="rt-lbl">BRK h</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center"><input type="time" class="rtime" value="${sh.end}" oninput="setShift('${wk}','${rosterGroup}','${s.name}',${i},'end',this.value)"><span class="rt-lbl">END</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center"><input type="number" class="rbreak" value="${sh.brk}" placeholder="0" min="0" step="0.5" oninput="setShift('${wk}','${rosterGroup}','${s.name}',${i},'brk',this.value)"><span class="rt-lbl">BRK h</span></div>
             </div>
           `}
           <div class="roster-day-hrs${effHrs>0?'':' zero'}" id="rh-${sk}-${i}">
@@ -3964,8 +3980,8 @@ function renderRGrid(){
             ${multLabel&&effHrs>0?`<span style="font-size:0.55rem;background:${isPH?'var(--red)':'var(--blue)'};color:#fff;padding:0.05rem 0.25rem;border-radius:3px;margin-left:2px">${multLabel}</span>`:''}
           </div>
           <div style="display:flex;gap:2px;justify-content:center;margin-top:2px;flex-wrap:wrap">
-            <button class="roster-flag-btn ${isLeave?'active-leave':''}" onclick="toggleFlag('${wk}','${s.name}',${i},'leave')" title="${isLeave?'Remove leave':'Mark as leave'}">🏖</button>
-            <button class="roster-flag-btn ${isPH?'active-ph':''}" onclick="toggleFlag('${wk}','${s.name}',${i},'ph')" title="${isPH?'Remove public holiday':'Mark as public holiday'}">🇿🇦</button>
+            <button class="roster-flag-btn ${isLeave?'active-leave':''}" onclick="toggleFlag('${wk}','${rosterGroup}','${s.name}',${i},'leave')" title="${isLeave?'Remove leave':'Mark as leave'}">🏖</button>
+            <button class="roster-flag-btn ${isPH?'active-ph':''}" onclick="toggleFlag('${wk}','${rosterGroup}','${s.name}',${i},'ph')" title="${isPH?'Remove public holiday':'Mark as public holiday'}">🇿🇦</button>
           </div>
         </div>`;
       }).join('')}</div></div>`;
@@ -3978,8 +3994,8 @@ function updRSummary(){
     let normalHrs=0,sunHrs=0,phHrs=0,leaveHrs=0;
     const wkDates=weekDates(rosterWeekOf);
     for(let i=0;i<7;i++){
-      const sh=getShift(wk,s.name,i);
-      const flags=getShiftFlags(wk,s.name,i);
+      const sh=getShift(wk,rosterGroup,s.name,i);
+      const flags=getShiftFlags(wk,rosterGroup,s.name,i);
       const autoLeave=isOnApprovedLeave(s.name,wkDates[i]);
       const mergedLeave=flags.leave||autoLeave;
       const raw=calcShiftHours(sh.start,sh.end,sh.brk);
@@ -4009,31 +4025,53 @@ async function saveRoster(){
   setSyncStatus('syncing');
   const wk=weekKey(rosterWeekOf);
   const rows=[];
-  Object.entries(rosterData[wk]||{}).forEach(([staffName,days])=>{
-    Object.entries(days).forEach(([dayIdx,sh])=>{
-      if(sh.start||sh.end) rows.push({staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0});
+  // rosterData[wk][group][staffName][dayIdx]
+  Object.entries(rosterData[wk]||{}).forEach(([grp,names])=>{
+    Object.entries(names).forEach(([staffName,days])=>{
+      Object.entries(days).forEach(([dayIdx,sh])=>{
+        if(sh.start||sh.end) rows.push({group_type:grp,staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0});
+      });
     });
   });
   if(rows.length){
-    const {error}=await SB.from('roster').upsert(rows,{onConflict:'staff_name,week_start,day_index'});
-    if(error){setSyncStatus('err');showToast('Error saving roster.',true);return;}
+    const {error}=await SB.from('roster').upsert(rows,{onConflict:'group_type,staff_name,week_start,day_index'});
+    if(error){setSyncStatus('err');showToast('Error saving roster: '+(error.message||error.code||'unknown'),true);console.error(error);return;}
   }
   setSyncStatus('ok');showToast('Roster saved to database ✓');
   await syncRosterHoursToPayroll();
+}
+
+// Helper: infer which roster group a staff member belongs to (for migrating old data without group_type)
+function inferRosterGroup(staffName){
+  const s=stfD.find(x=>x.name===staffName);
+  if(!s) return 'Bar / Waiters';
+  const div=(s.division||'').toLowerCase();
+  const role=(s.role||'').toLowerCase();
+  if(div==='management'||role.includes('manager')) return 'Managers';
+  if(div==='kitchen'||role.includes('kitchen')) return 'Kitchen';
+  const wph=getWaitphRosterStaff().map(n=>n.toLowerCase());
+  if(wph.some(n=>staffName.toLowerCase()===n||staffName.toLowerCase().startsWith(n))) return 'Waiters PH';
+  return 'Bar / Waiters';
 }
 
 async function loadRosterWeek(){
   const wk=weekKey(rosterWeekOf);
   const{data}=await SB.from('roster').select('*').eq('week_start',wk);
   if(!rosterData[wk])rosterData[wk]={};
-  (data||[]).forEach(r=>{if(!rosterData[wk][r.staff_name])rosterData[wk][r.staff_name]={};rosterData[wk][r.staff_name][r.day_index]={start:r.start_time||'',end:r.end_time||'',brk:r.break_hours||''};});
+  (data||[]).forEach(r=>{
+    // Use group_type from DB; fall back to inferring from staff role for old records
+    const grp=r.group_type||inferRosterGroup(r.staff_name);
+    if(!rosterData[wk][grp])rosterData[wk][grp]={};
+    if(!rosterData[wk][grp][r.staff_name])rosterData[wk][grp][r.staff_name]={};
+    rosterData[wk][grp][r.staff_name][r.day_index]={start:r.start_time||'',end:r.end_time||'',brk:r.break_hours||''};
+  });
   renderRGrid();updRSummary();
 }
 
 function printRoster(){
   const wk=weekKey(rosterWeekOf),dates=weekDates(rosterWeekOf),opts={day:'numeric',month:'short'};
   const groups=GROUPS.map(g=>({name:g,staff:staffForGroup(g).filter(s=>s.active!==false)}));
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Shift Roster</title><style>@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@400;600;700&display=swap');*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Karla',Arial,sans-serif;color:#1a0d10;}@page{size:A4 landscape;margin:12mm;}.hdr{display:flex;justify-content:space-between;padding-bottom:4mm;border-bottom:2px solid #7a1528;margin-bottom:4mm;}.brand{font-family:'Bebas Neue',sans-serif;font-size:20pt;color:#7a1528;}.wk{font-family:'Bebas Neue',sans-serif;font-size:13pt;text-align:right;}table{width:100%;border-collapse:collapse;margin-bottom:5mm;}.gl{font-family:'Bebas Neue',sans-serif;font-size:10pt;color:#7a1528;margin:3mm 0 2mm;}th{background:#7a1528;color:#fff;font-size:7pt;padding:2mm;text-align:center;border:1px solid #9e1e35;}th.nc{text-align:left;}td{padding:1.5mm 2mm;border:1px solid #e0d5cc;font-size:8pt;text-align:center;}td.nt{text-align:left;font-weight:600;background:#faf7f4;}.we{background:#fef8f0!important;}.tot{color:#1a7a45;font-weight:700;background:#eaf5ee;}.ft{display:flex;justify-content:space-between;font-size:7pt;color:#9a8070;padding-top:3mm;border-top:1px solid #e0d5cc;margin-top:2mm;}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}</style></head><body><div class="hdr"><div><div class="brand">DIE AKKER KOFFIEHUIS</div><div style="font-size:8pt;color:#9a8070">Staff Shift Roster</div></div><div class="wk">Week of ${rosterWeekOf.toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}<br><span style="font-size:9pt">${dates[0].toLocaleDateString('en-ZA',opts)} — ${dates[6].toLocaleDateString('en-ZA',opts)}</span></div></div>${groups.map(g=>{if(!g.staff.length)return'';return`<div class="gl">${g.name}</div><table><thead><tr><th class="nc">Name</th>${dates.map((d,i)=>`<th class="${i>=5?'we':''}">${DAYS[i]}<br>${d.getDate()}</th>`).join('')}<th>TOTAL</th></tr></thead><tbody>${g.staff.map(s=>{const dh=Array.from({length:7},(_,i)=>{const sh=getShift(wk,s.name,i);return{hrs:calcShiftHours(sh.start,sh.end,sh.brk),start:sh.start,end:sh.end};});const tot=dh.reduce((a,b)=>a+b.hrs,0);return`<tr><td class="nt">${s.name}<br><span style="font-size:6.5pt;color:#9a8070;font-weight:400">${s.role}</span></td>${dh.map((d,i)=>`<td class="${i>=5?'we':''}">${d.start&&d.end?`${d.start}<br><span style="font-size:6.5pt">→${d.end}</span>`:''}</td>`).join('')}<td class="tot">${tot>0?tot.toFixed(1)+'h':'—'}</td></tr>`;}).join('')}</tbody></table>`;}).join('')}<div class="ft"><span>Die Akker Koffiehuis — Potchefstroom</span><span>Printed: ${new Date().toLocaleDateString('en-ZA')}</span><span>Manager sign-off: ___________________________</span></div><div style="text-align:center;padding:15px;font-family:sans-serif"><button onclick="window.print()" style="background:#7a1528;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Print</button>&nbsp;<button onclick="window.close()" style="background:#f2ece6;border:1px solid #e0d5cc;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer">Close</button></div></body></html>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Shift Roster</title><style>@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@400;600;700&display=swap');*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Karla',Arial,sans-serif;color:#1a0d10;}@page{size:A4 landscape;margin:12mm;}.hdr{display:flex;justify-content:space-between;padding-bottom:4mm;border-bottom:2px solid #7a1528;margin-bottom:4mm;}.brand{font-family:'Bebas Neue',sans-serif;font-size:20pt;color:#7a1528;}.wk{font-family:'Bebas Neue',sans-serif;font-size:13pt;text-align:right;}table{width:100%;border-collapse:collapse;margin-bottom:5mm;}.gl{font-family:'Bebas Neue',sans-serif;font-size:10pt;color:#7a1528;margin:3mm 0 2mm;}th{background:#7a1528;color:#fff;font-size:7pt;padding:2mm;text-align:center;border:1px solid #9e1e35;}th.nc{text-align:left;}td{padding:1.5mm 2mm;border:1px solid #e0d5cc;font-size:8pt;text-align:center;}td.nt{text-align:left;font-weight:600;background:#faf7f4;}.we{background:#fef8f0!important;}.tot{color:#1a7a45;font-weight:700;background:#eaf5ee;}.ft{display:flex;justify-content:space-between;font-size:7pt;color:#9a8070;padding-top:3mm;border-top:1px solid #e0d5cc;margin-top:2mm;}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}</style></head><body><div class="hdr"><div><div class="brand">DIE AKKER KOFFIEHUIS</div><div style="font-size:8pt;color:#9a8070">Staff Shift Roster</div></div><div class="wk">Week of ${rosterWeekOf.toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}<br><span style="font-size:9pt">${dates[0].toLocaleDateString('en-ZA',opts)} — ${dates[6].toLocaleDateString('en-ZA',opts)}</span></div></div>${groups.map(g=>{if(!g.staff.length)return'';return`<div class="gl">${g.name}</div><table><thead><tr><th class="nc">Name</th>${dates.map((d,i)=>`<th class="${i>=5?'we':''}">${DAYS[i]}<br>${d.getDate()}</th>`).join('')}<th>TOTAL</th></tr></thead><tbody>${g.staff.map(s=>{const dh=Array.from({length:7},(_,i)=>{const sh=getShift(wk,g.name,s.name,i);return{hrs:calcShiftHours(sh.start,sh.end,sh.brk),start:sh.start,end:sh.end};});const tot=dh.reduce((a,b)=>a+b.hrs,0);return`<tr><td class="nt">${s.name}<br><span style="font-size:6.5pt;color:#9a8070;font-weight:400">${s.role}</span></td>${dh.map((d,i)=>`<td class="${i>=5?'we':''}">${d.start&&d.end?`${d.start}<br><span style="font-size:6.5pt">→${d.end}</span>`:''}</td>`).join('')}<td class="tot">${tot>0?tot.toFixed(1)+'h':'—'}</td></tr>`;}).join('')}</tbody></table>`;}).join('')}<div class="ft"><span>Die Akker Koffiehuis — Potchefstroom</span><span>Printed: ${new Date().toLocaleDateString('en-ZA')}</span><span>Manager sign-off: ___________________________</span></div><div style="text-align:center;padding:15px;font-family:sans-serif"><button onclick="window.print()" style="background:#7a1528;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Print</button>&nbsp;<button onclick="window.close()" style="background:#f2ece6;border:1px solid #e0d5cc;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer">Close</button></div></body></html>`;
   const win=window.open('','_blank','width=1000,height=700');win.document.write(html);win.document.close();
 }
 
@@ -4102,48 +4140,42 @@ async function syncRosterHoursToPayroll(){
       .lte('week_start',fmt(monthEnd));
     if(!data||!data.length) return;
 
-    // Sum effective hours, count evening shifts and total shifts per staff
-    const hoursByStaff={};
+    // Roster group → payroll key mapping
+    const GRP_TO_PAY={'Managers':'mgr','Kitchen':'kit','Bar / Waiters':'bar','Waiters PH':'waitph'};
+
+    // Sum hours PER GROUP so Jabulani's manager hours and waiter PH hours are tracked separately
+    const hoursByGroup={mgr:{},kit:{},bar:{},waitph:{}};
     const eveningShiftsByStaff={};
     const totalShiftsByStaff={};
+
     data.forEach(r=>{
-      // Compute the calendar date of this individual shift
       const wsDate=new Date(r.week_start+'T00:00:00Z');
       wsDate.setUTCDate(wsDate.getUTCDate()+r.day_index);
-      // Skip shifts that fall outside the current month
       if(wsDate<monthStart||wsDate>monthEnd) return;
 
-      // Use in-memory ph/leave flags if this week is loaded, otherwise default
-      const flags=(rosterFlags[r.week_start]?.[r.staff_name]?.[r.day_index])||{ph:false};
+      // Determine which roster group this row belongs to
+      const rowGrp=r.group_type||inferRosterGroup(r.staff_name);
+      const payGrp=GRP_TO_PAY[rowGrp];
+      if(!payGrp) return; // unknown group, skip
+
+      const flags=(rosterFlags[r.week_start]?.[rowGrp]?.[r.staff_name]?.[r.day_index])||{ph:false};
       const hrs=calcEffectiveHours(r.start_time,r.end_time,r.break_hours,r.day_index,flags);
       if(hrs>0){
-        hoursByStaff[r.staff_name]=(hoursByStaff[r.staff_name]||0)+hrs;
+        hoursByGroup[payGrp][r.staff_name]=(hoursByGroup[payGrp][r.staff_name]||0)+hrs;
         totalShiftsByStaff[r.staff_name]=(totalShiftsByStaff[r.staff_name]||0)+1;
       }
-      // Evening shift = start time 14:00 or later
-      if(r.start_time && hrs>0){
+      if(r.start_time&&hrs>0){
         const [h]=r.start_time.split(':').map(Number);
         if(h>=14) eveningShiftsByStaff[r.staff_name]=(eveningShiftsByStaff[r.staff_name]||0)+1;
       }
     });
 
-    // People on the Waiters PH list get roster hours synced to waitph ONLY.
-    // Their manager entry keeps manually-entered hours to avoid double-counting.
-    const waitphNameSet=new Set(getWaitphRosterStaff().map(n=>n.toLowerCase()));
-    const inWaitphList=(name)=>{
-      const nl=name.toLowerCase();
-      return waitphNameSet.has(nl)||[...waitphNameSet].some(n=>nl.startsWith(n)||n.startsWith(nl));
-    };
-
-    // Update payD: hours + auto-deductions for kitchen staff
-    // Taxi: R25 per evening shift | Breakage: R5 per shift
+    // Apply hours to each payroll group using only that group's roster data
+    // Managers sync from 'Managers' tab only; Waiters PH sync from 'Waiters PH' tab only — no overlap
     ['mgr','kit','bar','waitph'].forEach(grp=>{
       (payD[grp]||[]).forEach(s=>{
-        // For managers who are also on the Waiters PH list, skip auto-sync
-        // so their manager hours remain manually set (roster sync goes to waitph only)
-        if(grp==='mgr' && inWaitphList(s.name)) return;
-        if(hoursByStaff[s.name]!==undefined){
-          s.hrs=parseFloat(hoursByStaff[s.name].toFixed(1));
+        if(hoursByGroup[grp][s.name]!==undefined){
+          s.hrs=parseFloat(hoursByGroup[grp][s.name].toFixed(1));
         }
         if(grp==='kit'){
           s.taxi=(eveningShiftsByStaff[s.name]||0)*25;
@@ -8670,31 +8702,32 @@ function schedCopyToRoster(){
     mgr_morning:  {start:'07:00',end:'14:30',brk:0.5},
     mgr_afternoon:{start:'14:30',end:'22:00',brk:0.5},
   };
-  // Map schedule day names to Mon-indexed roster positions (Mon=0..Sun=6)
   const schedToRosterIdx={Wed:2,Thu:3,Fri:4,Sat:5,Sun:6,Mon:0,Tue:1};
   SCHED_DAYS.forEach((day)=>{
     const i=schedToRosterIdx[day];
     const d=sched[day]||emptySchedDay();
-    // Managers
+    // Managers → 'Managers' roster group
     MGR_SHIFTS.forEach(s=>{
       (d[s.key]||[]).forEach(name=>{
-        if(!rosterData[wk][name]) rosterData[wk][name]={};
-        if(!rosterData[wk][name][i]?.start)
-          rosterData[wk][name][i]=mgrTimes[s.key];
+        if(!rosterData[wk]['Managers']) rosterData[wk]['Managers']={};
+        if(!rosterData[wk]['Managers'][name]) rosterData[wk]['Managers'][name]={};
+        if(!rosterData[wk]['Managers'][name][i]?.start)
+          rosterData[wk]['Managers'][name][i]=mgrTimes[s.key];
       });
     });
-    // Waiters
+    // Waiters → 'Bar / Waiters' roster group
     const allWaiters=new Set([...d.morning,...d.afternoon,...d.evening]);
     allWaiters.forEach(name=>{
-      if(!rosterData[wk][name]) rosterData[wk][name]={};
-      if(!rosterData[wk][name][i]?.start){
+      if(!rosterData[wk]['Bar / Waiters']) rosterData[wk]['Bar / Waiters']={};
+      if(!rosterData[wk]['Bar / Waiters'][name]) rosterData[wk]['Bar / Waiters'][name]={};
+      if(!rosterData[wk]['Bar / Waiters'][name][i]?.start){
         const onM=d.morning.includes(name);
         const onA=d.afternoon.includes(name);
         const onE=d.evening.includes(name);
         const start=onM?'07:00':onA?'13:40':'16:40';
         const end=onE?'22:00':onA?'17:00':'14:00';
         const brk=(onM&&onA)||(onA&&onE)?0.5:0;
-        rosterData[wk][name][i]={start,end,brk};
+        rosterData[wk]['Bar / Waiters'][name][i]={start,end,brk};
       }
     });
   });
