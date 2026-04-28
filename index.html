@@ -3789,11 +3789,7 @@ function staffForGroup(g){
   const isMgr=(s)=>div(s,'management')||role(s,'manager');
   if(g==='Kitchen')       return stfD.filter(s=>!isMgr(s)&&(div(s,'kitchen')||role(s,'kitchen')));
   if(g==='Bar / Waiters') return stfD.filter(s=>!isMgr(s)&&(div(s,'floor')||div(s,'waiters')||div(s,'bar')||role(s,'waiter','barman','bartender','bar person','bar staff')));
-  // Managers who are also on the Waiters PH list have their shifts tracked there —
-  // exclude them from the Managers roster tab to avoid the same shift showing in two places.
-  const waitphSet=new Set(getWaitphRosterStaff().map(n=>n.toLowerCase()));
-  const inWaitph=(s)=>waitphSet.has(s.name.toLowerCase())||[...waitphSet].some(n=>s.name.toLowerCase().startsWith(n)||n.startsWith(s.name.toLowerCase()));
-  if(g==='Managers')      return stfD.filter(s=>isMgr(s)&&!inWaitph(s));
+  if(g==='Managers')      return stfD.filter(s=>isMgr(s));
   if(g==='Waiters PH'){
     return getWaitphRosterStaff().map(n=>{
       const found=stfD.find(s=>s.name.toLowerCase()===n.toLowerCase())||stfD.find(s=>s.name.toLowerCase().startsWith(n.toLowerCase()));
@@ -3884,7 +3880,12 @@ function initRosterPanel(){
   // Always load from DB — this fixes the data not persisting after login
   loadRosterWeek();
 }
-function switchRG(g){rosterGroup=g;renderRGrid();updRSummary();}
+function switchRG(g){
+  rosterGroup=g;
+  // Re-render tabs so the active highlight moves to the selected tab
+  document.getElementById('rosterGroupTabs').innerHTML=GROUPS.map(t=>`<button class="ct ${rosterGroup===t?'act':''}" onclick="switchRG('${t}')">${t}</button>`).join('');
+  renderRGrid();updRSummary();
+}
 function rosterWeek(d){rosterWeekOf=new Date(rosterWeekOf);rosterWeekOf.setDate(rosterWeekOf.getDate()+d*7);initRosterPanel();}
 
 function renderRGrid(){
