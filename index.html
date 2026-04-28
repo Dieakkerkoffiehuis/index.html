@@ -321,29 +321,38 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
   border-radius:0 var(--r2) var(--r2) 0;padding:1rem 1.1rem;margin-bottom:0.8rem;box-shadow:var(--sh);}
 
 /* ── ROSTER ── */
-.roster-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:0.8rem;overflow:hidden;box-shadow:var(--sh);}
-.roster-staff-hdr{background:linear-gradient(135deg,var(--burg),var(--burg2));padding:0.72rem 1rem;display:flex;align-items:center;gap:0.7rem;}
+/* ── ROSTER CARDS ── */
+.roster-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:0.8rem;overflow:hidden;box-shadow:var(--sh);transition:border-color 0.2s;}
+.roster-card.r-active{border:2px solid var(--red);box-shadow:0 0 0 3px rgba(200,30,30,0.10);}
+.roster-card.r-skipped{opacity:0.42;pointer-events:none;}
+.roster-card.r-skipped .roster-staff-hdr{background:linear-gradient(135deg,#999,#bbb)!important;}
+.roster-staff-hdr{background:linear-gradient(135deg,var(--burg),var(--burg2));padding:0.72rem 1rem;display:flex;align-items:center;gap:0.7rem;cursor:pointer;}
 .roster-staff-av{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0;}
 .roster-staff-name{font-weight:700;font-size:0.92rem;color:#fff;flex:1;}
 .roster-staff-role{font-size:0.66rem;color:rgba(255,255,255,0.68);}
 .roster-hours-pill{background:rgba(255,255,255,0.18);border-radius:20px;padding:0.2rem 0.72rem;font-size:0.74rem;font-weight:700;color:#fff;}
-.roster-day{display:flex;align-items:center;padding:0.52rem 0.9rem;border-bottom:1px solid var(--border-s);gap:0.7rem;}
+/* Each day row scrolls horizontally so names never disappear */
+.roster-days-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.roster-day{display:flex;align-items:center;padding:0.52rem 0.9rem;border-bottom:1px solid var(--border-s);gap:0.55rem;min-width:max-content;}
 .roster-day:last-child{border-bottom:none;}
 .roster-day.weekend{background:#fdf8f5;}
-.roster-day-label{width:36px;font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;flex-shrink:0;}
-.roster-day-date{width:22px;font-size:0.7rem;color:var(--muted);flex-shrink:0;}
+.roster-day-label{width:34px;font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;flex-shrink:0;}
+.roster-day-date{width:20px;font-size:0.7rem;color:var(--muted);flex-shrink:0;}
 .roster-day.weekend .roster-day-label{color:var(--gold);}
-.roster-time-group{display:flex;align-items:center;gap:0.4rem;flex:1;flex-wrap:wrap;}
-.rtime{width:72px;border:1.5px solid var(--border);border-radius:7px;padding:0.3rem 0.4rem;
-  font-family:'Karla',sans-serif;font-size:0.84rem;color:var(--ink);background:var(--cream);
+.roster-time-group{display:flex;align-items:center;gap:0.35rem;flex-shrink:0;}
+/* font-size:16px prevents iOS from zooming on input focus (stops the jump) */
+.rtime{width:80px;border:1.5px solid var(--border);border-radius:7px;padding:0.3rem 0.4rem;
+  font-family:'Karla',sans-serif;font-size:16px;color:var(--ink);background:var(--cream);
   outline:none;text-align:center;transition:var(--t);}
 .rtime:focus{border-color:var(--burg);background:#fff;box-shadow:0 0 0 2px rgba(122,21,40,0.09);}
-.rbreak{width:52px;border:1.5px solid var(--border);border-radius:7px;padding:0.3rem 0.4rem;
-  font-family:'Karla',sans-serif;font-size:0.82rem;color:var(--orange);background:#fef9f5;outline:none;text-align:center;}
+.rbreak{width:48px;border:1.5px solid var(--border);border-radius:7px;padding:0.3rem 0.35rem;
+  font-family:'Karla',sans-serif;font-size:16px;color:var(--orange);background:#fef9f5;outline:none;text-align:center;}
 .rbreak:focus{border-color:var(--orange);}
-.roster-day-hrs{min-width:40px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--green);}
+.roster-day-hrs{min-width:38px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--green);flex-shrink:0;}
 .roster-day-hrs.zero{color:var(--border-s);}
 .rt-lbl{font-size:0.57rem;color:var(--muted);text-align:center;display:block;margin-top:1px;letter-spacing:0.06em;}
+/* Scheduling queue nav bar */
+.roster-queue-bar{display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.8rem;background:var(--surface);border-bottom:1px solid var(--border);font-size:0.78rem;}
 .sum-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
 .sum-table th{background:var(--surface);color:var(--muted);font-size:0.6rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:0.5rem 0.7rem;text-align:left;border-bottom:1px solid var(--border);}
 .sum-table td{padding:0.55rem 0.7rem;border-bottom:1px solid var(--border-s);vertical-align:middle;}
@@ -1112,6 +1121,13 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
           <button class="btn bs bsm" onclick="rosterWeek(1)">Next ›</button>
         </div>
         <div class="ctabs" id="rosterGroupTabs"></div>
+        <!-- Scheduling queue nav bar -->
+        <div class="roster-queue-bar" id="rosterQueueBar">
+          <span style="font-size:0.72rem;color:var(--muted)">📋 Scheduling:</span>
+          <span id="rosterQueueLabel" style="font-size:0.78rem;font-weight:700;color:var(--burg);flex:1"></span>
+          <button class="btn bs bsm" onclick="advanceRosterQueue()" style="padding:0.2rem 0.6rem;font-size:0.72rem">Next ›</button>
+          <button class="btn bs bsm" onclick="resetRosterQueue()" style="padding:0.2rem 0.6rem;font-size:0.72rem;color:var(--muted)">↺ Reset</button>
+        </div>
         <div id="rosterGrid"></div>
         <div class="stitle">Week Summary</div>
         <div class="card" id="rosterSummary"></div>
@@ -3904,8 +3920,57 @@ function initRosterPanel(){
   // Always load from DB — this fixes the data not persisting after login
   loadRosterWeek();
 }
+// ── SCHEDULING QUEUE ──────────────────────────────────────────────────────────
+let rosterActiveIdx = 0;   // which card has the red "NOW" indicator
+let rosterSkipped   = {};  // {group: [names...]} — persisted per session
+
+function setRosterActive(idx){
+  rosterActiveIdx=idx;
+  renderRGrid();
+  // Scroll active card into view
+  const staff=staffForGroup(rosterGroup).filter(s=>s.active!==false);
+  const s=staff[idx];
+  if(s){
+    const el=document.getElementById('rcard-'+s.name.replace(/\W/g,'_'));
+    if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+}
+
+function skipRosterPerson(name){
+  if(!rosterSkipped[rosterGroup]) rosterSkipped[rosterGroup]=[];
+  if(!rosterSkipped[rosterGroup].includes(name)) rosterSkipped[rosterGroup].push(name);
+  // Advance to next non-skipped person
+  const staff=staffForGroup(rosterGroup).filter(s=>s.active!==false);
+  let next=rosterActiveIdx+1;
+  while(next<staff.length&&(rosterSkipped[rosterGroup]||[]).includes(staff[next].name)) next++;
+  rosterActiveIdx=next<staff.length?next:rosterActiveIdx;
+  renderRGrid();
+}
+
+function advanceRosterQueue(){
+  const staff=staffForGroup(rosterGroup).filter(s=>s.active!==false);
+  let next=rosterActiveIdx+1;
+  while(next<staff.length&&(rosterSkipped[rosterGroup]||[]).includes(staff[next].name)) next++;
+  if(next<staff.length){
+    rosterActiveIdx=next;
+    renderRGrid();
+    const s=staff[next];
+    const el=document.getElementById('rcard-'+s.name.replace(/\W/g,'_'));
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  } else {
+    showToast('All staff scheduled ✓');
+  }
+}
+
+function resetRosterQueue(){
+  rosterActiveIdx=0;
+  rosterSkipped[rosterGroup]=[];
+  renderRGrid();
+}
+
 function switchRG(g){
   rosterGroup=g;
+  rosterActiveIdx=0; // reset queue pointer when switching groups
   // Re-render tabs so the active highlight moves to the selected tab
   document.getElementById('rosterGroupTabs').innerHTML=GROUPS.map(t=>`<button class="ct ${rosterGroup===t?'act':''}" onclick="switchRG('${t}')">${t}</button>`).join('');
   renderRGrid();updRSummary();
@@ -3926,7 +3991,16 @@ function renderRGrid(){
       onkeydown="if(event.key==='Enter')addWaitphPerson()">
     <button class="btn bp bsm" onclick="addWaitphPerson()">Add</button>
   </div>`:'';
-  document.getElementById('rosterGrid').innerHTML=staff.map(s=>{
+  // Update queue nav label
+  const activeStaff=staff.filter(s=>!(rosterSkipped[rosterGroup]||[]).includes(s.name));
+  const qEl=document.getElementById('rosterQueueLabel');
+  if(qEl){
+    const cur=staff[rosterActiveIdx];
+    const doneCount=staff.slice(0,rosterActiveIdx+1).filter(s=>!(rosterSkipped[rosterGroup]||[]).includes(s.name)).length;
+    qEl.textContent=cur?`${cur.name} (${doneCount}/${activeStaff.length})`:'All done ✓';
+  }
+
+  document.getElementById('rosterGrid').innerHTML=staff.map((s,idx)=>{
     const sk=s.name.replace(/\W/g,'_');
     const wt=Array.from({length:7},(_,i)=>{
       const sh=getShift(wk,rosterGroup,s.name,i);
@@ -3938,7 +4012,9 @@ function renderRGrid(){
       style="background:rgba(255,255,255,0.18);border:none;border-radius:6px;cursor:pointer;color:#fff;font-size:0.75rem;padding:0.2rem 0.5rem;margin-left:0.4rem;transition:background 0.15s"
       onmouseover="this.style.background='rgba(255,255,255,0.35)'"
       onmouseout="this.style.background='rgba(255,255,255,0.18)'">✕</button>`:'';
-    return `<div class="roster-card"><div class="roster-staff-hdr"><div class="roster-staff-av">${s.name[0]}</div><div style="flex:1"><div class="roster-staff-name">${s.name}</div><div class="roster-staff-role">${s.role}</div></div><div class="roster-hours-pill" id="rtot-${sk}">${wt>0?wt.toFixed(1)+'h':'—'}</div>${removeBtn}</div><div>
+    const isActive=rosterActiveIdx===idx;
+    const isSkipped=(rosterSkipped[rosterGroup]||[]).includes(s.name);
+    return `<div class="roster-card${isActive?' r-active':''}${isSkipped?' r-skipped':''}" id="rcard-${sk}"><div class="roster-staff-hdr" onclick="setRosterActive(${idx})"><div class="roster-staff-av">${s.name[0]}</div><div style="flex:1"><div class="roster-staff-name">${s.name}</div><div class="roster-staff-role">${s.role}</div></div><div style="display:flex;align-items:center;gap:0.4rem">${isActive?`<span style="background:var(--red);color:#fff;font-size:0.6rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:10px;text-transform:uppercase;letter-spacing:0.08em">● NOW</span>`:''}${!isSkipped?`<button onclick="event.stopPropagation();skipRosterPerson('${nm}')" title="Skip this person" style="background:rgba(255,255,255,0.15);border:none;border-radius:5px;cursor:pointer;color:#fff;font-size:0.68rem;font-weight:700;padding:0.15rem 0.45rem">SKIP</button>`:''}<div class="roster-hours-pill" id="rtot-${sk}">${wt>0?wt.toFixed(1)+'h':'—'}</div>${removeBtn}</div></div><div class="roster-days-scroll"><div>
       ${dates.map((d,i)=>{
         const sh=getShift(wk,rosterGroup,s.name,i);
         const flags=getShiftFlags(wk,rosterGroup,s.name,i);
@@ -3984,7 +4060,7 @@ function renderRGrid(){
             <button class="roster-flag-btn ${isPH?'active-ph':''}" onclick="toggleFlag('${wk}','${rosterGroup}','${s.name}',${i},'ph')" title="${isPH?'Remove public holiday':'Mark as public holiday'}">🇿🇦</button>
           </div>
         </div>`;
-      }).join('')}</div></div>`;
+      }).join('')}</div></div></div>`;
   }).join('')+addCard;
 }
 
