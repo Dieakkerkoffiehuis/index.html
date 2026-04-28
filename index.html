@@ -4100,20 +4100,38 @@ function updRSummary(){
 async function saveRoster(){
   setSyncStatus('syncing');
   const wk=weekKey(rosterWeekOf);
-  const rows=[];
+  const rowsWithGrp=[];
+  const rowsWithoutGrp=[];
   // rosterData[wk][group][staffName][dayIdx]
   Object.entries(rosterData[wk]||{}).forEach(([grp,names])=>{
     Object.entries(names).forEach(([staffName,days])=>{
       Object.entries(days).forEach(([dayIdx,sh])=>{
-        if(sh.start||sh.end) rows.push({group_type:grp,staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0});
+        if(sh.start||sh.end){
+          rowsWithGrp.push({group_type:grp,staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0});
+          rowsWithoutGrp.push({staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0});
+        }
       });
     });
   });
-  if(rows.length){
-    const {error}=await SB.from('roster').upsert(rows,{onConflict:'group_type,staff_name,week_start,day_index'});
-    if(error){setSyncStatus('err');showToast('Error saving roster: '+(error.message||error.code||'unknown'),true);console.error(error);return;}
+  if(rowsWithGrp.length){
+    // Try saving WITH group_type (requires SQL migration)
+    const {error}=await SB.from('roster').upsert(rowsWithGrp,{onConflict:'group_type,staff_name,week_start,day_index'});
+    if(error){
+      // group_type column doesn't exist yet — fall back to saving without it
+      if(error.message&&(error.message.includes('group_type')||error.message.includes('schema cache')||error.message.includes('column'))){
+        const {error:e2}=await SB.from('roster').upsert(rowsWithoutGrp,{onConflict:'staff_name,week_start,day_index'});
+        if(e2){setSyncStatus('err');showToast('Error saving roster: '+(e2.message||'unknown'),true);return;}
+        setSyncStatus('ok');
+        showToast('Roster saved ✓ — Run SQL in Settings to enable separate manager/waiter shifts',false);
+      } else {
+        setSyncStatus('err');showToast('Error saving roster: '+(error.message||error.code||'unknown'),true);console.error(error);return;
+      }
+    } else {
+      setSyncStatus('ok');showToast('Roster saved to database ✓');
+    }
+  } else {
+    setSyncStatus('ok');showToast('Roster saved to database ✓');
   }
-  setSyncStatus('ok');showToast('Roster saved to database ✓');
   await syncRosterHoursToPayroll();
 }
 
