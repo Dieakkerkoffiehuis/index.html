@@ -117,6 +117,12 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .lout{display:flex;align-items:center;gap:0.75rem;padding:0.62rem 0.88rem;border-radius:9px;cursor:pointer;
   color:rgba(255,255,255,0.32);font-size:0.88rem;transition:var(--t);}
 .lout:hover{color:#fca5a5;background:rgba(142,26,26,0.18);}
+.sb-close{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
+  color:rgba(255,255,255,0.5);border-radius:8px;width:28px;height:28px;
+  display:none;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;
+  transition:var(--t);}
+.sb-close:hover{background:rgba(255,255,255,0.15);color:#fff;}
+@media(max-width:700px){.sb-close{display:flex;}}
 
 /* ── SYNC DOT ── */
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-left:auto;flex-shrink:0;}
@@ -477,16 +483,57 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .toast.on{display:block;animation:toastPop .3s cubic-bezier(0.34,1.4,0.64,1) forwards;}
 @keyframes toastPop{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
+/* ── BOTTOM TAB BAR (mobile only, hidden on desktop) ── */
+.btab-bar{display:none;position:fixed;bottom:0;left:0;right:0;height:58px;background:var(--white);
+  border-top:1.5px solid var(--border);z-index:190;
+  box-shadow:0 -2px 12px rgba(0,0,0,0.07);}
+.btab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;cursor:pointer;color:var(--muted);font-size:0.58rem;font-weight:700;
+  letter-spacing:0.06em;text-transform:uppercase;transition:color 0.18s;border:none;background:none;
+  padding:0;position:relative;}
+.btab.act{color:var(--burg);}
+.btab.act .bt-ic{transform:scale(1.12);}
+.bt-ic{font-size:1.35rem;line-height:1;transition:transform 0.18s;}
+.btab .bt-bdg{position:absolute;top:6px;right:calc(50% - 18px);background:var(--red);
+  color:#fff;font-size:0.52rem;font-weight:800;min-width:14px;height:14px;
+  border-radius:7px;padding:0 3px;display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--white);display:none;}
+.btab .bt-bdg.on{display:flex;}
+
+/* Hamburger visibility control */
+.ham-mobile{display:none;}
+.ham-desktop{display:none;}  /* hidden until media query shows it */
+
 /* ── MOBILE ── */
 @media(max-width:700px){
-  .sb{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:200;}
+  /* Right-side drawer */
+  .sb{position:fixed;right:0;left:auto;top:0;bottom:0;
+    transform:translateX(110%);z-index:300;width:84%;max-width:330px;
+    border-radius:22px 0 0 22px;box-shadow:-8px 0 40px rgba(0,0,0,0.22);}
   .sb.open{transform:translateX(0);}
-  .main{width:100%;}
-  .ham{display:flex;}
-  .ct-area{padding:1.1rem;}
-  .topbar{padding:0 1.1rem;height:60px;}
-  .tb-title{font-size:1.25rem;}
+  /* Mobile hamburger (right side) shows; desktop one hides */
+  .ham-mobile{display:flex;}
+  .ham-desktop{display:none !important;}
+  /* Bottom tab bar visible */
+  .btab-bar{display:flex;}
+  /* Layout */
+  .main{width:100%;padding-bottom:58px;}
+  .ct-area{padding:1rem 0.9rem;}
+  /* Topbar: clean mobile header */
+  .topbar{padding:0 1.1rem;height:58px;}
+  .tb-title{font-size:1.3rem;}
   .tb-sub{display:none;}
+  .tb-date{display:none;}
+  .tb-r{gap:0.5rem;}
+  /* Overlay covers full screen, z-index below drawer */
+  .ov{z-index:299;}
+  /* Hide desktop role badge */
+  #tbRole{display:none;}
+}
+@media(min-width:701px){
+  /* Desktop: show left hamburger to toggle sidebar */
+  .ham-desktop{display:flex;}
+  .ham-mobile{display:none;}
 }
 </style>
 </head>
@@ -524,7 +571,10 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
   <div class="ov" id="ov" onclick="closeSb()"></div>
   <nav class="sb" id="sb">
     <div class="sb-hd">
-      <div class="sb-brand">DIE AKKER</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div class="sb-brand">DIE AKKER</div>
+        <button onclick="closeSb()" class="sb-close" title="Close menu">✕</button>
+      </div>
       <div class="sb-tag">Koffiehuis — Potchefstroom</div>
       <div class="sb-user">
         <div class="sb-av" id="sbAv">Z</div>
@@ -576,7 +626,8 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
   <div class="main">
     <div class="topbar">
       <div class="tb-l">
-        <button class="ham" onclick="toggleSb()"><div class="hl"><span></span><span></span><span></span></div></button>
+        <!-- Left hamburger: desktop only (opens left sidebar) -->
+        <button class="ham ham-desktop" onclick="toggleSb()"><div class="hl"><span></span><span></span><span></span></div></button>
         <div class="tb-title-wrap">
           <div class="tb-title" id="tbTitle">Dashboard</div>
           <div class="tb-sub" id="tbSub">Overview of all operations</div>
@@ -585,6 +636,8 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
       <div class="tb-r">
         <div class="tb-date" id="tbDate"></div>
         <span class="bdg bgo" id="tbRole">Owner</span>
+        <!-- Right hamburger: mobile only (opens right drawer) -->
+        <button class="ham ham-mobile" onclick="toggleSb()"><div class="hl"><span></span><span></span><span></span></div></button>
       </div>
     </div>
     <div class="sa">
@@ -642,7 +695,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
           <option value="all">All Divisions</option>
           <option>Meat</option><option>Dairy</option><option>Produce</option>
           <option>Dry Goods</option><option>Bar</option><option>Bakery</option>
-          <option>Frozen</option><option>Beverages</option>
+          <option>Frozen</option><option>Beverages</option><option>Cleaning</option>
         </select>
         <div class="sb2"><span>🔍</span><input type="text" id="stSrch" placeholder="Search items..." oninput="renderST()"></div>
         <div id="stList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading stock...</div></div>
@@ -1721,6 +1774,25 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
 
     </div></div>
   </div>
+
+  <!-- BOTTOM TAB BAR (mobile only) -->
+  <nav class="btab-bar" id="btabBar">
+    <button class="btab act" id="bt-dashboard" onclick="goTab('dashboard')">
+      <span class="bt-ic">📊</span><span>Dashboard</span>
+    </button>
+    <button class="btab" id="bt-stocktake" onclick="goTab('stocktake')">
+      <span class="bt-ic">📦</span><span>Stock</span>
+    </button>
+    <button class="btab" id="bt-cashup" onclick="goTab('cashup')">
+      <span class="bt-ic">💰</span><span>Cash Up</span>
+    </button>
+    <button class="btab" id="bt-roster" onclick="goTab('roster')">
+      <span class="bt-ic">📅</span><span>Roster</span>
+    </button>
+    <button class="btab" id="bt-more" onclick="toggleSb()">
+      <span class="bt-ic">☰</span><span>More</span>
+    </button>
+  </nav>
 </div>
 
 <!-- MODALS -->
@@ -2144,10 +2216,32 @@ function go(id,el){
     checkSectionColStatus();
   }
   closeSb();
+  syncBottomTabs(id);
 }
 function tg(h,g){ h.classList.toggle('op'); document.getElementById(g).classList.toggle('op'); }
 function toggleSb(){ document.getElementById('sb').classList.toggle('open'); document.getElementById('ov').classList.toggle('show'); }
 function closeSb(){ document.getElementById('sb').classList.remove('open'); document.getElementById('ov').classList.remove('show'); }
+
+// Bottom tab bar navigation (mobile)
+const BOTTOM_TAB_SECTIONS = ['dashboard','stocktake','cashup','roster'];
+function goTab(id){
+  go(id, document.getElementById('n-'+id));
+  // Update bottom tab active state
+  document.querySelectorAll('.btab').forEach(b=>b.classList.remove('act'));
+  const bt = document.getElementById('bt-'+id);
+  if(bt) bt.classList.add('act');
+}
+// Keep bottom tabs in sync when navigating via sidebar
+function syncBottomTabs(id){
+  document.querySelectorAll('.btab').forEach(b=>b.classList.remove('act'));
+  const bt = document.getElementById('bt-'+id);
+  if(bt) bt.classList.add('act');
+  // If section not in bottom tabs, highlight More
+  else {
+    const more = document.getElementById('bt-more');
+    if(more) more.classList.add('act');
+  }
+}
 
 // ═══════════════════════════════════════════
 // DASHBOARD
@@ -2302,17 +2396,25 @@ function openAddStock(){
   openMo('moAddStock');
 }
 
+function setSelectVal(sel, val){
+  // Set a select value; if option doesn't exist, insert it so the value is never silently lost
+  if(!val) return;
+  const exists=[...sel.options].some(o=>o.value===val||o.text===val);
+  if(!exists){ const o=document.createElement('option'); o.value=val; o.text=val; sel.appendChild(o); }
+  sel.value=val;
+}
+
 function openEditStock(id){
   if(!['owner','manager'].includes(CU?.role)||isReadOnly()) return;
   const it=DB.find(i=>i.id===id); if(!it) return;
   document.getElementById('stockMoTitle').textContent='Edit Stock Item';
   document.getElementById('nsId').value=id;
   document.getElementById('nsNm').value=it.name;
-  document.getElementById('nsCat').value=it.category;
+  setSelectVal(document.getElementById('nsCat'), it.category);
   document.getElementById('nsUn').value=it.unit;
   document.getElementById('nsQty').value=it.stock;
   document.getElementById('nsMn').value=it.min_level;
-  document.getElementById('nsSup').value=it.supplier;
+  setSelectVal(document.getElementById('nsSup'), it.supplier);
   document.getElementById('nsSection').value=it.section||'';
   document.getElementById('nsDeleteBtn').style.display='inline-flex';
   openMo('moAddStock');
@@ -2521,6 +2623,8 @@ async function loadSuppliers(){
       SUPS[s.name]={c:s.contact||'',m:s.method||'wa',g:s.greeting||'Good morning',i:s.intro||'Can we please order:',urg:!!s.urgent};
     });
   } catch(e){ /* table not yet created — use defaults */ }
+  // Always refresh dropdowns so stock edit modal shows correct supplier list
+  updateSupplierDropdowns();
 }
 
 // ═══════════════════════════════════════════
@@ -4083,9 +4187,9 @@ function updRSummary(){
     }
     const totalEffHrs=normalHrs+sunHrs+phHrs;
     let pay=0,note='';
-    if(rosterGroup==='Managers'){const r=payD.mgr?.find(m=>m.name===s.name)?.hourly_rate||35;pay=totalEffHrs*r;note=`R${r}/hr`;}
-    else if(rosterGroup==='Kitchen'){const r=payD.kit?.find(m=>m.name===s.name)?.hourly_rate||22;pay=totalEffHrs*r;note=`R${r}/hr`;}
-    else if(rosterGroup==='Waiters PH'){const r=payD.waitph?.find(m=>m.name===s.name)?.hourly_rate||22;pay=totalEffHrs*r;note=`R${r}/hr`;}
+    if(rosterGroup==='Managers'){const r=payD.mgr?.find(m=>m.name===s.name)?.hourly_rate||resolveRate(s.name,42.50);pay=totalEffHrs*r;note=`R${r}/hr`;}
+    else if(rosterGroup==='Kitchen'){const r=payD.kit?.find(m=>m.name===s.name)?.hourly_rate||resolveRate(s.name,30.23);pay=totalEffHrs*r;note=`R${r}/hr`;}
+    else if(rosterGroup==='Waiters PH'){const r=payD.waitph?.find(m=>m.name===s.name)?.hourly_rate||resolveRate(s.name,30.23);pay=totalEffHrs*r;note=`R${r}/hr`;}
     else{note='Tips + 3% sales';}
     const badges=[];
     if(leaveHrs>0) badges.push(`<span class="bdg" style="background:var(--gold-l);color:var(--gold);border:1px solid #f0d090">🏖 ${leaveHrs}h leave</span>`);
@@ -4185,9 +4289,21 @@ function canEditCashup(){
   return CASHUP_EDIT_NAMES.includes(first);
 }
 
+// Per-person default rates (used when no DB payroll record exists yet)
+const KNOWN_STAFF_RATES = {
+  'Jabulani':48.75, 'Juan':42.50, 'Marleigh':42.50,
+  'Pakiso':30.60,   'Thabo':31.25,
+};
+function resolveRate(name, defaultRate){
+  // Check KNOWN_STAFF_RATES by first name match
+  const firstName = (name||'').split(' ')[0];
+  return KNOWN_STAFF_RATES[firstName] || KNOWN_STAFF_RATES[name] || defaultRate;
+}
+
 function buildPayEntry(s, rows, defaultRate){
-  const r=rows.find(x=>x.staff_name===s.name&&x.group_type===s._grp)||rows.find(x=>x.staff_name===s.name)||{hourly_rate:defaultRate,hours:0};
-  return{name:s.name,pos:s.role,hourly_rate:r.hourly_rate||defaultRate,hrs:r.hours||0,taxi:r.taxi||0,borrowed:r.borrowed||0,saccawu:r.saccawu||0,breakage:r.breakage||0};
+  const r=rows.find(x=>x.staff_name===s.name&&x.group_type===s._grp)||rows.find(x=>x.staff_name===s.name)||null;
+  const rate = r ? (r.hourly_rate||resolveRate(s.name,defaultRate)) : resolveRate(s.name,defaultRate);
+  return{name:s.name,pos:s.role,hourly_rate:rate,hrs:r?r.hours||0:0,taxi:r?r.taxi||0:0,borrowed:r?r.borrowed||0:0,saccawu:r?r.saccawu||0:0,breakage:r?r.breakage||0:0};
 }
 
 function buildPayData(rows){
@@ -4207,10 +4323,10 @@ function buildPayData(rows){
     return found ? {...found,_grp:'waitph'} : {name:n,role:'Waiter / Manager PH',division:'waiters',_grp:'waitph'};
   });
 
-  payD.mgr    = mgrStaff.map(s=>buildPayEntry({...s,_grp:'manager'}, rows, 35));
-  payD.kit    = kitStaff.map(s=>buildPayEntry({...s,_grp:'kitchen'}, rows, 22));
-  payD.bar    = barStaff.map(s=>buildPayEntry({...s,_grp:'bar'},     rows, 22));
-  payD.waitph = waitphStaff.map(s=>buildPayEntry(s, rows, 22));
+  payD.mgr    = mgrStaff.map(s=>buildPayEntry({...s,_grp:'manager'}, rows, 42.50));
+  payD.kit    = kitStaff.map(s=>buildPayEntry({...s,_grp:'kitchen'}, rows, 30.23));
+  payD.bar    = barStaff.map(s=>buildPayEntry({...s,_grp:'bar'},     rows, 30.60));
+  payD.waitph = waitphStaff.map(s=>buildPayEntry(s, rows, 30.23));
 }
 
 async function syncRosterHoursToPayroll(){
@@ -4638,10 +4754,10 @@ function printPayslip(){
     if(sales>0) incomeLines.push({desc:'Sales 3%', rate:'0.03', qty:`@ R ${sales.toFixed(2)}`, amt:comm});
     if(tips>0)  incomeLines.push({desc:'Tips', rate:'1', qty:`@ R ${tips.toFixed(2)}`, amt:tips});
   } else if(group==='manager'){
-    const s=payD.mgr?.find(x=>x.name===name)||{hrs:0,hourly_rate:35};
+    const s=payD.mgr?.find(x=>x.name===name)||{hrs:0,hourly_rate:resolveRate(name,42.50)};
     if(s.hrs>0) incomeLines.push({desc:`Hourly Pay (${s.hrs} hrs @ R${s.hourly_rate}/hr)`, rate:'', qty:'', amt:s.hrs*s.hourly_rate});
   } else {
-    const s=payD.kit?.find(x=>x.name===name)||{hrs:0,hourly_rate:22};
+    const s=payD.kit?.find(x=>x.name===name)||payD.waitph?.find(x=>x.name===name)||{hrs:0,hourly_rate:resolveRate(name,30.23)};
     if(s.hrs>0) incomeLines.push({desc:`Hourly Pay (${s.hrs} hrs @ R${s.hourly_rate}/hr)`, rate:'', qty:'', amt:s.hrs*s.hourly_rate});
   }
 
@@ -9200,7 +9316,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
           <option value="all">All / Mixed</option>
           <option>Meat</option><option>Dairy</option><option>Produce</option>
           <option>Dry Goods</option><option>Bar</option><option>Bakery</option>
-          <option>Frozen</option><option>Beverages</option>
+          <option>Frozen</option><option>Beverages</option><option>Cleaning</option>
         </select>
       </div>
       <div id="scanStatus" style="font-size:0.78rem;color:var(--muted);text-align:center;padding:0.3rem 0;display:none"></div>
