@@ -6807,7 +6807,7 @@ async function xeroConnect(){
   const verifier=xeroRandStr(64);
   const challenge=await xeroChallenge(verifier);
   sessionStorage.setItem('xeroPKCEVerifier',verifier);
-  const scopes='openid profile email accounting.transactions accounting.contacts offline_access';
+  const scopes='openid profile email offline_access accounting.invoices accounting.contacts accounting.settings.read';
   const params=new URLSearchParams({
     response_type:'code',client_id:clientId,redirect_uri:redirectUri,
     scope:scopes,state:'xeroauth',code_challenge:challenge,code_challenge_method:'S256'
