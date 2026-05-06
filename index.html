@@ -6835,7 +6835,7 @@ async function xeroHandleCallback(){
     body.append('client_id',clientId);
   }
   try{
-    const resp=await fetch('https://identity.xero.com/connect/token',{
+    const resp=await fetch('/xero-token',{
       method:'POST',headers:hdrs,body:body.toString()
     });
     const data=await resp.json();
@@ -6867,7 +6867,7 @@ async function xeroRefreshIfNeeded(){
     body.append('client_id',clientId);
   }
   try{
-    const resp=await fetch('https://identity.xero.com/connect/token',{
+    const resp=await fetch('/xero-token',{
       method:'POST',headers:hdrs,body:body.toString()
     });
     const data=await resp.json();
