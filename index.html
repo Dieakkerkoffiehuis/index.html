@@ -6825,13 +6825,18 @@ async function xeroHandleCallback(){
   const redirectUri=window.location.href.split('?')[0].split('#')[0];
   const verifier=sessionStorage.getItem('xeroPKCEVerifier');
   const body=new URLSearchParams({
-    grant_type:'authorization_code',client_id:clientId,code,
+    grant_type:'authorization_code',code,
     redirect_uri:redirectUri,code_verifier:verifier
   });
-  if(clientSecret) body.append('client_secret',clientSecret);
+  const hdrs={'Content-Type':'application/x-www-form-urlencoded'};
+  if(clientSecret){
+    hdrs['Authorization']='Basic '+btoa(unescape(encodeURIComponent(clientId+':'+clientSecret)));
+  } else {
+    body.append('client_id',clientId);
+  }
   try{
     const resp=await fetch('https://identity.xero.com/connect/token',{
-      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()
+      method:'POST',headers:hdrs,body:body.toString()
     });
     const data=await resp.json();
     if(!data.access_token) throw new Error(data.error_description||'Auth failed');
@@ -6854,11 +6859,16 @@ async function xeroRefreshIfNeeded(){
   if(!refresh) return false;
   const clientId=localStorage.getItem('xeroClientId');
   const clientSecret=localStorage.getItem('xeroClientSecret');
-  const body=new URLSearchParams({grant_type:'refresh_token',client_id:clientId,refresh_token:refresh});
-  if(clientSecret) body.append('client_secret',clientSecret);
+  const body=new URLSearchParams({grant_type:'refresh_token',refresh_token:refresh});
+  const hdrs={'Content-Type':'application/x-www-form-urlencoded'};
+  if(clientSecret){
+    hdrs['Authorization']='Basic '+btoa(unescape(encodeURIComponent(clientId+':'+clientSecret)));
+  } else {
+    body.append('client_id',clientId);
+  }
   try{
     const resp=await fetch('https://identity.xero.com/connect/token',{
-      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()
+      method:'POST',headers:hdrs,body:body.toString()
     });
     const data=await resp.json();
     if(!data.access_token) return false;
