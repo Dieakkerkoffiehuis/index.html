@@ -605,6 +605,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
         <div class="nsi" onclick="go('recipes',this)" id="n-recipes" data-r="manager"><span class="dot"></span>🍳 Recipe Costing</div>
         <div class="nsi" onclick="go('pricing',this)" id="n-pricing" data-r="manager"><span class="dot"></span>💸 Price Alerts & GP <span class="bdg" id="pricingAlertBdg" style="display:none;background:var(--red);color:#fff">!</span></div>
         <div class="nsi" onclick="go('waiterlog',this)" id="n-waiterlog" data-r="manager"><span class="dot"></span>Waiter Accountability</div>
+        <div class="nsi" onclick="go('invoices',this)" id="n-invoices" data-r="manager"><span class="dot"></span>🧾 Tax Invoices <span class="bdg" id="xeroBadge" style="display:none;background:var(--green);color:#fff">Xero</span></div>
       </div>
       <div class="nlbl" style="margin-top:0.5rem">People</div>
       <div class="ngh" onclick="tg(this,'g-hr')"><span>👥</span>&nbsp;HUMAN RESOURCES<span class="arr">▼</span></div>
@@ -1461,6 +1462,34 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
         <div id="auditList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading...</div></div>
       </div>
 
+      <!-- TAX INVOICES -->
+      <div class="pnl" id="p-invoices">
+        <!-- Xero connection banner -->
+        <div id="xeroConnBanner" style="display:none;background:var(--green-l);border:1px solid var(--green-b);border-radius:12px;padding:0.9rem 1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap">
+          <div style="font-size:1.4rem">✅</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:0.88rem;color:var(--green)">Connected to Xero</div>
+            <div style="font-size:0.72rem;color:var(--muted)" id="xeroOrgName">Organisation loading...</div>
+          </div>
+          <button class="btn bs bsm" onclick="xeroSyncContacts()" id="xeroSyncBtn">🔄 Sync Contacts</button>
+        </div>
+        <div id="xeroDisconnBanner" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.9rem 1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap">
+          <div style="font-size:1.4rem">🔗</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:0.88rem">Connect to Xero</div>
+            <div style="font-size:0.72rem;color:var(--muted)">Link your Xero account to upload invoices directly. Configure in Settings → Xero.</div>
+          </div>
+          <button class="btn bp bsm" onclick="go('settings',null)">⚙️ Set Up</button>
+        </div>
+        <!-- Actions -->
+        <div class="brow" style="margin-bottom:1rem">
+          <button class="btn bp" onclick="openInvoiceScanner()" style="flex:1">📸 Scan Tax Invoice</button>
+          <button class="btn bs" onclick="loadXeroInvoices()" id="xeroLoadBtn">🔄 Load from Xero</button>
+        </div>
+        <!-- Invoice list -->
+        <div id="invoiceList"><div style="text-align:center;padding:2rem;color:var(--muted)">No invoices loaded yet. Scan a photo or load from Xero.</div></div>
+      </div>
+
       <!-- SETTINGS -->
       <div class="pnl" id="p-settings">
         <div class="card">
@@ -1624,6 +1653,7 @@ VALUES
   ('Wraps', 'Bakery', 'Bidfood', 'unit', 0, 1),
   ('Cordon Bleu', 'Meat', 'Bidfood', 'unit', 0, 1),
   ('Cream Cheese 2.5kg', 'Dairy', 'Bidfood', 'unit', 0, 2),
+  -- Beers
   ('Amstel', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Heineken', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Windhoek Draught', 'Bar', 'Blue Bottle', 'unit', 0, 0),
@@ -1634,20 +1664,82 @@ VALUES
   ('Savanna Light', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Hunters Dry', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Hunters Gold', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Buffelsfontein L', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Castle Double Malt', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Corona', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Bavaria Non Alc.', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Jack Black Lager', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Devils Peak Ale', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Devils Peak IPA', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Stella Artois', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  -- Spirits
   ('Amarula', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Kahlua', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Cape Velvet', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Sourz Behave', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Harrier', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Jack Daniels', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('J&amp;B', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Bells', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Jameson', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Pushkin Vodka', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Tequila', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Triple Sec', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Bols Blue', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Grenadine', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Richelieu', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Klipdrift Premium', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Bacardi Rum', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Southern Comfort', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Malibu', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Gordons Gin', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Bombay Sapphire Gin', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Belgravia Gin', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Bitters', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('OBS', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  -- Wines
+  ('Overmeer Red 5Lt', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Late Harvest 5Lt', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Grand Cru 5Lt', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('J/Berger Rose 5Lt', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Graca Rose', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Graca Wit', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('JC Le Roux Wit', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('JC Le Roux Rooi', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Van Loveren Chenin No5', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Van Loveren Sauvignon Blanc', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Van Loveren River Red', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Van Loveren Java Pinotage', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Nederburg Rose', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Nederburg Merlot', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Nederburg Sauvignon Blanc', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  -- Soft Drinks 330ml
+  ('Coke 330ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Coke Zero 330ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Coke Light 330ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Sprite 330ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Sprite Zero 330ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Fanta Orange 330ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Crème Soda 330ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Appletizer 330ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Grapetizer Rooi 330ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Ice Tea Lemon 330ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Ice Tea Peach 330ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  -- Water
+  ('Valpre Spark 500ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Valpre Still 500ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  -- Mixers 200ml
+  ('Indian Tonic 200ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Pink Tonic 200ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Blue Tonic 200ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Lemonade (Schweppes) 200ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Dry Lemon 200ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Tomato Cocktail 200ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Ginger Ale 200ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Soda Water 200ml', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  -- Ciders
+  ('Kopparberg Lime', 'Bar', 'Blue Bottle', 'unit', 0, 0),
+  ('Kopparberg Raspberry', 'Bar', 'Blue Bottle', 'unit', 0, 0),
   ('Sauce Soya', 'Dry Goods', 'Golden Catering', 'unit', 0, 1),
   ('Ginger', 'Dry Goods', 'Golden Catering', 'unit', 0, 1),
   ('Coconut', 'Dry Goods', 'Golden Catering', 'unit', 0, 3),
@@ -1768,6 +1860,61 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
           <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap">
             <button class="btn bp bsm" onclick="saveAnthropicKey()">💾 Save Key</button>
             <button class="btn bs bsm" onclick="printStockTemplate()">📥 Download Stock Form</button>
+          </div>
+        </div>
+
+        <!-- XERO SETTINGS -->
+        <div class="card" id="xeroSettingsCard">
+          <div class="card-title">🔗 Xero Accounting Integration</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Connect Die Akker to Xero to automatically upload scanned tax invoices as supplier bills.</div>
+
+          <!-- Step-by-step setup guide -->
+          <div style="background:var(--surface);border-radius:10px;padding:0.9rem;margin-bottom:1rem;font-size:0.78rem;color:var(--text)">
+            <div style="font-weight:700;margin-bottom:0.5rem;font-size:0.8rem">📋 One-time setup (5 min):</div>
+            <div style="display:flex;flex-direction:column;gap:0.4rem">
+              <div>1. Go to <strong>developer.xero.com</strong> → My Apps → New App</div>
+              <div>2. Choose <strong>Web app</strong> — name it "Die Akker"</div>
+              <div>3. Set Redirect URI to the URL of this page (shown below)</div>
+              <div>4. Copy the <strong>Client ID</strong> and <strong>Client Secret</strong> here</div>
+              <div>5. Click <strong>Connect to Xero</strong> and approve access</div>
+            </div>
+          </div>
+
+          <div class="fg2">
+            <div class="fg">
+              <label>Client ID</label>
+              <input type="text" id="xeroClientId" placeholder="ABC123..." autocomplete="off"
+                style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
+            </div>
+            <div class="fg">
+              <label>Client Secret</label>
+              <input type="password" id="xeroClientSecret" placeholder="••••••••"
+                style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
+            </div>
+          </div>
+          <div class="fg" style="margin-top:0.5rem">
+            <label>Redirect URI <span style="font-size:0.7rem;color:var(--muted);font-weight:400">(copy this exactly into Xero developer portal)</span></label>
+            <div style="display:flex;gap:0.5rem;align-items:center">
+              <input type="text" id="xeroRedirectUri" readonly
+                style="flex:1;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.78rem;background:var(--surface);outline:none;color:var(--muted);box-sizing:border-box">
+              <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('xeroRedirectUri').value).then(()=>showToast('Copied ✓'))">📋</button>
+            </div>
+          </div>
+
+          <!-- Default purchase account code -->
+          <div class="fg" style="margin-top:0.5rem">
+            <label>Default Purchase Account Code <span style="font-size:0.7rem;color:var(--muted);font-weight:400">(from your Xero chart of accounts)</span></label>
+            <input type="text" id="xeroAccountCode" placeholder="e.g. 310"
+              style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
+            <div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem">In Xero: Accounting → Chart of Accounts → find your "Food Purchases" or "Cost of Sales" account code</div>
+          </div>
+
+          <div id="xeroStatusMsg" style="font-size:0.78rem;padding:0.5rem 0.7rem;border-radius:8px;margin-top:0.7rem;display:none"></div>
+
+          <div style="display:flex;gap:0.5rem;margin-top:0.8rem;flex-wrap:wrap">
+            <button class="btn bp bsm" onclick="xeroSaveSettings()" style="flex:1">💾 Save Settings</button>
+            <button class="btn bs bsm" id="xeroConnectBtn" onclick="xeroConnect()" style="flex:1">🔗 Connect to Xero</button>
+            <button class="btn bs bsm" id="xeroDisconnectBtn" onclick="xeroDisconnect()" style="color:var(--red);border-color:var(--red-b);display:none">✕ Disconnect</button>
           </div>
         </div>
       </div>
@@ -2026,17 +2173,17 @@ const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // AUTH
 // ═══════════════════════════════════════════
 // All sections available
-const ALL_SECTIONS = ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','analytics','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','auditlog','settings'];
-const SECTION_LABELS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',auditlog:'Audit Log',settings:'Settings'};
+const ALL_SECTIONS = ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','analytics','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
+const SECTION_LABELS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
 
 // Owner always has full access (hardcoded, cannot be removed)
 const ACCESS = {
   owner:   ALL_SECTIONS,
-  manager: ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','kpi','docs'],
+  manager: ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','kpi','docs','invoices'],
   employee:['dashboard','stocktake'],
 };
-const TTLS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',auditlog:'Audit Log',settings:'Settings'};
-const TSUBS = {dashboard:'Overview of all operations',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',auditlog:'System activity and change history',settings:'System configuration and preferences'};
+const TTLS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
+const TSUBS = {dashboard:'Overview of all operations',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
 const INVESTOR_SECTIONS = ['dashboard','stockdb','reports','analytics','recipes','pricing','cashup','payroll','roster','leave','kpi','docs','auditlog'];
 const ROLE_COLORS = {owner:'#7a1528', investor:'#c8922a', manager:'#152438', employee:'#1a6e40'};
 
@@ -2069,6 +2216,22 @@ async function doLogin(){
 function doLogout(){
   if(CU) logAudit('login','Logout','Signed out');
   CU = null;
+  // Restore sidebar and bottom bar for next login
+  const sb = document.getElementById('sb');
+  if(sb) sb.style.display = '';
+  // Reset bottom bar back to full 5-tab default
+  const bar = document.getElementById('btabBar');
+  if(bar){
+    bar.style.height = '';
+    bar.innerHTML = `
+      <button class="btab act" id="bt-dashboard" onclick="goTab('dashboard')"><span class="bt-ic">📊</span><span>Dashboard</span></button>
+      <button class="btab" id="bt-stocktake" onclick="goTab('stocktake')"><span class="bt-ic">📦</span><span>Stock</span></button>
+      <button class="btab" id="bt-cashup" onclick="goTab('cashup')"><span class="bt-ic">💰</span><span>Cash Up</span></button>
+      <button class="btab" id="bt-roster" onclick="goTab('roster')"><span class="bt-ic">📅</span><span>Roster</span></button>
+      <button class="btab" id="bt-more" onclick="toggleSb()"><span class="bt-ic">☰</span><span>More</span></button>`;
+    const main = document.getElementById('app')?.querySelector('.main');
+    if(main) main.style.paddingBottom = '';
+  }
   document.getElementById('app').classList.remove('show');
   document.getElementById('ls').style.display='flex';
 }
@@ -2100,9 +2263,31 @@ async function launchApp(){
   });
 
   if(CU.role==='owner'||CU.role==='investor') document.getElementById('ownerSt').style.display='block';
+
+  // Stock employee mode: ensure orders access + hide full nav clutter
+  if(isStockEmployee()){
+    // Give access to stocktake + orders (even if not in DB access_sections)
+    if(!CU.access.includes('orders')) CU.access = [...CU.access, 'orders'];
+    if(!CU.access.includes('stocktake')) CU.access = [...CU.access, 'stocktake'];
+    // Show nav item for orders in sidebar (in case they use it)
+    const ordEl = document.getElementById('n-orders');
+    if(ordEl) ordEl.style.display = '';
+    // Hide the sidebar entirely for stock employees (they only need bottom tabs)
+    document.getElementById('sb').style.display = 'none';
+  }
+
+  // Render appropriate bottom tab bar (simplified for Fridah, full for others)
+  renderBottomTabs();
+
   setSyncStatus('syncing');
   await loadAllData();
   setSyncStatus('ok');
+
+  // Auto-navigate stock employees to Stock Count on login
+  if(isStockEmployee()){
+    go('stocktake', null);
+    syncBottomTabs('stocktake');
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -2200,6 +2385,7 @@ function go(id,el){
   if(id==='payroll'){ syncRosterHoursToPayroll(); loadWaiterSalesForMonth().then(()=>renderPay()); renderPaymentDate(); }
   if(id==='waiterlog'){ wlToday(); initLeaderboard(); initScheduling(); }
   if(id==='auditlog') loadAuditLog();
+  if(id==='invoices') initInvoicesPanel();
   if(id==='staff') loadStaffLogins();
   if(id==='reports'){ initReportDates(); loadReports(); }
   if(id==='analytics'){ initAnalytics(); loadAnalytics(); }
@@ -2214,6 +2400,8 @@ function go(id,el){
     if(keyInp){ const k=localStorage.getItem('anthropicKey')||''; keyInp.value=k; updateAiKeyStatus(k); }
     // Check if section column exists by seeing if any DB item has the key
     checkSectionColStatus();
+    // Load Xero settings into form
+    xeroLoadSettings();
   }
   closeSb();
   syncBottomTabs(id);
@@ -2241,6 +2429,37 @@ function syncBottomTabs(id){
     const more = document.getElementById('bt-more');
     if(more) more.classList.add('act');
   }
+}
+
+// ── STOCK EMPLOYEE MODE (Fridah + similar roles) ──────────────────────────
+// Detects staff who only need stock counting + ordering interface
+function isStockEmployee(){
+  const name = (CU?.name||'').toLowerCase();
+  // By name (Fridah, or similar stock-ordering staff)
+  if(name.includes('fridah')) return true;
+  // By access pattern: has 'orders' but not management sections
+  if(CU?.role==='employee' && CU?.access?.includes('orders') && !CU?.access?.includes('cashup')) return true;
+  return false;
+}
+
+function renderBottomTabs(){
+  const bar = document.getElementById('btabBar');
+  if(!bar) return;
+  if(isStockEmployee()){
+    // Simplified 2-tab bar for stock employees
+    bar.innerHTML = `
+      <button class="btab act" id="bt-stocktake" onclick="goTab('stocktake')" style="flex:1;max-width:50%">
+        <span class="bt-ic">📦</span><span>Stock on Hand</span>
+      </button>
+      <button class="btab" id="bt-orders" onclick="goTab('orders')" style="flex:1;max-width:50%">
+        <span class="bt-ic">🛒</span><span>What to Order</span>
+      </button>`;
+    // Make tabs taller and more prominent for simplified mode
+    bar.style.height = '64px';
+    bar.style.setProperty('--bt-fz','0.65rem');
+    document.getElementById('app').querySelector('.main').style.paddingBottom = '64px';
+  }
+  // else: keep the default 5-tab HTML already in the DOM
 }
 
 // ═══════════════════════════════════════════
@@ -2556,6 +2775,7 @@ let SUPS={
   'Mitch CGC':{c:'Mitch 078 099 5147',m:'wa',g:'Good day Mitch',i:'Can I please order:'},
   'Sir Juice':{c:'OrdersJHB@sirfruit.co.za',m:'email',g:'Good morning',i:'Can we please order the following:'},
   'Pienk Pilletjies':{c:'Telephone',m:'phone',g:'Good morning',i:'Can we please order:'},
+  'Blue Bottle':{c:'018 297 5750',m:'phone',g:'Good morning',i:'Can we please order the following:'},
 };
 
 // ── ORDER SCHEDULE: which suppliers to order on which day ─────────────────
@@ -2609,7 +2829,34 @@ const ORDER_TEMPLATES = {
   'Chubby Chick':[{n:'Chicken Breast Fillet',ml:null},{n:'Chicken Wings',ml:null},{n:'Chicken Liver',ml:null}],
   'Spill-it Coffee':[{n:'Espresso Beans',ml:12},{n:'Filter Coffee',ml:5}],
   'Bidfood':[{n:'Tramezinni',ml:3},{n:'Ribs MEA5919',ml:2},{n:'English Muffins',ml:1},{n:'Panini 150g',ml:2},{n:'Ciabatta',ml:2},{n:'Smoked Salmon',ml:1},{n:'Hickory Ham',ml:2},{n:'Sandwich Ham',ml:1},{n:'Pork Sausage',ml:1},{n:'Viennas',ml:1},{n:'Meadowland',ml:2},{n:'Romi',ml:1},{n:'Rye Bread',ml:1},{n:'Wraps',ml:1},{n:'Cordon Bleu',ml:1},{n:'Cream Cheese 2.5kg',ml:2}],
-  'Blue Bottle':[{n:'Amstel',ml:null},{n:'Heineken',ml:null},{n:'Windhoek Draught',ml:null},{n:'Windhoek Lager',ml:null},{n:'Castle Lite',ml:null},{n:'Flying Fish Lemon',ml:null},{n:'Savanna Dry',ml:null},{n:'Savanna Light',ml:null},{n:'Hunters Dry',ml:null},{n:'Hunters Gold',ml:null},{n:'Corona',ml:null},{n:'Bavaria Non Alc.',ml:null},{n:'Amarula',ml:null},{n:'Kahlua',ml:null},{n:'Jack Daniels',ml:null},{n:'J&B',ml:null},{n:'Jameson',ml:null},{n:'Pushkin Vodka',ml:null},{n:'Tequila',ml:null},{n:'Richelieu',ml:null},{n:'Klipdrift Premium',ml:null},{n:'Bacardi Rum',ml:null},{n:'Gordons Gin',ml:null},{n:'Bombay Sapphire Gin',ml:null}],
+  'Blue Bottle':[
+    {n:'Amstel',ml:null},{n:'Heineken',ml:null},{n:'Windhoek Draught',ml:null},{n:'Windhoek Lager',ml:null},
+    {n:'Castle Lite',ml:null},{n:'Flying Fish Lemon',ml:null},{n:'Savanna Dry',ml:null},{n:'Savanna Light',ml:null},
+    {n:'Hunters Dry',ml:null},{n:'Hunters Gold',ml:null},{n:'Buffelsfontein L',ml:null},{n:'Castle Double Malt',ml:null},
+    {n:'Corona',ml:null},{n:'Bavaria Non Alc.',ml:null},{n:'Jack Black Lager',ml:null},
+    {n:'Devils Peak Ale',ml:null},{n:'Devils Peak IPA',ml:null},{n:'Stella Artois',ml:null},
+    {n:'Amarula',ml:null},{n:'Kahlua',ml:null},{n:'Cape Velvet',ml:null},{n:'Sourz Behave',ml:null},
+    {n:'Harrier',ml:null},{n:'Jack Daniels',ml:null},{n:'J&B',ml:null},{n:'Bells',ml:null},
+    {n:'Jameson',ml:null},{n:'Pushkin Vodka',ml:null},{n:'Tequila',ml:null},{n:'Triple Sec',ml:null},
+    {n:'Bols Blue',ml:null},{n:'Grenadine',ml:null},{n:'Richelieu',ml:null},{n:'Klipdrift Premium',ml:null},
+    {n:'Bacardi Rum',ml:null},{n:'Southern Comfort',ml:null},{n:'Malibu',ml:null},
+    {n:'Gordons Gin',ml:null},{n:'Bombay Sapphire Gin',ml:null},{n:'Belgravia Gin',ml:null},
+    {n:'Bitters',ml:null},{n:'OBS',ml:null},
+    {n:'Overmeer Red 5Lt',ml:null},{n:'Late Harvest 5Lt',ml:null},{n:'Grand Cru 5Lt',ml:null},{n:'J/Berger Rose 5Lt',ml:null},
+    {n:'Graca Rose',ml:null},{n:'Graca Wit',ml:null},{n:'JC Le Roux Wit',ml:null},{n:'JC Le Roux Rooi',ml:null},
+    {n:'Van Loveren Chenin No5',ml:null},{n:'Van Loveren Sauvignon Blanc',ml:null},
+    {n:'Van Loveren River Red',ml:null},{n:'Van Loveren Java Pinotage',ml:null},
+    {n:'Nederburg Rose',ml:null},{n:'Nederburg Merlot',ml:null},{n:'Nederburg Sauvignon Blanc',ml:null},
+    {n:'Coke 330ml',ml:null},{n:'Coke Zero 330ml',ml:null},{n:'Coke Light 330ml',ml:null},
+    {n:'Sprite 330ml',ml:null},{n:'Sprite Zero 330ml',ml:null},{n:'Fanta Orange 330ml',ml:null},
+    {n:'Crème Soda 330ml',ml:null},{n:'Appletizer 330ml',ml:null},{n:'Grapetizer Rooi 330ml',ml:null},
+    {n:'Ice Tea Lemon 330ml',ml:null},{n:'Ice Tea Peach 330ml',ml:null},
+    {n:'Valpre Spark 500ml',ml:null},{n:'Valpre Still 500ml',ml:null},
+    {n:'Indian Tonic 200ml',ml:null},{n:'Pink Tonic 200ml',ml:null},{n:'Blue Tonic 200ml',ml:null},
+    {n:'Lemonade (Schweppes) 200ml',ml:null},{n:'Dry Lemon 200ml',ml:null},
+    {n:'Tomato Cocktail 200ml',ml:null},{n:'Ginger Ale 200ml',ml:null},{n:'Soda Water 200ml',ml:null},
+    {n:'Kopparberg Lime',ml:null},{n:'Kopparberg Raspberry',ml:null},
+  ],
   'Golden Catering':[{n:'Sauce Soya',ml:1},{n:'Ginger',ml:1},{n:'Coconut',ml:3},{n:'Salt - table',ml:4},{n:'Salt - Sea coarse',ml:4},{n:'Calamata Olywe',ml:1},{n:'Muesli',ml:2},{n:'Balsamic Vinegar',ml:1},{n:'Olive Oil',ml:1},{n:'Stroop',ml:6},{n:'Sugar Brown 1kg',ml:4},{n:'Chip White',ml:2},{n:'Rys 2.5kg',ml:2},{n:'Macaroni',ml:5},{n:'Lasagne',ml:5},{n:'Chip Spice',ml:2},{n:'Cinnamon',ml:1},{n:'Baked Beans',ml:2},{n:'Cocoa 250g',ml:2},{n:'Cream Bombs',ml:10},{n:'Heuning',ml:6},{n:'Chicken Spice',ml:2},{n:'Chocolate Mousse',ml:4},{n:'Icing Sugar',ml:1},{n:'Cake Flour 12.5kg',ml:2},{n:'Maizina',ml:6},{n:'Baking Powder',ml:1},{n:'Tobasco Green',ml:6},{n:'Tobasco Red',ml:6},{n:'Paprika',ml:1},{n:'Garlic',ml:1},{n:'Sprinkle Nuts',ml:2},{n:'100s & 1000s',ml:1},{n:'Hollandaise',ml:6},{n:'Peanut Butter',ml:2},{n:'B-Well Mayo 20L',ml:1},{n:'Sweet Chilli',ml:3},{n:'Chutney 6.25kg',ml:1},{n:'Basil Pesto',ml:2},{n:'Capers',ml:1},{n:'Jalapeno',ml:2},{n:'Peppadews',ml:1},{n:'Tomato Puree 410g',ml:8},{n:'Sundried Tomato',ml:1},{n:'Jam Strawberry',ml:1},{n:'Jam Apricot',ml:1},{n:'Condensed Milk',ml:18},{n:'Caramel Treat',ml:12}],
 };
 
@@ -6476,6 +6723,494 @@ function updateAiKeyStatus(key){
 }
 
 // ═══════════════════════════════════════════
+// XERO ACCOUNTING INTEGRATION
+// ═══════════════════════════════════════════
+let xeroContacts = []; // cached Xero contacts (suppliers)
+let invPhotos = [];    // invoice scan photos
+let invLineData = [];  // extracted line items
+
+// ── PKCE helpers ─────────────────────────────────────────────────────────
+function xeroRandStr(len){
+  const arr=new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return btoa(String.fromCharCode(...arr)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+async function xeroChallenge(verifier){
+  const data=new TextEncoder().encode(verifier);
+  const hash=await crypto.subtle.digest('SHA-256',data);
+  return btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+// ── Settings persistence ──────────────────────────────────────────────────
+function xeroSaveSettings(){
+  const id=document.getElementById('xeroClientId').value.trim();
+  const sec=document.getElementById('xeroClientSecret').value.trim();
+  const acc=document.getElementById('xeroAccountCode').value.trim();
+  if(!id){showToast('Enter your Xero Client ID.',true);return;}
+  localStorage.setItem('xeroClientId',id);
+  if(sec) localStorage.setItem('xeroClientSecret',sec);
+  if(acc) localStorage.setItem('xeroAccountCode',acc);
+  showToast('Xero settings saved ✓');
+  updateXeroStatus();
+}
+
+function xeroLoadSettings(){
+  const id=localStorage.getItem('xeroClientId')||'';
+  const sec=localStorage.getItem('xeroClientSecret')||'';
+  const acc=localStorage.getItem('xeroAccountCode')||'';
+  const rd=document.getElementById('xeroRedirectUri');
+  if(rd) rd.value=window.location.href.split('?')[0].split('#')[0];
+  const eli=document.getElementById('xeroClientId');     if(eli) eli.value=id;
+  const els=document.getElementById('xeroClientSecret'); if(els) els.value=sec?'••••••••':'';
+  const ela=document.getElementById('xeroAccountCode');  if(ela) ela.value=acc;
+  updateXeroStatus();
+}
+
+function updateXeroStatus(){
+  const tok=localStorage.getItem('xeroAccessToken');
+  const exp=parseInt(localStorage.getItem('xeroTokenExpiry')||'0');
+  const connected=tok&&Date.now()<exp;
+  const org=localStorage.getItem('xeroOrgName')||'Connected';
+  // Settings card status
+  const msg=document.getElementById('xeroStatusMsg');
+  if(msg){
+    msg.style.display='block';
+    if(connected){
+      msg.style.background='var(--green-l)';msg.style.color='var(--green)';msg.style.border='1px solid var(--green-b)';
+      msg.textContent=`✅ Connected — ${org}`;
+    } else if(localStorage.getItem('xeroClientId')){
+      msg.style.background='var(--surface)';msg.style.color='var(--muted)';msg.style.border='1px solid var(--border)';
+      msg.textContent='Not connected yet — click "Connect to Xero" to authorise';
+    } else {
+      msg.style.display='none';
+    }
+  }
+  const discBtn=document.getElementById('xeroDisconnectBtn');
+  if(discBtn) discBtn.style.display=connected?'inline-flex':'none';
+  // Invoices panel banners
+  const cb=document.getElementById('xeroConnBanner');
+  const db=document.getElementById('xeroDisconnBanner');
+  if(cb) cb.style.display=connected?'flex':'none';
+  if(db) db.style.display=connected?'none':'flex';
+  const orgEl=document.getElementById('xeroOrgName');
+  if(orgEl&&connected) orgEl.textContent=org;
+  // Nav badge
+  const bdg=document.getElementById('xeroBadge');
+  if(bdg) bdg.style.display=connected?'inline-flex':'none';
+}
+
+// ── OAuth PKCE connect ────────────────────────────────────────────────────
+async function xeroConnect(){
+  const clientId=localStorage.getItem('xeroClientId');
+  if(!clientId){showToast('Save your Client ID in Settings → Xero first.',true);return;}
+  const redirectUri=window.location.href.split('?')[0].split('#')[0];
+  const verifier=xeroRandStr(64);
+  const challenge=await xeroChallenge(verifier);
+  sessionStorage.setItem('xeroPKCEVerifier',verifier);
+  const scopes='openid profile email accounting.transactions accounting.contacts offline_access';
+  const params=new URLSearchParams({
+    response_type:'code',client_id:clientId,redirect_uri:redirectUri,
+    scope:scopes,state:'xeroauth',code_challenge:challenge,code_challenge_method:'S256'
+  });
+  window.location.href=`https://login.xero.com/identity/connect/authorize?${params}`;
+}
+
+async function xeroHandleCallback(){
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('state')!=='xeroauth'||!params.get('code')) return;
+  const code=params.get('code');
+  history.replaceState({},'',window.location.pathname);
+  const clientId=localStorage.getItem('xeroClientId');
+  const clientSecret=localStorage.getItem('xeroClientSecret');
+  const redirectUri=window.location.href.split('?')[0].split('#')[0];
+  const verifier=sessionStorage.getItem('xeroPKCEVerifier');
+  const body=new URLSearchParams({
+    grant_type:'authorization_code',client_id:clientId,code,
+    redirect_uri:redirectUri,code_verifier:verifier
+  });
+  if(clientSecret) body.append('client_secret',clientSecret);
+  try{
+    const resp=await fetch('https://identity.xero.com/connect/token',{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()
+    });
+    const data=await resp.json();
+    if(!data.access_token) throw new Error(data.error_description||'Auth failed');
+    localStorage.setItem('xeroAccessToken',data.access_token);
+    localStorage.setItem('xeroRefreshToken',data.refresh_token||'');
+    localStorage.setItem('xeroTokenExpiry',Date.now()+(data.expires_in||1800)*1000);
+    await xeroGetTenants();
+    showToast('Connected to Xero ✓ — syncing contacts...');
+    await xeroSyncContacts();
+    updateXeroStatus();
+  }catch(e){
+    showToast('Xero auth failed: '+e.message,true);
+  }
+}
+
+async function xeroRefreshIfNeeded(){
+  const exp=parseInt(localStorage.getItem('xeroTokenExpiry')||'0');
+  if(Date.now()<exp-60000) return true; // still valid (>1 min left)
+  const refresh=localStorage.getItem('xeroRefreshToken');
+  if(!refresh) return false;
+  const clientId=localStorage.getItem('xeroClientId');
+  const clientSecret=localStorage.getItem('xeroClientSecret');
+  const body=new URLSearchParams({grant_type:'refresh_token',client_id:clientId,refresh_token:refresh});
+  if(clientSecret) body.append('client_secret',clientSecret);
+  try{
+    const resp=await fetch('https://identity.xero.com/connect/token',{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()
+    });
+    const data=await resp.json();
+    if(!data.access_token) return false;
+    localStorage.setItem('xeroAccessToken',data.access_token);
+    if(data.refresh_token) localStorage.setItem('xeroRefreshToken',data.refresh_token);
+    localStorage.setItem('xeroTokenExpiry',Date.now()+(data.expires_in||1800)*1000);
+    return true;
+  }catch(e){ return false; }
+}
+
+function xeroDisconnect(){
+  ['xeroAccessToken','xeroRefreshToken','xeroTokenExpiry','xeroTenantId','xeroOrgName'].forEach(k=>localStorage.removeItem(k));
+  xeroContacts=[];
+  updateXeroStatus();
+  showToast('Disconnected from Xero');
+}
+
+// ── Tenant / org ──────────────────────────────────────────────────────────
+async function xeroGetTenants(){
+  const tok=localStorage.getItem('xeroAccessToken');
+  const resp=await fetch('https://api.xero.com/connections',{
+    headers:{Authorization:`Bearer ${tok}`,Accept:'application/json'}
+  });
+  const tenants=await resp.json();
+  if(tenants&&tenants.length){
+    localStorage.setItem('xeroTenantId',tenants[0].tenantId);
+    localStorage.setItem('xeroOrgName',tenants[0].tenantName||'Xero Org');
+  }
+}
+
+// ── API helper ────────────────────────────────────────────────────────────
+async function xeroAPI(path,method='GET',body=null){
+  if(!await xeroRefreshIfNeeded()){showToast('Xero session expired — reconnect in Settings.',true);return null;}
+  const tok=localStorage.getItem('xeroAccessToken');
+  const tid=localStorage.getItem('xeroTenantId');
+  const opts={method,headers:{Authorization:`Bearer ${tok}`,'Xero-tenant-id':tid,Accept:'application/json'}};
+  if(body){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(body);}
+  const resp=await fetch(`https://api.xero.com/api.xro/2.0/${path}`,opts);
+  if(!resp.ok){const err=await resp.text();throw new Error(err);}
+  return resp.json();
+}
+
+// ── Contacts (suppliers) sync ─────────────────────────────────────────────
+async function xeroSyncContacts(){
+  const btn=document.getElementById('xeroSyncBtn');
+  if(btn){btn.disabled=true;btn.textContent='Syncing...';}
+  try{
+    const data=await xeroAPI('Contacts?where=IsSupplier%3D%3Dtrue&summaryOnly=true');
+    xeroContacts=(data?.Contacts||[]).map(c=>({id:c.ContactID,name:c.Name,email:c.EmailAddress||''}));
+    localStorage.setItem('xeroContactsCache',JSON.stringify(xeroContacts));
+    showToast(`✓ ${xeroContacts.length} Xero supplier contacts synced`);
+    populateXeroSupplierDropdown();
+  }catch(e){
+    showToast('Could not sync contacts: '+e.message,true);
+  }
+  if(btn){btn.disabled=false;btn.textContent='🔄 Sync Contacts';}
+}
+
+function populateXeroSupplierDropdown(){
+  const sel=document.getElementById('invSupplierSel');
+  if(!sel) return;
+  const contacts=xeroContacts.length?xeroContacts:JSON.parse(localStorage.getItem('xeroContactsCache')||'[]');
+  sel.innerHTML='<option value="">— Select Xero contact —</option>'+
+    contacts.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+}
+
+// ── Load invoices from Xero ───────────────────────────────────────────────
+async function loadXeroInvoices(){
+  if(!localStorage.getItem('xeroAccessToken')){showToast('Connect to Xero first.',true);return;}
+  const el=document.getElementById('invoiceList');
+  el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted)">Loading from Xero...</div>';
+  try{
+    const data=await xeroAPI('Invoices?where=Type%3D%3D%22ACCPAY%22&order=Date DESC&page=1');
+    const invs=data?.Invoices||[];
+    if(!invs.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">No supplier bills found in Xero.</div>';return;}
+    el.innerHTML=invs.map(inv=>{
+      const total=inv.Total||0;
+      const status=inv.Status||'';
+      const statusCol=status==='PAID'?'var(--green)':status==='AUTHORISED'?'var(--blue)':'var(--gold)';
+      return `<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem">
+        <div style="display:flex;align-items:center;gap:0.8rem">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:0.9rem">${inv.Contact?.Name||'Unknown supplier'}</div>
+            <div style="font-size:0.72rem;color:var(--muted)">${inv.InvoiceNumber||'No ref'} · ${(inv.Date||'').slice(6,10)+'-'+(inv.Date||'').slice(4,6)+'-'+(inv.Date||'').slice(0,4)||'No date'}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--burg)">R ${total.toFixed(2)}</div>
+            <span class="bdg" style="background:${statusCol}22;color:${statusCol};border:1px solid ${statusCol}44;font-size:0.55rem">${status}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--red)">Error loading invoices: '+e.message+'</div>';
+  }
+}
+
+// ── Invoice scanner ───────────────────────────────────────────────────────
+const MAX_INV_PHOTOS=5;
+
+function initInvoicesPanel(){
+  updateXeroStatus();
+  // Restore cached contacts
+  const cached=localStorage.getItem('xeroContactsCache');
+  if(cached) xeroContacts=JSON.parse(cached);
+}
+
+function openInvoiceScanner(){
+  invPhotos=[]; invLineData=[];
+  document.getElementById('invStep1').style.display='block';
+  document.getElementById('invStep2').style.display='none';
+  document.getElementById('invScanStatus').style.display='none';
+  document.getElementById('invPhotoCamera').value='';
+  document.getElementById('invPhotoGallery').value='';
+  renderInvPhotoSlots();
+  populateXeroSupplierDropdown();
+  openMo('moInvoiceScan');
+}
+
+function renderInvPhotoSlots(){
+  const el=document.getElementById('invPhotoSlots'); if(!el) return;
+  let html=invPhotos.map((p,i)=>`
+    <div style="position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--surface)">
+      <img src="${p.thumb}" style="width:100%;height:100%;object-fit:cover">
+      <button onclick="removeInvPhoto(${i})" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.6);border:none;border-radius:50%;width:22px;height:22px;color:#fff;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
+    </div>`).join('');
+  if(invPhotos.length<MAX_INV_PHOTOS) html+=`<div style="border:2px dashed var(--border);border-radius:8px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:1.5rem;cursor:pointer" onclick="document.getElementById('invPhotoGallery').click()">+</div>`;
+  el.innerHTML=html;
+  const btn=document.getElementById('invScanBtn');
+  if(btn) btn.textContent=invPhotos.length>0?`🤖 Read ${invPhotos.length} Photo${invPhotos.length>1?'s':''} with AI`:'🤖 Read Invoice with AI';
+}
+
+function removeInvPhoto(i){ invPhotos.splice(i,1); renderInvPhotoSlots(); }
+
+function addInvPhoto(input){ if(!input.files||!input.files[0]) return; readInvFile(input.files[0]); input.value=''; }
+function addInvPhotos(input){
+  if(!input.files||!input.files.length) return;
+  Array.from(input.files).slice(0,MAX_INV_PHOTOS-invPhotos.length).forEach(f=>readInvFile(f));
+  input.value='';
+}
+function readInvFile(file){
+  if(invPhotos.length>=MAX_INV_PHOTOS){showToast(`Max ${MAX_INV_PHOTOS} photos.`,true);return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    invPhotos.push({base64:e.target.result.split(',')[1],mediaType:e.target.result.split(';')[0].split(':')[1],thumb:e.target.result});
+    renderInvPhotoSlots();
+  };
+  reader.readAsDataURL(file);
+}
+
+function invRescan(){ invPhotos=[]; invLineData=[]; document.getElementById('invStep1').style.display='block'; document.getElementById('invStep2').style.display='none'; renderInvPhotoSlots(); }
+
+async function scanInvoice(){
+  if(!invPhotos.length){showToast('Add at least one photo of the invoice.',true);return;}
+  const apiKey=localStorage.getItem('anthropicKey')||'';
+  if(!apiKey){showToast('Add your Anthropic API key in Settings → AI Photo Scan.',true);return;}
+  const btn=document.getElementById('invScanBtn');
+  const status=document.getElementById('invScanStatus');
+  btn.disabled=true; status.style.display='block'; status.textContent=`Reading invoice${invPhotos.length>1?' ('+invPhotos.length+' pages)':''}...`;
+
+  const content=[];
+  invPhotos.forEach((p,i)=>{
+    content.push({type:'image',source:{type:'base64',media_type:p.mediaType,data:p.base64}});
+    if(invPhotos.length>1) content.push({type:'text',text:`Page ${i+1} of ${invPhotos.length}.`});
+  });
+  content.push({type:'text',text:`This is a South African supplier tax invoice. Extract all information and return ONLY valid JSON — no explanation, no markdown, no code fences.
+
+Return this exact structure:
+{
+  "supplier_name": "Name on invoice",
+  "invoice_number": "INV-XXX or reference number",
+  "invoice_date": "YYYY-MM-DD",
+  "due_date": "YYYY-MM-DD or null",
+  "line_items": [
+    {"description": "item description", "quantity": 1, "unit_price": 0.00, "amount": 0.00, "vat_amount": 0.00}
+  ],
+  "subtotal_excl_vat": 0.00,
+  "vat_total": 0.00,
+  "total_incl_vat": 0.00
+}
+
+Rules:
+- Amounts are in South African Rand (ZAR)
+- VAT is 15% in South Africa
+- If due date not shown, set to null
+- Include every line item visible
+- "amount" = quantity × unit_price (excl VAT)
+- If prices shown incl VAT, back-calculate excl VAT amounts`});
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:3000,messages:[{role:'user',content}]})
+    });
+    const data=await resp.json();
+    const text=data.content?.find(b=>b.type==='text')?.text||'';
+    const jsonMatch=text.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('Could not read invoice data — try a clearer photo');
+    const parsed=JSON.parse(jsonMatch[0]);
+    showInvoiceReview(parsed);
+  }catch(err){
+    showToast('Could not read invoice: '+err.message+'. Try better lighting or a closer shot.',true);
+    status.style.display='none';
+  }
+  btn.disabled=false;
+}
+
+function showInvoiceReview(parsed){
+  // Populate header fields
+  document.getElementById('invNumber').value=parsed.invoice_number||'';
+  document.getElementById('invDate').value=parsed.invoice_date||new Date().toISOString().slice(0,10);
+  document.getElementById('invDueDate').value=parsed.due_date||'';
+
+  // Try to match supplier to Xero contact
+  const contacts=xeroContacts.length?xeroContacts:JSON.parse(localStorage.getItem('xeroContactsCache')||'[]');
+  const supName=(parsed.supplier_name||'').toLowerCase();
+  const matched=contacts.find(c=>c.name.toLowerCase().includes(supName)||supName.includes(c.name.toLowerCase()));
+  const sel=document.getElementById('invSupplierSel');
+  if(sel&&matched) sel.value=matched.id;
+
+  // Build line items
+  invLineData=(parsed.line_items||[]).map(l=>({
+    description:l.description||'',
+    quantity:parseFloat(l.quantity)||1,
+    unit_price:parseFloat(l.unit_price)||0,
+    amount:parseFloat(l.amount)||0,
+    vat_amount:parseFloat(l.vat_amount)||0
+  }));
+
+  renderInvLineItems();
+  document.getElementById('invScanSummary').textContent=`✓ Read from invoice — ${invLineData.length} line item${invLineData.length!==1?'s':''}${parsed.supplier_name?` · ${parsed.supplier_name}`:''}`;
+  document.getElementById('invStep1').style.display='none';
+  document.getElementById('invStep2').style.display='block';
+}
+
+function renderInvLineItems(){
+  const el=document.getElementById('invLineItems'); if(!el) return;
+  if(!invLineData.length){el.innerHTML='<div style="padding:1rem;text-align:center;color:var(--muted);font-size:0.82rem">No line items</div>';return;}
+  el.innerHTML=invLineData.map((l,i)=>`
+    <div style="padding:0.6rem 0.8rem;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 70px 80px 70px 24px;gap:0.4rem;align-items:center;font-size:0.8rem">
+      <input value="${l.description}" placeholder="Description"
+        style="border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;width:100%;box-sizing:border-box"
+        oninput="invLineData[${i}].description=this.value">
+      <input type="number" value="${l.quantity}" min="0" step="0.001" placeholder="Qty"
+        style="border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.4rem;font-family:'Karla',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;text-align:center;width:100%;box-sizing:border-box"
+        oninput="invLineData[${i}].quantity=parseFloat(this.value)||0;recalcInvLine(${i})">
+      <input type="number" value="${l.unit_price.toFixed(2)}" min="0" step="0.01" placeholder="Unit Price"
+        style="border:1px solid var(--burg);border-radius:6px;padding:0.3rem 0.4rem;font-family:'Karla',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;text-align:right;width:100%;box-sizing:border-box"
+        oninput="invLineData[${i}].unit_price=parseFloat(this.value)||0;recalcInvLine(${i})">
+      <div id="invLine${i}Amt" style="text-align:right;font-weight:700;color:var(--burg)">R ${l.amount.toFixed(2)}</div>
+      <button onclick="removeInvLine(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;padding:0;line-height:1">✕</button>
+    </div>`).join('')+
+    `<div style="padding:0.4rem 0.8rem;font-size:0.65rem;color:var(--muted);display:grid;grid-template-columns:1fr 70px 80px 70px 24px;gap:0.4rem"><span style="color:var(--muted)">Description</span><span style="text-align:center">Qty</span><span style="text-align:right">Unit (excl VAT)</span><span style="text-align:right">Amount</span><span></span></div>`;
+  recalcInvTotals();
+}
+
+function recalcInvLine(i){
+  const l=invLineData[i];
+  l.amount=Math.round(l.quantity*l.unit_price*100)/100;
+  l.vat_amount=Math.round(l.amount*0.15*100)/100;
+  const amtEl=document.getElementById(`invLine${i}Amt`);
+  if(amtEl) amtEl.textContent=`R ${l.amount.toFixed(2)}`;
+  recalcInvTotals();
+}
+
+function recalcInvTotals(){
+  const sub=invLineData.reduce((s,l)=>s+l.amount,0);
+  const vat=Math.round(sub*0.15*100)/100;
+  document.getElementById('invSubtotal').textContent=`R ${sub.toFixed(2)}`;
+  document.getElementById('invVAT').textContent=`R ${vat.toFixed(2)}`;
+  document.getElementById('invTotal').textContent=`R ${(sub+vat).toFixed(2)}`;
+}
+
+function addInvLineItem(){
+  invLineData.push({description:'',quantity:1,unit_price:0,amount:0,vat_amount:0});
+  renderInvLineItems();
+}
+
+function removeInvLine(i){ invLineData.splice(i,1); renderInvLineItems(); }
+
+// ── Submit invoice to Xero ────────────────────────────────────────────────
+async function submitInvoiceToXero(){
+  const contactId=document.getElementById('invSupplierSel').value;
+  if(!contactId){showToast('Select a supplier contact first.',true);return;}
+  if(!invLineData.length){showToast('No line items to submit.',true);return;}
+  const tok=localStorage.getItem('xeroAccessToken');
+  if(!tok){showToast('Not connected to Xero — reconnect in Settings.',true);return;}
+
+  const btn=document.getElementById('invSubmitBtn');
+  const status=document.getElementById('invSubmitStatus');
+  btn.disabled=true; btn.textContent='Uploading...';
+  status.style.display='block';
+  status.style.background='var(--surface)'; status.style.color='var(--muted)'; status.style.border='1px solid var(--border)';
+  status.textContent='Sending to Xero...';
+
+  const accountCode=localStorage.getItem('xeroAccountCode')||'310';
+  const invoiceDate=document.getElementById('invDate').value;
+  const dueDate=document.getElementById('invDueDate').value;
+  const invNum=document.getElementById('invNumber').value;
+
+  const payload={
+    Invoices:[{
+      Type:'ACCPAY',
+      Contact:{ContactID:contactId},
+      Date:invoiceDate,
+      ...(dueDate?{DueDate:dueDate}:{}),
+      ...(invNum?{InvoiceNumber:invNum}:{}),
+      Status:'AUTHORISED',
+      LineAmountTypes:'EXCLUSIVE',
+      LineItems:invLineData.map(l=>({
+        Description:l.description||'Item',
+        Quantity:l.quantity,
+        UnitAmount:l.unit_price,
+        AccountCode:accountCode,
+        TaxType:'INPUT2'
+      }))
+    }]
+  };
+
+  try{
+    const data=await xeroAPI('Invoices','POST',payload);
+    const created=data?.Invoices?.[0];
+    if(!created||created.HasErrors){
+      const errs=(created?.ValidationErrors||[]).map(e=>e.Message).join('; ');
+      throw new Error(errs||'Xero returned an error');
+    }
+    status.style.background='var(--green-l)'; status.style.color='var(--green)'; status.style.border='1px solid var(--green-b)';
+    status.textContent=`✅ Bill created in Xero! Ref: ${created.InvoiceNumber||created.InvoiceID}`;
+    await logAudit('invoices','Xero Upload',`Invoice ${invNum||created.InvoiceID} uploaded to Xero — R${(created.Total||0).toFixed(2)}`);
+    btn.textContent='✓ Done';
+    setTimeout(()=>{closeMo('moInvoiceScan');loadXeroInvoices();},1800);
+  }catch(e){
+    status.style.background='#fff0f0'; status.style.color='var(--red)'; status.style.border='1px solid var(--red-b,#fca5a5)';
+    status.textContent='Upload failed: '+e.message;
+    btn.disabled=false; btn.textContent='📤 Upload to Xero';
+  }
+}
+
+// ── On page load: handle OAuth callback if returning from Xero ────────────
+(async function xeroInit(){
+  if(window.location.search.includes('state=xeroauth')){
+    // Show loading while we handle the OAuth callback
+    await xeroHandleCallback();
+  }
+  // Restore cached contacts on startup
+  const cached=localStorage.getItem('xeroContactsCache');
+  if(cached) try{ xeroContacts=JSON.parse(cached); }catch(e){}
+  updateXeroStatus();
+})();
+
+// ═══════════════════════════════════════════
 // PHOTO STOCKTAKE SCAN
 // ═══════════════════════════════════════════
 let photoSTPhotos = []; // array of {base64, mediaType, thumb}
@@ -9331,6 +10066,78 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       <div class="brow" style="margin-top:0.8rem">
         <button class="btn bp" onclick="applyScanResults()" style="flex:1">✓ Apply to Stocktake</button>
         <button class="btn bs" onclick="resetPhotoST()">↩ Rescan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TAX INVOICE SCANNER -->
+<div class="mo" id="moInvoiceScan">
+  <div class="md" style="max-width:520px">
+    <button class="md-close" onclick="closeMo('moInvoiceScan')">✕</button>
+    <div class="md-title">🧾 Scan Tax Invoice</div>
+
+    <!-- Step 1: Photo upload -->
+    <div id="invStep1">
+      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.9rem">Take a photo of the supplier's tax invoice. The AI reads all line items, amounts, VAT and supplier details automatically.</div>
+      <div id="invPhotoSlots" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:0.8rem"></div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.8rem">
+        <button class="btn bp" onclick="document.getElementById('invPhotoCamera').click()" style="flex:1">📸 Camera</button>
+        <button class="btn bs" onclick="document.getElementById('invPhotoGallery').click()" style="flex:1">🖼️ Gallery</button>
+      </div>
+      <input type="file" id="invPhotoCamera" accept="image/*" capture="environment" style="display:none" onchange="addInvPhoto(this)">
+      <input type="file" id="invPhotoGallery" accept="image/*" multiple style="display:none" onchange="addInvPhotos(this)">
+      <div id="invScanStatus" style="font-size:0.78rem;color:var(--muted);text-align:center;padding:0.3rem 0;display:none"></div>
+      <button class="btn bp" onclick="scanInvoice()" style="width:100%;margin-top:0.3rem" id="invScanBtn">🤖 Read Invoice with AI</button>
+    </div>
+
+    <!-- Step 2: Review extracted data -->
+    <div id="invStep2" style="display:none">
+      <div style="background:var(--green-l);border:1px solid var(--green-b);border-radius:10px;padding:0.8rem;margin-bottom:0.8rem;font-size:0.82rem;color:var(--green);font-weight:600" id="invScanSummary"></div>
+
+      <!-- Supplier + invoice header -->
+      <div class="fg2" style="margin-bottom:0.6rem">
+        <div class="fg">
+          <label>Supplier</label>
+          <select id="invSupplierSel" style="width:100%;border:1px solid var(--burg);border-radius:8px;padding:0.55rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
+            <option value="">— Select Xero contact —</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Invoice #</label>
+          <input type="text" id="invNumber" placeholder="e.g. INV-001"
+            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
+        </div>
+      </div>
+      <div class="fg2" style="margin-bottom:0.9rem">
+        <div class="fg">
+          <label>Invoice Date</label>
+          <input type="date" id="invDate"
+            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
+        </div>
+        <div class="fg">
+          <label>Due Date</label>
+          <input type="date" id="invDueDate"
+            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
+        </div>
+      </div>
+
+      <!-- Line items table -->
+      <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">Line Items</div>
+      <div id="invLineItems" style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin-bottom:0.7rem"></div>
+      <button class="btn bs bsm" onclick="addInvLineItem()" style="width:100%;margin-bottom:0.9rem">+ Add Line Item</button>
+
+      <!-- Totals -->
+      <div style="background:var(--surface);border-radius:10px;padding:0.8rem;margin-bottom:0.9rem;font-size:0.85rem">
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span style="color:var(--muted)">Subtotal (excl. VAT)</span><span id="invSubtotal" style="font-weight:600">R 0.00</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span style="color:var(--muted)">VAT (15%)</span><span id="invVAT" style="font-weight:600">R 0.00</span></div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:0.4rem;margin-top:0.3rem"><span style="font-weight:700">Total</span><span id="invTotal" style="font-weight:800;font-size:1rem;color:var(--burg)">R 0.00</span></div>
+      </div>
+
+      <div id="invSubmitStatus" style="font-size:0.78rem;padding:0.5rem 0.7rem;border-radius:8px;margin-bottom:0.7rem;display:none"></div>
+      <div class="brow">
+        <button class="btn bp" onclick="submitInvoiceToXero()" style="flex:2" id="invSubmitBtn">📤 Upload to Xero</button>
+        <button class="btn bs" onclick="invRescan()">↩ Rescan</button>
       </div>
     </div>
   </div>
