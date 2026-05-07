@@ -91,6 +91,15 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .sb-ur{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);}
 .sb-nav{padding:1rem 0.8rem;flex:1;}
 .nlbl{font-size:0.62rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.25);padding:0.7rem 0.65rem 0.32rem;}
+.sb-grp-label{font-size:0.6rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.28);padding:1.1rem 0.88rem 0.3rem;margin-top:0.1rem;}
+.sb-grp-label:first-child{padding-top:0.3rem;}
+/* Section tab bar */
+#sectionTabBar{display:none;padding:0 1.2rem;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+#sectionTabBar::-webkit-scrollbar{height:0;}
+.sec-tab-row{display:flex;gap:0.2rem;padding:0.55rem 0;}
+.sec-tab{padding:0.42rem 1rem;border-radius:7px;font-size:0.78rem;font-weight:500;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all 0.15s;border:none;background:none;font-family:inherit;}
+.sec-tab:hover{background:rgba(0,0,0,0.05);color:var(--text);}
+.sec-tab.act{background:var(--burg);color:#fff;font-weight:600;}
 .ni{display:flex;align-items:center;gap:0.75rem;padding:0.62rem 0.88rem;border-radius:9px;cursor:pointer;
   color:rgba(255,255,255,0.52);font-size:0.9rem;font-weight:500;transition:var(--t);margin-bottom:0.1rem;}
 .ni:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.9);}
@@ -583,41 +592,33 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
       </div>
     </div>
     <div class="sb-nav">
+      <div class="sb-grp-label">Overview</div>
       <div class="ni act" onclick="go('dashboard',this)" id="n-dashboard"><span class="ic">📊</span><span class="lb">Dashboard</span></div>
-      <div class="nlbl" style="margin-top:0.5rem">Stock</div>
-      <div class="ngh op" onclick="tg(this,'g-stock')"><span>📦</span>&nbsp;STOCK<span class="arr">▼</span></div>
-      <div class="ngs op" id="g-stock">
-        <div class="nsi act" onclick="go('stocktake',this)" id="n-stocktake"><span class="dot"></span>Stock Take</div>
-        <div class="nsi" onclick="go('stockdb',this)" id="n-stockdb" data-r="manager"><span class="dot"></span>Stock Database</div>
-        <div class="nsi" onclick="go('pending',this)" id="n-pending" data-r="manager"><span class="dot"></span>Pending <span class="bdg" id="pendBdg">0</span></div>
-      </div>
-      <div class="nlbl" style="margin-top:0.5rem">Orders</div>
-      <div class="ngh" onclick="tg(this,'g-orders')"><span>🛒</span>&nbsp;ORDERS<span class="arr">▼</span></div>
-      <div class="ngs" id="g-orders">
-        <div class="nsi" onclick="go('orders',this)" id="n-orders" data-r="manager"><span class="dot"></span>Supplier Orders</div>
-      </div>
-      <div class="nlbl" style="margin-top:0.5rem">Finance</div>
-      <div class="ngh" onclick="tg(this,'g-fin')"><span>💰</span>&nbsp;FINANCE<span class="arr">▼</span></div>
-      <div class="ngs" id="g-fin">
-        <div class="nsi" onclick="go('cashup',this)" id="n-cashup" data-r="manager"><span class="dot"></span>Daily Cash Up</div>
-        <div class="nsi" onclick="go('reports',this)" id="n-reports" data-r="manager"><span class="dot"></span>Reports & Variance</div>
-        <div class="nsi" onclick="go('analytics',this)" id="n-analytics" data-r="manager"><span class="dot"></span>📊 Analytics</div>
-        <div class="nsi" onclick="go('recipes',this)" id="n-recipes" data-r="manager"><span class="dot"></span>🍳 Recipe Costing</div>
-        <div class="nsi" onclick="go('pricing',this)" id="n-pricing" data-r="manager"><span class="dot"></span>💸 Price Alerts & GP <span class="bdg" id="pricingAlertBdg" style="display:none;background:var(--red);color:#fff">!</span></div>
-        <div class="nsi" onclick="go('waiterlog',this)" id="n-waiterlog" data-r="manager"><span class="dot"></span>Waiter Accountability</div>
-        <div class="nsi" onclick="go('invoices',this)" id="n-invoices" data-r="manager"><span class="dot"></span>🧾 Tax Invoices <span class="bdg" id="xeroBadge" style="display:none;background:var(--green);color:#fff">Xero</span></div>
-      </div>
-      <div class="nlbl" style="margin-top:0.5rem">People</div>
-      <div class="ngh" onclick="tg(this,'g-hr')"><span>👥</span>&nbsp;HUMAN RESOURCES<span class="arr">▼</span></div>
-      <div class="ngs" id="g-hr">
-        <div class="nsi" onclick="go('roster',this)"  id="n-roster"  data-r="manager"><span class="dot"></span>Shift Roster</div>
-        <div class="nsi" onclick="go('payroll',this)" id="n-payroll" data-r="manager"><span class="dot"></span>Payroll</div>
-        <div class="nsi" onclick="go('staff',this)"   id="n-staff"   data-r="owner"><span class="dot"></span>Staff Management</div>
-        <div class="nsi" onclick="go('leave',this)"   id="n-leave"   data-r="manager"><span class="dot"></span>Leave Management</div>
-        <div class="nsi" onclick="go('kpi',this)"     id="n-kpi"     data-r="manager"><span class="dot"></span>⭐ KPI Reviews</div>
-        <div class="nsi" onclick="go('docs',this)"    id="n-docs"    data-r="manager"><span class="dot"></span>Staff Documents</div>
-      </div>
-      <div class="nlbl" style="margin-top:0.5rem">System</div>
+
+      <div class="sb-grp-label">Operations</div>
+      <div class="ni" onclick="go('stocktake',this)" id="n-stocktake"><span class="ic">📦</span><span class="lb">Stock Take</span></div>
+      <div class="ni" onclick="go('stockdb',this)" id="n-stockdb" data-r="manager"><span class="ic">🗃️</span><span class="lb">Stock Database</span></div>
+      <div class="ni" onclick="go('pending',this)" id="n-pending" data-r="manager"><span class="ic">🚚</span><span class="lb">Pending Deliveries <span class="bdg" id="pendBdg">0</span></span></div>
+      <div class="ni" onclick="go('orders',this)" id="n-orders" data-r="manager"><span class="ic">🛒</span><span class="lb">Supplier Orders</span></div>
+
+      <div class="sb-grp-label">Finance</div>
+      <div class="ni" onclick="go('cashup',this)" id="n-cashup" data-r="manager"><span class="ic">💰</span><span class="lb">Cash Up</span></div>
+      <div class="ni" onclick="go('reports',this)" id="n-reports" data-r="manager"><span class="ic">📈</span><span class="lb">Reports & Variance</span></div>
+      <div class="ni" onclick="go('analytics',this)" id="n-analytics" data-r="manager"><span class="ic">📊</span><span class="lb">Analytics</span></div>
+      <div class="ni" onclick="go('recipes',this)" id="n-recipes" data-r="manager"><span class="ic">🍳</span><span class="lb">Recipe Costing</span></div>
+      <div class="ni" onclick="go('pricing',this)" id="n-pricing" data-r="manager"><span class="ic">💸</span><span class="lb">Price Alerts <span class="bdg" id="pricingAlertBdg" style="display:none;background:var(--red);color:#fff">!</span></span></div>
+      <div class="ni" onclick="go('waiterlog',this)" id="n-waiterlog" data-r="manager"><span class="ic">👨‍🍳</span><span class="lb">Waiter Log</span></div>
+      <div class="ni" onclick="go('invoices',this)" id="n-invoices" data-r="manager"><span class="ic">🧾</span><span class="lb">Tax Invoices <span class="bdg" id="xeroBadge" style="display:none;background:var(--green);color:#fff">Xero</span></span></div>
+
+      <div class="sb-grp-label">People</div>
+      <div class="ni" onclick="go('roster',this)"  id="n-roster"  data-r="manager"><span class="ic">📅</span><span class="lb">Shift Roster</span></div>
+      <div class="ni" onclick="go('payroll',this)" id="n-payroll" data-r="manager"><span class="ic">💵</span><span class="lb">Payroll</span></div>
+      <div class="ni" onclick="go('staff',this)"   id="n-staff"   data-r="owner"><span class="ic">👥</span><span class="lb">Staff Management</span></div>
+      <div class="ni" onclick="go('leave',this)"   id="n-leave"   data-r="manager"><span class="ic">🏖️</span><span class="lb">Leave Management</span></div>
+      <div class="ni" onclick="go('kpi',this)"     id="n-kpi"     data-r="manager"><span class="ic">⭐</span><span class="lb">KPI Reviews</span></div>
+      <div class="ni" onclick="go('docs',this)"    id="n-docs"    data-r="manager"><span class="ic">📄</span><span class="lb">Staff Documents</span></div>
+
+      <div class="sb-grp-label">System</div>
       <div class="ni" onclick="go('auditlog',this)" id="n-auditlog" data-r="owner"><span class="ic">📋</span><span class="lb">Audit Log</span></div>
       <div class="ni" onclick="go('settings',this)" id="n-settings" data-r="owner"><span class="ic">⚙️</span><span class="lb">Settings</span></div>
     </div>
@@ -641,6 +642,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
         <button class="ham ham-mobile" onclick="toggleSb()"><div class="hl"><span></span><span></span><span></span></div></button>
       </div>
     </div>
+    <div id="sectionTabBar"><div class="sec-tab-row" id="secTabRow"></div></div>
     <div class="sa">
       <!-- Global price alert banner -->
       <div id="globalPriceAlert" style="display:none;background:var(--red);color:#fff;padding:0.7rem 1.2rem;align-items:center;justify-content:space-between;gap:0.8rem;flex-wrap:wrap">
@@ -2252,7 +2254,7 @@ async function launchApp(){
   // Hide nav items based on per-user access list — single source of truth
   const userAccess = CU.access || [];
   // First show everything, then hide what user can't access
-  document.querySelectorAll('[data-r], .ni, .nsi').forEach(el => {
+  document.querySelectorAll('[data-r], .ni').forEach(el => {
     // Remove any previous hiding
     if(el.id && el.id.startsWith('n-')) el.style.display = '';
   });
@@ -2376,7 +2378,7 @@ function go(id,el){
   const userAccess = CU?.access || [];
   if(!userAccess.includes(id)){showToast('No access to this section.',true);return;}
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('act'));
-  document.querySelectorAll('.ni,.nsi').forEach(n=>n.classList.remove('act'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
   document.getElementById('p-'+id).classList.add('act');
   if(el)el.classList.add('act');
   document.getElementById('tbTitle').textContent=TTLS[id]||id;
@@ -2403,10 +2405,67 @@ function go(id,el){
     // Load Xero settings into form
     xeroLoadSettings();
   }
+  updateSectionTabBar(id);
   closeSb();
   syncBottomTabs(id);
 }
-function tg(h,g){ h.classList.toggle('op'); document.getElementById(g).classList.toggle('op'); }
+// ── Section tab bar ──────────────────────────────────────────────────────────
+const SEC_GROUPS = {
+  operations:{tabs:[
+    {id:'stocktake',label:'Stock Take'},
+    {id:'stockdb',label:'Stock Database',r:'manager'},
+    {id:'pending',label:'Pending Deliveries',r:'manager'},
+    {id:'orders',label:'Supplier Orders',r:'manager'},
+  ]},
+  finance:{tabs:[
+    {id:'cashup',label:'Cash Up',r:'manager'},
+    {id:'reports',label:'Reports',r:'manager'},
+    {id:'analytics',label:'Analytics',r:'manager'},
+    {id:'recipes',label:'Recipe Costing',r:'manager'},
+    {id:'pricing',label:'Price Alerts',r:'manager'},
+    {id:'waiterlog',label:'Waiter Log',r:'manager'},
+    {id:'invoices',label:'Tax Invoices',r:'manager'},
+  ]},
+  people:{tabs:[
+    {id:'roster',label:'Roster',r:'manager'},
+    {id:'payroll',label:'Payroll',r:'manager'},
+    {id:'staff',label:'Staff',r:'owner'},
+    {id:'leave',label:'Leave',r:'manager'},
+    {id:'kpi',label:'KPI Reviews',r:'manager'},
+    {id:'docs',label:'Documents',r:'manager'},
+  ]},
+  system:{tabs:[
+    {id:'auditlog',label:'Audit Log',r:'owner'},
+    {id:'settings',label:'Settings',r:'owner'},
+  ]},
+};
+const SEC_GROUP_MAP = {
+  stocktake:'operations',stockdb:'operations',pending:'operations',orders:'operations',
+  cashup:'finance',reports:'finance',analytics:'finance',recipes:'finance',pricing:'finance',waiterlog:'finance',invoices:'finance',
+  roster:'people',payroll:'people',staff:'people',leave:'people',kpi:'people',docs:'people',
+  auditlog:'system',settings:'system',
+};
+function updateSectionTabBar(id){
+  const bar=document.getElementById('sectionTabBar');
+  const row=document.getElementById('secTabRow');
+  if(!bar||!row) return;
+  const grpKey=SEC_GROUP_MAP[id];
+  if(!grpKey){bar.style.display='none';return;}
+  const grp=SEC_GROUPS[grpKey];
+  const access=CU?.access||[];
+  const role=CU?.role||'employee';
+  const visibleTabs=grp.tabs.filter(t=>{
+    if(!access.includes(t.id)) return false;
+    if(t.r==='owner'&&role!=='owner') return false;
+    return true;
+  });
+  if(visibleTabs.length<=1){bar.style.display='none';return;}
+  row.innerHTML=visibleTabs.map(t=>
+    `<button class="sec-tab${t.id===id?' act':''}" onclick="go('${t.id}',document.getElementById('n-${t.id}'))">${t.label}</button>`
+  ).join('');
+  bar.style.display='block';
+}
+function tg(h,g){ h.classList.toggle('op'); document.getElementById(g)?.classList.toggle('op'); }
 function toggleSb(){ document.getElementById('sb').classList.toggle('open'); document.getElementById('ov').classList.toggle('show'); }
 function closeSb(){ document.getElementById('sb').classList.remove('open'); document.getElementById('ov').classList.remove('show'); }
 
@@ -4550,7 +4609,19 @@ function resolveRate(name, defaultRate){
 function buildPayEntry(s, rows, defaultRate){
   const r=rows.find(x=>x.staff_name===s.name&&x.group_type===s._grp)||rows.find(x=>x.staff_name===s.name)||null;
   const rate = r ? (r.hourly_rate||resolveRate(s.name,defaultRate)) : resolveRate(s.name,defaultRate);
-  return{name:s.name,pos:s.role,hourly_rate:rate,hrs:r?r.hours||0:0,taxi:r?r.taxi||0:0,borrowed:r?r.borrowed||0:0,saccawu:r?r.saccawu||0:0,breakage:r?r.breakage||0:0};
+  return{name:s.name,pos:s.role,hourly_rate:rate,
+    hrs:r?r.hours||0:0,
+    sun_hrs:r?r.sun_hours||0:0,
+    hol_hrs:r?r.holiday_hours||0:0,
+    taxi:r?r.taxi||0:0,borrowed:r?r.borrowed||0:0,saccawu:r?r.saccawu||0:0,breakage:r?r.breakage||0:0};
+}
+// Returns raw hours split by type (not multiplied)
+function calcHoursBreakdown(start,end,brk,dayIndex,flags){
+  const raw=calcShiftHours(start,end,brk);
+  if(!raw) return{reg:0,sun:0,hol:0};
+  if(flags?.ph) return{reg:0,sun:0,hol:raw};
+  if(dayIndex===6) return{reg:0,sun:raw,hol:0};
+  return{reg:raw,sun:0,hol:0};
 }
 
 function buildPayData(rows){
@@ -4600,7 +4671,7 @@ async function syncRosterHoursToPayroll(){
     // Roster group → payroll key mapping
     const GRP_TO_PAY={'Managers':'mgr','Kitchen':'kit','Bar / Waiters':'bar','Waiters PH':'waitph'};
 
-    // Sum hours PER GROUP so Jabulani's manager hours and waiter PH hours are tracked separately
+    // Sum RAW hours PER GROUP split by type (reg/sun/hol) — multipliers applied at gross calc time
     const hoursByGroup={mgr:{},kit:{},bar:{},waitph:{}};
     const eveningShiftsByStaff={};
     const totalShiftsByStaff={};
@@ -4610,29 +4681,37 @@ async function syncRosterHoursToPayroll(){
       wsDate.setUTCDate(wsDate.getUTCDate()+r.day_index);
       if(wsDate<monthStart||wsDate>monthEnd) return;
 
-      // Determine which roster group this row belongs to
       const rowGrp=r.group_type||inferRosterGroup(r.staff_name);
       const payGrp=GRP_TO_PAY[rowGrp];
-      if(!payGrp) return; // unknown group, skip
+      if(!payGrp) return;
 
       const flags=(rosterFlags[r.week_start]?.[rowGrp]?.[r.staff_name]?.[r.day_index])||{ph:false};
-      const hrs=calcEffectiveHours(r.start_time,r.end_time,r.break_hours,r.day_index,flags);
-      if(hrs>0){
-        hoursByGroup[payGrp][r.staff_name]=(hoursByGroup[payGrp][r.staff_name]||0)+hrs;
-        totalShiftsByStaff[r.staff_name]=(totalShiftsByStaff[r.staff_name]||0)+1;
-      }
-      if(r.start_time&&hrs>0){
+      const raw=calcShiftHours(r.start_time,r.end_time,r.break_hours);
+      if(!raw||raw<=0) return;
+
+      // Categorise into reg / sun / hol (raw hours only — no multipliers here)
+      const bd=flags.ph?{reg:0,sun:0,hol:raw}:r.day_index===6?{reg:0,sun:raw,hol:0}:{reg:raw,sun:0,hol:0};
+
+      if(!hoursByGroup[payGrp][r.staff_name]) hoursByGroup[payGrp][r.staff_name]={reg:0,sun:0,hol:0};
+      hoursByGroup[payGrp][r.staff_name].reg+=bd.reg;
+      hoursByGroup[payGrp][r.staff_name].sun+=bd.sun;
+      hoursByGroup[payGrp][r.staff_name].hol+=bd.hol;
+
+      totalShiftsByStaff[r.staff_name]=(totalShiftsByStaff[r.staff_name]||0)+1;
+      if(r.start_time){
         const [h]=r.start_time.split(':').map(Number);
         if(h>=14) eveningShiftsByStaff[r.staff_name]=(eveningShiftsByStaff[r.staff_name]||0)+1;
       }
     });
 
-    // Apply hours to each payroll group using only that group's roster data
-    // Managers sync from 'Managers' tab only; Waiters PH sync from 'Waiters PH' tab only — no overlap
+    // Apply hours to each payroll group
     ['mgr','kit','bar','waitph'].forEach(grp=>{
       (payD[grp]||[]).forEach(s=>{
-        if(hoursByGroup[grp][s.name]!==undefined){
-          s.hrs=parseFloat(hoursByGroup[grp][s.name].toFixed(1));
+        const b=hoursByGroup[grp][s.name];
+        if(b){
+          s.hrs    =parseFloat(b.reg.toFixed(1));
+          s.sun_hrs=parseFloat(b.sun.toFixed(1));
+          s.hol_hrs=parseFloat(b.hol.toFixed(1));
         }
         if(grp==='kit'){
           s.taxi=(eveningShiftsByStaff[s.name]||0)*25;
@@ -4663,9 +4742,13 @@ function getGrpLabel(cId){
   return 'kitchen';
 }
 
+function calcGross(s){
+  const r=s.hourly_rate||0;
+  return (s.hrs||0)*r + (s.sun_hrs||0)*r*1.5 + (s.hol_hrs||0)*r*2;
+}
 function renderPaySec(list,cId,tId){
   document.getElementById(cId).innerHTML=list.map((s,i)=>{
-    const g=s.hrs*(s.hourly_rate||0);
+    const g=calcGross(s);
     const uif=Math.round(g*0.01*100)/100;
     const taxi=s.taxi||0;
     const borrowed=s.borrowed||0;
@@ -4674,10 +4757,19 @@ function renderPaySec(list,cId,tId){
     const net=g-uif-taxi-borrowed-saccawu-breakage;
     const grp=getGrpLabel(cId);
     const nm=s.name.replace(/'/g,"\\'");
-    const inp=(field,val,label)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
+    const hrInp=(field,val,label,color)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
+          <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;color:${color||'var(--muted)'}">${label}</div>
+          <input type="number" class="hi" value="${val||''}" placeholder="0" min="0" style="width:58px;border-color:${color||'var(--border)'}" oninput="updPayHrs('${cId}',${i},'${field}',this.value,'${tId}')">
+        </div>`;
+    const dedInp=(field,val,label)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
           <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">${label}</div>
           <input type="number" class="hi" value="${val||''}" placeholder="0" min="0" style="width:62px" oninput="updKitField('${cId}',${i},'${field}',this.value,'${tId}')">
         </div>`;
+    const grossBreak=g>0?`<div style="font-size:0.68rem;color:var(--muted);margin-top:0.1rem">
+        ${s.hrs>0?`Reg: R${((s.hrs||0)*(s.hourly_rate||0)).toFixed(2)}`:''}
+        ${s.sun_hrs>0?` · Sun: R${((s.sun_hrs||0)*(s.hourly_rate||0)*1.5).toFixed(2)}`:''}
+        ${s.hol_hrs>0?` · PH: R${((s.hol_hrs||0)*(s.hourly_rate||0)*2).toFixed(2)}`:''}
+      </div>`:'';
     return `<div class="pr" style="flex-wrap:wrap;gap:0.5rem 0.8rem">
       <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:180px">
         <div class="prav" style="background:${PAC[i%PAC.length]}">${s.name[0]||'?'}</div>
@@ -4689,27 +4781,27 @@ function renderPaySec(list,cId,tId){
           <div class="prp">${s.pos}</div>
         </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:flex-end;flex:2;min-width:280px">
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:flex-end;flex:2;min-width:300px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
           <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Rate/Hr</div>
           <input type="number" class="ri" value="${s.hourly_rate}" min="0" step="0.5" ${canER()?'':'readonly'} oninput="updR('${cId}',${i},this.value,'${tId}')">
         </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
-          <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">Hours</div>
-          <input type="number" class="hi" value="${s.hrs||''}" placeholder="0" min="0" oninput="updH('${cId}',${i},this.value,'${tId}')">
-        </div>
+        ${hrInp('hrs',s.hrs,'Reg Hrs','var(--ink)')}
+        ${hrInp('sun_hrs',s.sun_hrs,'Sun Hrs','#d97706')}
+        ${hrInp('hol_hrs',s.hol_hrs,'PH Hrs','#7c3aed')}
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
           <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">UIF (1%)</div>
-          <div style="width:62px;height:32px;border:1px solid var(--border);border-radius:6px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:0.78rem;color:var(--muted)">${g>0?uif.toFixed(2):'—'}</div>
+          <div id="puif-${cId}-${i}" style="width:58px;height:32px;border:1px solid var(--border);border-radius:6px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:var(--muted)">${g>0?uif.toFixed(2):'—'}</div>
         </div>
-        ${inp('taxi',taxi,'Taxi')}
-        ${inp('borrowed',borrowed,'Lening')}
-        ${inp('saccawu',saccawu,'SACCAWU')}
-        ${inp('breakage',breakage,'Breakage')}
+        ${dedInp('taxi',taxi,'Taxi')}
+        ${dedInp('borrowed',borrowed,'Lening')}
+        ${dedInp('saccawu',saccawu,'SACCAWU')}
+        ${dedInp('breakage',breakage,'Breakage')}
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem;min-width:80px">
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.1rem;min-width:80px">
         <div class="pnet" id="pnet-${cId}-${i}">${net>0?'R '+net.toFixed(2):'—'}</div>
-        <button onclick="openPayslip('${nm}','${grp}')" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;cursor:pointer;color:var(--burg);white-space:nowrap">🖨️ Slip</button>
+        <div id="pbreak-${cId}-${i}">${grossBreak}</div>
+        <button onclick="openPayslip('${nm}','${grp}')" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;cursor:pointer;color:var(--burg);white-space:nowrap;margin-top:0.2rem">🖨️ Slip</button>
       </div>
     </div>`;
   }).join('');
@@ -4717,17 +4809,32 @@ function renderPaySec(list,cId,tId){
 }
 
 function calcRowNet(s){
-  const g=(s.hrs||0)*(s.hourly_rate||0);
+  const g=calcGross(s);
   if(g<=0) return 0;
   const uif=Math.round(g*0.01*100)/100;
   return g-uif-(s.taxi||0)-(s.borrowed||0)-(s.saccawu||0)-(s.breakage||0);
 }
 function refreshRowNet(c,i){
   const s=getPayList(c)[i];
+  const g=calcGross(s);
+  const n=calcRowNet(s);
+  const uif=Math.round(g*0.01*100)/100;
   const el=document.getElementById('pnet-'+c+'-'+i);
-  if(el){const n=calcRowNet(s);el.textContent=n>0?'R '+n.toFixed(2):'—';}
+  if(el) el.textContent=n>0?'R '+n.toFixed(2):'—';
+  const uel=document.getElementById('puif-'+c+'-'+i);
+  if(uel) uel.textContent=g>0?uif.toFixed(2):'—';
+  const bel=document.getElementById('pbreak-'+c+'-'+i);
+  if(bel){
+    const r=s.hourly_rate||0;
+    bel.innerHTML=g>0?`<div style="font-size:0.68rem;color:var(--muted);margin-top:0.1rem">
+      ${s.hrs>0?`Reg: R${((s.hrs||0)*r).toFixed(2)}`:''}
+      ${(s.sun_hrs||0)>0?` · Sun: R${((s.sun_hrs||0)*r*1.5).toFixed(2)}`:''}
+      ${(s.hol_hrs||0)>0?` · PH: R${((s.hol_hrs||0)*r*2).toFixed(2)}`:''}
+    </div>`:'';
+  }
 }
 function updH(c,i,v,t){const l=getPayList(c);l[i].hrs=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
+function updPayHrs(c,i,field,v,t){const l=getPayList(c);l[i][field]=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
 function updR(c,i,v,t){if(!canER())return;const l=getPayList(c);l[i].hourly_rate=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
 function updKitField(c,i,field,v,t){const l=getPayList(c);l[i][field]=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
 function updPTot(l,t){
@@ -4739,7 +4846,7 @@ function editPayName(cId,i,tId){const l=getPayList(cId);const v=prompt(`Edit nam
 async function savePay(){
   setSyncStatus('syncing');
   const mo=new Date().toISOString().slice(0,7);
-  const toRows=(grp,label)=>(payD[grp]||[]).map(s=>({staff_name:s.name,group_type:label,position:s.pos,hourly_rate:s.hourly_rate,hours:s.hrs,taxi:s.taxi||0,borrowed:s.borrowed||0,saccawu:s.saccawu||0,breakage:s.breakage||0,month:mo}));
+  const toRows=(grp,label)=>(payD[grp]||[]).map(s=>({staff_name:s.name,group_type:label,position:s.pos,hourly_rate:s.hourly_rate,hours:s.hrs,sun_hours:s.sun_hrs||0,holiday_hours:s.hol_hrs||0,taxi:s.taxi||0,borrowed:s.borrowed||0,saccawu:s.saccawu||0,breakage:s.breakage||0,month:mo}));
   const rows=[...toRows('mgr','manager'),...toRows('kit','kitchen'),...toRows('bar','bar'),...toRows('waitph','waitph')];
   const{error}=await SB.from('payroll').upsert(rows,{onConflict:'staff_name,month,group_type'});
   setSyncStatus(error?'err':'ok');
