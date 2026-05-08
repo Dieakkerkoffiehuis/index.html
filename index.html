@@ -5342,7 +5342,11 @@ function getLeaveTaken(staffName, year, types){
 function getCarryOver(staffName, year){
   const today=new Date().toISOString().split('T')[0];
   const expiry=`${year}-06-30`;
-  if(today>expiry) return 0; // carry-over window expired
+  if(today>expiry) return 0;
+  // Only carry over if there are actual leave records from the previous year
+  // (prevents showing phantom carry-over when no prior-year data exists)
+  const prevYearRecords=leaveData.filter(l=>l.staff_name===staffName&&(l.start_date||'').startsWith(String(year-1)));
+  if(!prevYearRecords.length) return 0;
   const prevTaken=getLeaveTaken(staffName, year-1, ['Annual']);
   return Math.max(0, ANNUAL_LEAVE_ALLOWANCE - prevTaken);
 }
