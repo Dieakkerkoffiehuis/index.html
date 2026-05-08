@@ -2032,7 +2032,6 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
     <div class="fg"><label>Leave Type</label>
       <select id="leaveType">
         <option value="Annual">🏖️ Annual Leave</option>
-        <option value="Sick">🤒 Sick Leave</option>
         <option value="Family">👨‍👩‍👧 Family Responsibility</option>
         <option value="Unpaid">💸 Unpaid Leave</option>
         <option value="Other">📋 Other</option>
@@ -5317,8 +5316,8 @@ async function deleteStf(id,name){
 const LEAVE_CFG={'Annual':{cls:'lp-annual',icon:'🏖️'},'Sick':{cls:'lp-sick',icon:'🤒'},'Family':{cls:'lp-family',icon:'👨‍👩‍👧'},'Unpaid':{cls:'lp-unpaid',icon:'💸'},'Sick — Unplanned':{cls:'lp-sick',icon:'🤒'},'Other':{cls:'lp-unpaid',icon:'📋'}};
 const STATUS_CFG={'Approved':'bgg','Pending':'bgo','Sick — Unplanned':'bgr','Rejected':'bgr'};
 // ── LEAVE ALLOWANCES (annual, year = Jan–Dec) ───────────────────────────────
-const ANNUAL_LEAVE_ALLOWANCE = 15; // days per leave year
-const SICK_LEAVE_ALLOWANCE   = 10; // days per leave year
+const ANNUAL_LEAVE_ALLOWANCE = 21; // 1.75 days/month × 12
+const SICK_LEAVE_ALLOWANCE   =  0; // not tracked at Die Akker
 const FAMILY_LEAVE_ALLOWANCE =  3; // days per leave year
 let leaveFilter='all';
 let leaveCalYear=new Date().getFullYear(), leaveCalMonth=new Date().getMonth();
@@ -5543,22 +5542,19 @@ function renderLeaveBalances(){
   if(!staff.length){el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No staff found.</div>';return;}
   el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
     <div style="padding:0.7rem 1rem;background:var(--surface);border-bottom:1px solid var(--border);font-size:0.72rem;color:var(--muted);display:flex;gap:1rem;flex-wrap:wrap">
-      <span>🏖️ Annual: 15 days/yr · unused carries over until 30 June</span>
-      <span>🤒 Sick: 10 days/yr</span>
-      <span>👨‍👩‍👧 Family: 3 days/yr</span>
+      <span>🏖️ Annual: 21 days/yr (1.75 days/month) · unused carries over until 30 June</span>
+      <span>👨‍👩‍👧 Family responsibility: 3 days/yr</span>
     </div>
     <div style="overflow-x:auto">
     <table class="lv-tbl">
       <thead><tr>
         <th>Staff Member</th>
         <th>Annual (days)</th><th>Used</th><th>Remaining</th>
-        <th>Sick Leave</th><th>Sick Used</th>
         <th>Family</th><th>Family Used</th>
       </tr></thead>
       <tbody>${staff.map(s=>{
         const b=getLeaveBalance(s.name,yr);
-        const annCol=b.annRem<=2?'var(--red)':b.annRem<=5?'var(--orange)':'var(--ink)';
-        const sickCol=b.sickRem<=2?'var(--red)':b.sickRem<=3?'var(--orange)':'var(--ink)';
+        const annCol=b.annRem<=3?'var(--red)':b.annRem<=7?'var(--orange)':'var(--ink)';
         const carryStr=b.carryOver>0?` <span style="font-size:0.65rem;background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;padding:0.05rem 0.4rem;border-radius:10px">+${b.carryOver}</span>`:'';
         return `<tr>
           <td>
@@ -5573,8 +5569,6 @@ function renderLeaveBalances(){
           <td style="color:var(--muted)">${ANNUAL_LEAVE_ALLOWANCE + (b.carryOver||0)}${carryStr}</td>
           <td>${b.annTaken}</td>
           <td><strong style="color:${annCol}">${b.annRem}</strong></td>
-          <td style="color:var(--muted)">${SICK_LEAVE_ALLOWANCE}</td>
-          <td style="color:${sickCol}">${b.sickTaken}</td>
           <td style="color:var(--muted)">${FAMILY_LEAVE_ALLOWANCE}</td>
           <td>${b.famTaken}</td>
         </tr>`;
