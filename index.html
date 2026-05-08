@@ -100,6 +100,23 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .sec-tab{padding:0.42rem 1rem;border-radius:7px;font-size:0.78rem;font-weight:500;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all 0.15s;border:none;background:none;font-family:inherit;}
 .sec-tab:hover{background:rgba(0,0,0,0.05);color:var(--text);}
 .sec-tab.act{background:var(--burg);color:#fff;font-weight:600;}
+.lvtab{padding:0.38rem 0.95rem;border-radius:8px;font-size:0.78rem;font-weight:500;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all 0.15s;border:none;background:none;font-family:inherit;}
+.lvtab.act{background:var(--burg);color:#fff;font-weight:600;}
+.lv-tbl{width:100%;border-collapse:collapse;font-size:0.82rem;}
+.lv-tbl th{font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:0.75rem 1rem;text-align:left;border-bottom:2px solid var(--border);background:var(--surface);}
+.lv-tbl td{padding:0.75rem 1rem;border-bottom:1px solid var(--surface);vertical-align:middle;}
+.lv-tbl tr:last-child td{border-bottom:none;}
+.lv-tbl tr:hover td{background:var(--cream);}
+.lv-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.lv-cal-hdr{font-size:0.65rem;font-weight:700;text-align:center;padding:0.4rem 0;color:var(--muted);text-transform:uppercase;}
+.lv-cal-day{border-radius:7px;padding:0.55rem 0.3rem;text-align:center;font-size:0.82rem;cursor:default;min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:background 0.1s;}
+.lv-cal-day.empty{background:none;}
+.lv-cal-day.today{background:var(--burg);color:#fff;font-weight:700;}
+.lv-cal-day.has-leave{background:#fde8e8;color:#7a1528;}
+.lv-cal-day.today.has-leave{background:var(--burg);color:#fff;}
+.lv-cal-day.normal{background:var(--surface);}
+.lv-dot{width:5px;height:5px;border-radius:50%;background:var(--burg);flex-shrink:0;}
+.lv-cal-day.today .lv-dot{background:#fff;}
 .ni{display:flex;align-items:center;gap:0.75rem;padding:0.62rem 0.88rem;border-radius:9px;cursor:pointer;
   color:rgba(255,255,255,0.52);font-size:0.9rem;font-weight:500;transition:var(--t);margin-bottom:0.1rem;}
 .ni:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.9);}
@@ -1317,36 +1334,17 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 
       <!-- LEAVE -->
       <div class="pnl" id="p-leave">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem">
-          <div style="font-size:0.82rem;color:var(--muted)">Kitchen staff leave tracking — annual &amp; sick leave balances.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.6rem">
+          <div style="display:flex;gap:0.2rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.22rem">
+            <button class="lvtab act" id="lvtab-requests" onclick="switchLeaveTab('requests')">Leave Requests</button>
+            <button class="lvtab" id="lvtab-calendar" onclick="switchLeaveTab('calendar')">Calendar</button>
+            <button class="lvtab" id="lvtab-balances" onclick="switchLeaveTab('balances')">Balances</button>
+          </div>
           <button class="btn bp bsm" id="recordLeaveBtn" onclick="openLeaveModal(null)">+ Record Leave</button>
         </div>
-        <!-- Leave Balance Overview -->
-        <div id="sickCycleCard" style="background:linear-gradient(135deg,var(--white),var(--surface));border:1px solid var(--border);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.9rem">
-          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap">
-            <span style="font-size:1rem">📊</span>
-            <div style="font-weight:700;font-size:0.92rem;color:var(--burg);flex:1" id="leaveBalanceTitle">Leave Balances — 2026</div>
-            <div style="display:flex;gap:0.5rem;font-size:0.7rem;font-weight:700">
-              <span style="background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;padding:0.15rem 0.55rem;border-radius:20px">🏖️ Annual: 15 days/yr</span>
-              <span style="background:var(--red-l);color:var(--red);border:1px solid var(--red-b);padding:0.15rem 0.55rem;border-radius:20px">🤒 Sick: 10 days/yr</span>
-              <span style="background:var(--green-l);color:var(--green);border:1px solid var(--green-b);padding:0.15rem 0.55rem;border-radius:20px">👨‍👩‍👧 Family: 3 days/yr</span>
-            </div>
-          </div>
-          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.6rem">Unused annual leave carries over for 6 months (expires 30 June of the following year)</div>
-          <div id="sickCycleGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.6rem"></div>
-        </div>
-        <!-- Annual leave year filter -->
-        <div class="card" style="padding:0.65rem 1rem;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.7rem;flex-wrap:wrap">
-          <span style="font-size:0.78rem;font-weight:700;color:var(--muted)">ANNUAL LEAVE YEAR</span>
-          <select id="leaveYearFilter" onchange="renderLeave()" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;flex:1;min-width:100px">
-            <option value="all">All Time</option>
-          </select>
-          <button class="btn bs bsm" onclick="setLeaveYearFilter('all')">All Time</button>
-        </div>
-        <div class="ctabs" id="leaveTabs"></div>
-        <div id="leaveCards"></div>
-        <div class="stitle">Leave Log</div>
-        <div id="leaveLog"></div>
+        <div id="leaveTabRequests"></div>
+        <div id="leaveTabCalendar" style="display:none"></div>
+        <div id="leaveTabBalances" style="display:none"></div>
       </div>
 
       <!-- KPI REVIEWS -->
@@ -5323,13 +5321,13 @@ const ANNUAL_LEAVE_ALLOWANCE = 15; // days per leave year
 const SICK_LEAVE_ALLOWANCE   = 10; // days per leave year
 const FAMILY_LEAVE_ALLOWANCE =  3; // days per leave year
 let leaveFilter='all';
+let leaveCalYear=new Date().getFullYear(), leaveCalMonth=new Date().getMonth();
+let leaveActiveTab='requests';
 function kitchenStaff(){return stfD.filter(s=>s.active!==false && (s.division==='Kitchen'||s.role.startsWith('Kitchen')));}
+function allActiveStaff(){return stfD.filter(s=>s.active!==false);}
 function leaveDays(l){if(!l.start_date||!l.end_date)return 0;const s=new Date(l.start_date),e=new Date(l.end_date);return Math.max(1,Math.round((e-s)/(1000*60*60*24))+1);}
 
-function getActiveLeaveYear(){
-  const v=document.getElementById('leaveYearFilter')?.value;
-  return (v&&v!=='all')?parseInt(v):new Date().getFullYear();
-}
+function getActiveLeaveYear(){ return new Date().getFullYear(); }
 
 function getLeaveTaken(staffName, year, types){
   const y=String(year);
@@ -5370,7 +5368,7 @@ const SICK_ALLOWANCE = SICK_LEAVE_ALLOWANCE;
 
 function renderSickCycleGrid(){
   const el=document.getElementById('sickCycleGrid');
-  if(!el)return;
+  if(!el)return; // legacy grid removed — now in Balances tab
   const kit=kitchenStaff();
   const year=getActiveLeaveYear();
   if(!kit.length){el.innerHTML='<div style="font-size:0.78rem;color:var(--muted)">No staff found.</div>';return;}
@@ -5411,99 +5409,190 @@ function setLeaveYearFilter(yr){
   renderLeave();
 }
 
+function switchLeaveTab(tab){
+  leaveActiveTab=tab;
+  ['requests','calendar','balances'].forEach(t=>{
+    document.getElementById('lvtab-'+t)?.classList.toggle('act',t===tab);
+    const el=document.getElementById('leaveTab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(el) el.style.display=t===tab?'block':'none';
+  });
+  if(tab==='requests') renderLeaveRequests();
+  else if(tab==='calendar') renderLeaveCalendar();
+  else if(tab==='balances') renderLeaveBalances();
+}
+
 function renderLeave(){
-  const kit=kitchenStaff();
   const recBtn=document.getElementById('recordLeaveBtn');
   if(recBtn) recBtn.style.display=isReadOnly()?'none':'inline-flex';
-
-  // Populate year filter
-  const yrSel=document.getElementById('leaveYearFilter');
-  if(yrSel&&yrSel.options.length<=1){
-    const years=new Set(leaveData.map(l=>l.start_date?l.start_date.slice(0,4):null).filter(Boolean));
-    const sorted=[...years].sort((a,b)=>b-a);
-    sorted.forEach(y=>{if(![...yrSel.options].some(o=>o.value===y)){const o=document.createElement('option');o.value=y;o.textContent=y;yrSel.appendChild(o);}});
-  }
-  const yearFilter=yrSel?yrSel.value:'all';
-
-  // Update balance overview title with active year
-  const activeYear=getActiveLeaveYear();
-  const titleEl=document.getElementById('leaveBalanceTitle');
-  if(titleEl) titleEl.textContent=`Leave Balances — ${yearFilter==='all'?activeYear:yearFilter}`;
-  renderSickCycleGrid();
-
-  document.getElementById('leaveTabs').innerHTML=`<button class="ct ${leaveFilter==='all'?'act':''}" onclick="filterLeave('all',this)">All Staff</button>`+kit.map(s=>`<button class="ct ${leaveFilter===s.name?'act':''}" onclick="filterLeave('${s.name.replace(/'/g,"\\'")}',this)">${s.name}</button>`).join('');
-  const filt=leaveFilter==='all'?kit:kit.filter(s=>s.name===leaveFilter);
-  const displayYear=yearFilter==='all'?activeYear:parseInt(yearFilter);
-  document.getElementById('leaveCards').innerHTML=filt.map(s=>{
-    const b=getLeaveBalance(s.name, displayYear);
-    const unpaid=getLeaveTaken(s.name, displayYear, ['Unpaid']);
-    const annCol =b.annRem<=2?'var(--red)':b.annRem<=5?'var(--orange)':'var(--blue)';
-    const sickCol=b.sickRem<=2?'var(--red)':b.sickRem<=5?'var(--orange)':'var(--green)';
-    const addBtn=isReadOnly()?'':'<button class="btn bp bsm" onclick="openLeaveModal(\''+s.name.replace(/'/g,"\\'")+'\')" >+ Add</button>';
-    const carryBadge=b.carryOver>0?`<span style="font-size:0.7rem;background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;padding:0.15rem 0.5rem;border-radius:20px;font-weight:700">+${b.carryOver} days carry-over (exp. 30 Jun)</span>`:'';
-    return `<div class="leave-summary">
-      <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.7rem">
-        <div style="width:32px;height:32px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
-        <div style="flex:1">
-          <div style="font-weight:700;font-size:0.95rem">${s.name}</div>
-          ${carryBadge}
-        </div>
-        ${addBtn}
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:0.5rem">
-        <div style="background:var(--blue-l);border:1px solid #b8cfe8;border-radius:8px;padding:0.5rem 0.6rem;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;line-height:1;color:${annCol}">${b.annRem}</div>
-          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--blue);margin-top:0.1rem">Annual left</div>
-          <div style="font-size:0.62rem;color:var(--muted)">${b.annTaken} taken</div>
-        </div>
-        <div style="background:var(--red-l);border:1px solid var(--red-b);border-radius:8px;padding:0.5rem 0.6rem;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;line-height:1;color:${sickCol}">${b.sickRem}</div>
-          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--red);margin-top:0.1rem">Sick left</div>
-          <div style="font-size:0.62rem;color:var(--muted)">${b.sickTaken} taken</div>
-        </div>
-        <div style="background:var(--green-l);border:1px solid var(--green-b);border-radius:8px;padding:0.5rem 0.6rem;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;line-height:1;color:var(--green)">${b.famRem}</div>
-          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;color:var(--green);margin-top:0.1rem">Family left</div>
-          <div style="font-size:0.62rem;color:var(--muted)">${b.famTaken} taken</div>
-        </div>
-      </div>
-      ${unpaid>0?`<div style="font-size:0.72rem;background:var(--surface);color:var(--muted);border:1px solid var(--border);padding:0.25rem 0.7rem;border-radius:20px;display:inline-block">💸 Unpaid: ${unpaid} day${unpaid!==1?'s':''}</div>`:''}
-    </div>`;
-  }).join('');
-
-  let logs=[...leaveData];
-  if(leaveFilter!=='all') logs=logs.filter(l=>l.staff_name===leaveFilter);
-  if(yearFilter!=='all') logs=logs.filter(l=>l.start_date&&l.start_date.startsWith(yearFilter));
-  logs.sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||''));
-  const el=document.getElementById('leaveLog');
-  if(!logs.length){el.innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No leave records for this selection</div>';return;}
-  el.innerHTML=logs.map(l=>{
-    const cfg=LEAVE_CFG[l.leave_type]||{cls:'lp-unpaid',icon:'📋'};
-    const days=leaveDays(l);
-    const isPending=l.status==='Pending';
-    const canAct=!isReadOnly()&&CU?.role==='owner'||CU?.role==='manager';
-    const approveBtn=canAct&&isPending?`<button onclick="approveLeave('${l.id}')"
-      style="background:var(--green-l);border:1px solid var(--green-b);color:var(--green);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.28rem 0.7rem;border-radius:6px;display:inline-flex;align-items:center;gap:0.25rem">✅ Approve</button>`:'';
-    const rejectBtn=canAct&&isPending?`<button onclick="rejectLeave('${l.id}')"
-      style="background:var(--red-l);border:1px solid var(--red-b);color:var(--red);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.28rem 0.7rem;border-radius:6px;display:inline-flex;align-items:center;gap:0.25rem">❌ Reject</button>`:'';
-    const editBtn=isReadOnly()?'':'<button onclick="editLeave(\''+l.id+'\')" style="background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:6px;color:var(--ink)">✏️ Edit</button>';
-    const delBtn=isReadOnly()?'':'<button onclick="deleteLeave(\''+l.id+'\')" style="background:none;border:none;cursor:pointer;font-size:0.9rem;color:var(--muted)">🗑</button>';
-    const pendingBanner=isPending?`<div style="background:#fff8e6;border:1px solid #f0d090;border-radius:6px;padding:0.45rem 0.75rem;margin-bottom:0.4rem;font-size:0.78rem;color:var(--gold);font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap">
-      <span>⏳ Awaiting approval — will sync to shift roster once approved</span>
-      <div style="display:flex;gap:0.4rem">${approveBtn}${rejectBtn}</div>
-    </div>`:'';
-    return `<div class="leave-row"><div class="leave-row-hdr"><div><span style="font-size:0.72rem;background:var(--surface);padding:0.1rem 0.5rem;border-radius:4px;font-weight:600;margin-right:0.4rem">${l.staff_name}</span><span style="font-size:0.72rem;padding:0.18rem 0.55rem;border-radius:20px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase" class="${cfg.cls}">${cfg.icon} ${l.leave_type}</span></div><div style="display:flex;align-items:center;gap:0.4rem"><span class="bdg ${STATUS_CFG[l.status]||'bgm'}">${l.status}</span><button onclick="printLeaveForm('${l.id}')" style="background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:6px;color:var(--ink)">🖨️ Form</button>${editBtn}${delBtn}</div></div>${pendingBanner}<div class="leave-row-meta">${l.start_date} → ${l.end_date} · <strong>${days} day${days!==1?'s':''}</strong></div>${l.notes?`<div style="font-size:0.75rem;color:var(--muted);font-style:italic;margin-top:0.3rem;padding-top:0.3rem;border-top:1px solid var(--surface)">${l.notes}</div>`:''}</div>`;
-  }).join('');
+  switchLeaveTab(leaveActiveTab);
 }
+
+function renderLeaveRequests(){
+  const canAct=!isReadOnly()&&(CU?.role==='owner'||CU?.role==='manager');
+  const sorted=[...leaveData].sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||''));
+  const el=document.getElementById('leaveTabRequests');
+  if(!sorted.length){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No leave records yet. Use "+ Record Leave" to add one.</div>';
+    return;
+  }
+  el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
+    <table class="lv-tbl">
+      <thead><tr>
+        <th>Staff Member</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th><th>Action</th>
+      </tr></thead>
+      <tbody>${sorted.map(l=>{
+        const cfg=LEAVE_CFG[l.leave_type]||{cls:'lp-unpaid',icon:'📋'};
+        const days=leaveDays(l);
+        const isPending=l.status==='Pending';
+        const statusBadge=`<span class="bdg ${STATUS_CFG[l.status]||'bgm'}">${l.status}</span>`;
+        const actions=[];
+        if(canAct&&isPending){
+          actions.push(`<button onclick="approveLeave('${l.id}')" style="background:var(--green-l);border:1px solid var(--green-b);color:var(--green);cursor:pointer;font-size:0.7rem;font-weight:700;padding:0.22rem 0.6rem;border-radius:6px">✓ Approve</button>`);
+          actions.push(`<button onclick="rejectLeave('${l.id}')" style="background:var(--red-l);border:1px solid var(--red-b);color:var(--red);cursor:pointer;font-size:0.7rem;font-weight:700;padding:0.22rem 0.45rem;border-radius:6px">✕</button>`);
+        }
+        if(!isReadOnly()){
+          actions.push(`<button onclick="editLeave('${l.id}')" style="background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:0.7rem;font-weight:700;padding:0.22rem 0.5rem;border-radius:6px;color:var(--muted)" title="Edit">✏️</button>`);
+          actions.push(`<button onclick="printLeaveForm('${l.id}')" style="background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:0.7rem;font-weight:700;padding:0.22rem 0.5rem;border-radius:6px;color:var(--muted)" title="Print">🖨️</button>`);
+          actions.push(`<button onclick="deleteLeave('${l.id}')" style="background:none;border:none;cursor:pointer;font-size:0.82rem;color:var(--muted)" title="Delete">🗑</button>`);
+        }
+        return `<tr>
+          <td><span style="font-weight:700">${l.staff_name}</span></td>
+          <td><span class="${cfg.cls}" style="font-size:0.7rem;padding:0.18rem 0.55rem;border-radius:20px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">${cfg.icon} ${l.leave_type}</span></td>
+          <td style="white-space:nowrap;color:var(--ink)">${l.start_date||'—'}</td>
+          <td style="white-space:nowrap;color:var(--ink)">${l.end_date||'—'}</td>
+          <td style="font-weight:700;color:var(--burg)">${days}</td>
+          <td style="color:var(--muted);font-style:italic;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.notes||'—'}</td>
+          <td>${statusBadge}</td>
+          <td><div style="display:flex;gap:0.3rem;flex-wrap:wrap">${actions.join('')}</div></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderLeaveCalendar(){
+  const el=document.getElementById('leaveTabCalendar');
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS_SH=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const today=new Date();
+  const todayStr=today.toISOString().split('T')[0];
+  const yr=leaveCalYear, mo=leaveCalMonth;
+  const firstDay=new Date(yr,mo,1);
+  // Week starts Monday; getDay() is 0=Sun…6=Sat → convert to 0=Mon…6=Sun
+  const startDow=((firstDay.getDay()+6)%7);
+  const daysInMonth=new Date(yr,mo+1,0).getDate();
+
+  // Build a set of dates that have leave (approved or pending)
+  const leaveDates={};
+  leaveData.forEach(l=>{
+    if(!l.start_date||!l.end_date) return;
+    if(l.status==='Rejected') return;
+    const s=new Date(l.start_date),e=new Date(l.end_date);
+    for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){
+      const ds=d.toISOString().split('T')[0];
+      if(!leaveDates[ds]) leaveDates[ds]=[];
+      leaveDates[ds].push(l.staff_name);
+    }
+  });
+
+  // Calendar cells
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+=`<div class="lv-cal-day empty"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=ds===todayStr;
+    const names=leaveDates[ds]||[];
+    const hasLeave=names.length>0;
+    let cls='lv-cal-day normal';
+    if(isToday&&hasLeave) cls='lv-cal-day today has-leave';
+    else if(isToday) cls='lv-cal-day today';
+    else if(hasLeave) cls='lv-cal-day has-leave';
+    const dots=hasLeave?names.slice(0,3).map(()=>`<div class="lv-dot"></div>`).join(''):'';
+    const title=hasLeave?` title="${names.join(', ')}"` : '';
+    cells+=`<div class="${cls}"${title}><span>${d}</span>${dots?`<div style="display:flex;gap:2px;justify-content:center">${dots}</div>`:''}</div>`;
+  }
+
+  el.innerHTML=`<div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <button onclick="lvCalNav(-1)" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.9rem">‹</button>
+      <div style="font-weight:700;font-size:1rem;color:var(--burg)">${MONTHS[mo]} ${yr} — Leave Calendar</div>
+      <button onclick="lvCalNav(1)" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.9rem">›</button>
+    </div>
+    <div class="lv-cal">
+      ${DAYS_SH.map(d=>`<div class="lv-cal-hdr">${d}</div>`).join('')}
+      ${cells}
+    </div>
+    <div style="display:flex;gap:1rem;margin-top:1rem;font-size:0.75rem;align-items:center;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:0.4rem"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#fde8e8;border:1px solid #f5c0c0"></span> Leave / Absent</span>
+      <span style="display:flex;align-items:center;gap:0.4rem"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:var(--burg)"></span> Today</span>
+      <span style="color:var(--muted)">Hover a date to see who's on leave</span>
+    </div>
+  </div>`;
+}
+function lvCalNav(dir){
+  leaveCalMonth+=dir;
+  if(leaveCalMonth<0){leaveCalMonth=11;leaveCalYear--;}
+  if(leaveCalMonth>11){leaveCalMonth=0;leaveCalYear++;}
+  renderLeaveCalendar();
+}
+
+function renderLeaveBalances(){
+  const el=document.getElementById('leaveTabBalances');
+  const staff=allActiveStaff();
+  const yr=new Date().getFullYear();
+  if(!staff.length){el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No staff found.</div>';return;}
+  el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:0.7rem 1rem;background:var(--surface);border-bottom:1px solid var(--border);font-size:0.72rem;color:var(--muted);display:flex;gap:1rem;flex-wrap:wrap">
+      <span>🏖️ Annual: 15 days/yr · unused carries over until 30 June</span>
+      <span>🤒 Sick: 10 days/yr</span>
+      <span>👨‍👩‍👧 Family: 3 days/yr</span>
+    </div>
+    <div style="overflow-x:auto">
+    <table class="lv-tbl">
+      <thead><tr>
+        <th>Staff Member</th>
+        <th>Annual (days)</th><th>Used</th><th>Remaining</th>
+        <th>Sick Leave</th><th>Sick Used</th>
+        <th>Family</th><th>Family Used</th>
+      </tr></thead>
+      <tbody>${staff.map(s=>{
+        const b=getLeaveBalance(s.name,yr);
+        const annCol=b.annRem<=2?'var(--red)':b.annRem<=5?'var(--orange)':'var(--ink)';
+        const sickCol=b.sickRem<=2?'var(--red)':b.sickRem<=3?'var(--orange)':'var(--ink)';
+        const carryStr=b.carryOver>0?` <span style="font-size:0.65rem;background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;padding:0.05rem 0.4rem;border-radius:10px">+${b.carryOver}</span>`:'';
+        return `<tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem">
+              <div style="width:28px;height:28px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
+              <div>
+                <div style="font-weight:700">${s.name}</div>
+                <div style="font-size:0.68rem;color:var(--muted)">${s.role||''}</div>
+              </div>
+            </div>
+          </td>
+          <td style="color:var(--muted)">${ANNUAL_LEAVE_ALLOWANCE + (b.carryOver||0)}${carryStr}</td>
+          <td>${b.annTaken}</td>
+          <td><strong style="color:${annCol}">${b.annRem}</strong></td>
+          <td style="color:var(--muted)">${SICK_LEAVE_ALLOWANCE}</td>
+          <td style="color:${sickCol}">${b.sickTaken}</td>
+          <td style="color:var(--muted)">${FAMILY_LEAVE_ALLOWANCE}</td>
+          <td>${b.famTaken}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+    </div>
+  </div>`;
+}
+
 function filterLeave(n,b){leaveFilter=n;renderLeave();}
 function openLeaveModal(nm){
-  const kit=kitchenStaff();document.getElementById('leaveStaff').innerHTML=kit.map(s=>`<option value="${s.name}" ${nm===s.name?'selected':''}>${s.name}</option>`).join('');
+  const all=allActiveStaff();document.getElementById('leaveStaff').innerHTML=all.map(s=>`<option value="${s.name}" ${nm===s.name?'selected':''}>${s.name}</option>`).join('');
   document.getElementById('leaveEditId').value='';document.getElementById('leaveStart').value=new Date().toISOString().split('T')[0];document.getElementById('leaveEnd').value=new Date().toISOString().split('T')[0];document.getElementById('leaveNotes').value='';document.getElementById('leaveStatus').value='Pending';document.getElementById('moLeaveTitle').textContent='Record Leave';openMo('moLeave');
 }
 function editLeave(id){
   const l=leaveData.find(x=>x.id===id);if(!l)return;
-  const kit=kitchenStaff();
-  document.getElementById('leaveStaff').innerHTML=kit.map(s=>`<option value="${s.name}" ${s.name===l.staff_name?'selected':''}>${s.name}</option>`).join('');
+  const all=allActiveStaff();
+  document.getElementById('leaveStaff').innerHTML=all.map(s=>`<option value="${s.name}" ${s.name===l.staff_name?'selected':''}>${s.name}</option>`).join('');
   document.getElementById('leaveEditId').value=id;
   document.getElementById('leaveType').value=l.leave_type||'Annual';
   document.getElementById('leaveStart').value=l.start_date||'';
