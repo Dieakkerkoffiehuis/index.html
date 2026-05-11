@@ -42,11 +42,11 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 
 /* ── LOGIN ── */
 #ls{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(155deg,#5c101f 0%,var(--burg) 50%,var(--burg2) 100%);
+  background:#ffffff;
   z-index:1000;padding:1.5rem;display:none;}
-.lc{width:100%;max-width:360px;background:rgba(255,255,255,0.055);backdrop-filter:blur(28px);
-  border:1px solid rgba(255,255,255,0.10);border-radius:24px;padding:2.8rem 2rem;
-  box-shadow:0 32px 80px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.08);}
+.lc{width:100%;max-width:360px;background:var(--burg);
+  border:none;border-radius:24px;padding:2.8rem 2rem;
+  box-shadow:0 24px 64px rgba(122,21,40,0.22),0 4px 16px rgba(0,0,0,0.10);}
 .lc-logo{text-align:center;margin-bottom:2rem;}
 .lc-logo h1{font-family:'Bebas Neue',sans-serif;font-size:3.2rem;letter-spacing:0.12em;color:#fff;line-height:1;}
 .lc-logo p{font-size:0.65rem;letter-spacing:0.28em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-top:0.35rem;}
@@ -66,11 +66,11 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .lf input::placeholder{color:rgba(255,255,255,0.22);}
 .lf input:focus{border-color:rgba(200,146,42,0.6);background:rgba(255,255,255,0.10);}
 .lerr{color:#fb8080;font-size:0.8rem;text-align:center;display:none;padding:0.3rem 0;}
-.lbtn{background:linear-gradient(135deg,var(--burg),var(--burg2));color:#fff;border:none;border-radius:11px;
+.lbtn{background:#1c1015;color:#fff;border:none;border-radius:11px;
   padding:0.9rem;font-family:'Karla',sans-serif;font-weight:700;font-size:0.88rem;letter-spacing:0.1em;
   text-transform:uppercase;cursor:pointer;transition:var(--t);width:100%;
-  box-shadow:0 4px 18px rgba(122,21,40,0.4);}
-.lbtn:hover{box-shadow:0 6px 24px rgba(122,21,40,0.5);transform:translateY(-1px);}
+  box-shadow:0 4px 16px rgba(0,0,0,0.35);}
+.lbtn:hover{background:#2e1a20;box-shadow:0 6px 22px rgba(0,0,0,0.4);transform:translateY(-1px);}
 .lbtn:active{transform:translateY(0);}
 .lhint{text-align:center;font-size:0.67rem;color:rgba(255,255,255,0.18);margin-top:1.2rem;line-height:1.9;}
 
