@@ -11,8 +11,8 @@
   /* Brand */
   --burg:#7a1528;--burg2:#9e1e35;--burg-l:#fdf0f2;
   /* Neutrals */
-  --cream:#f8f5f2;--white:#ffffff;--ink:#1c1015;
-  --border:#e6dbd4;--border-s:#ede8e3;--surface:#f2ece7;--muted:#9a8070;
+  --cream:#ffffff;--white:#ffffff;--ink:#1c1015;
+  --border:#e4d0d3;--border-s:#ede6e7;--surface:#f9f3f4;--muted:#9a8070;
   /* Accents */
   --gold:#c8922a;--gold2:#e8b84b;--gold-l:#fdf6e8;
   --green:#1a7a45;--green-l:#eaf5ee;--green-b:#b8dfc7;
@@ -34,7 +34,7 @@ html,body{height:100%;overflow:hidden;}
 body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;font-size:15px;line-height:1.5;}
 
 /* ── LOADING ── */
-#loadScreen{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:1.2rem;}
+#loadScreen{position:fixed;inset:0;background:var(--burg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:1.2rem;}
 #loadScreen h1{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;color:#fff;letter-spacing:0.12em;}
 #loadScreen p{color:rgba(255,255,255,0.35);font-size:0.8rem;letter-spacing:0.18em;text-transform:uppercase;}
 .spinner{width:34px;height:34px;border:2.5px solid rgba(255,255,255,0.1);border-top-color:var(--gold);border-radius:50%;animation:spin 0.75s linear infinite;}
@@ -42,7 +42,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 
 /* ── LOGIN ── */
 #ls{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(155deg,var(--navy) 0%,#1d0b16 50%,#5c101f 100%);
+  background:linear-gradient(155deg,#5c101f 0%,var(--burg) 50%,var(--burg2) 100%);
   z-index:1000;padding:1.5rem;display:none;}
 .lc{width:100%;max-width:360px;background:rgba(255,255,255,0.055);backdrop-filter:blur(28px);
   border:1px solid rgba(255,255,255,0.10);border-radius:24px;padding:2.8rem 2rem;
@@ -79,13 +79,13 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 #app.show{display:flex;}
 
 /* ── SIDEBAR ── */
-.sb{width:var(--sw);height:100%;background:var(--navy2);display:flex;flex-direction:column;
+.sb{width:var(--sw);height:100%;background:var(--burg);display:flex;flex-direction:column;
   flex-shrink:0;transition:transform 0.28s cubic-bezier(.4,0,.2,1);z-index:200;overflow-y:auto;}
-.sb-hd{padding:1.35rem 1.1rem 1.1rem;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;}
+.sb-hd{padding:1.35rem 1.1rem 1.1rem;border-bottom:1px solid rgba(255,255,255,0.12);flex-shrink:0;}
 .sb-brand{font-family:'Bebas Neue',sans-serif;font-size:1.65rem;letter-spacing:0.1em;color:#fff;}
-.sb-tag{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-top:0.14rem;}
-.sb-user{display:flex;align-items:center;gap:0.7rem;background:rgba(255,255,255,0.07);border-radius:10px;
-  padding:0.7rem 0.9rem;margin-top:0.9rem;border:1px solid rgba(255,255,255,0.06);}
+.sb-tag{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-top:0.14rem;}
+.sb-user{display:flex;align-items:center;gap:0.7rem;background:rgba(255,255,255,0.12);border-radius:10px;
+  padding:0.7rem 0.9rem;margin-top:0.9rem;border:1px solid rgba(255,255,255,0.14);}
 .sb-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;flex-shrink:0;}
 .sb-un{font-size:0.88rem;font-weight:700;color:#fff;}
 .sb-ur{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);}
@@ -94,7 +94,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .sb-grp-label{font-size:0.6rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.28);padding:1.1rem 0.88rem 0.3rem;margin-top:0.1rem;}
 .sb-grp-label:first-child{padding-top:0.3rem;}
 /* Section tab bar */
-#sectionTabBar{display:none;padding:0 1.2rem;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+#sectionTabBar{display:none;padding:0 1.2rem;border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 #sectionTabBar::-webkit-scrollbar{height:0;}
 .sec-tab-row{display:flex;gap:0.2rem;padding:0.55rem 0;}
 .sec-tab{padding:0.42rem 1rem;border-radius:7px;font-size:0.78rem;font-weight:500;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all 0.15s;border:none;background:none;font-family:inherit;}
@@ -106,7 +106,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .lv-tbl th{font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:0.75rem 1rem;text-align:left;border-bottom:2px solid var(--border);background:var(--surface);}
 .lv-tbl td{padding:0.75rem 1rem;border-bottom:1px solid var(--surface);vertical-align:middle;}
 .lv-tbl tr:last-child td{border-bottom:none;}
-.lv-tbl tr:hover td{background:var(--cream);}
+.lv-tbl tr:hover td{background:var(--surface);}
 .lv-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
 .lv-cal-hdr{font-size:0.65rem;font-weight:700;text-align:center;padding:0.4rem 0;color:var(--muted);text-transform:uppercase;}
 .lv-cal-day{border-radius:7px;padding:0.55rem 0.3rem;text-align:center;font-size:0.82rem;cursor:default;min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:background 0.1s;}
@@ -118,13 +118,13 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .lv-dot{width:5px;height:5px;border-radius:50%;background:var(--burg);flex-shrink:0;}
 .lv-cal-day.today .lv-dot{background:#fff;}
 .ni{display:flex;align-items:center;gap:0.75rem;padding:0.62rem 0.88rem;border-radius:9px;cursor:pointer;
-  color:rgba(255,255,255,0.52);font-size:0.9rem;font-weight:500;transition:var(--t);margin-bottom:0.1rem;}
-.ni:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.9);}
-.ni.act{background:linear-gradient(135deg,var(--burg),var(--burg2));color:#fff;
-  box-shadow:0 2px 12px rgba(122,21,40,0.45),inset 0 1px 0 rgba(255,255,255,0.12);}
+  color:rgba(255,255,255,0.65);font-size:0.9rem;font-weight:500;transition:var(--t);margin-bottom:0.1rem;}
+.ni:hover{background:rgba(255,255,255,0.12);color:#fff;}
+.ni.act{background:rgba(255,255,255,0.2);color:#fff;font-weight:700;
+  border:1px solid rgba(255,255,255,0.25);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);}
 .ni .ic{font-size:1.05rem;width:22px;text-align:center;flex-shrink:0;}
 .ni .lb{flex:1;}
-.ni .bdg{background:var(--gold);color:var(--navy);font-size:0.6rem;font-weight:700;padding:0.12rem 0.5rem;border-radius:20px;}
+.ni .bdg{background:var(--gold);color:#1c1015;font-size:0.6rem;font-weight:700;padding:0.12rem 0.5rem;border-radius:20px;}
 .ngh{display:flex;align-items:center;gap:0.75rem;padding:0.56rem 0.88rem;border-radius:9px;cursor:pointer;
   background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
   color:rgba(255,255,255,0.55);font-size:0.78rem;font-weight:700;letter-spacing:0.07em;
@@ -1244,6 +1244,21 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
             </div>
             <div id="payCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:300px"></div>
             <div style="font-size:0.67rem;color:var(--muted);margin-top:0.5rem">Tap any day to set it as the monthly payday · weekends auto-shift to Friday</div>
+          </div>
+        </div>
+        <!-- Pay Period selector -->
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.7rem 1rem;margin-bottom:0.8rem;display:flex;align-items:center;flex-wrap:wrap;gap:0.6rem">
+          <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);flex-shrink:0">📆 Pay Period</span>
+          <div style="display:flex;align-items:center;gap:0.4rem;flex:1;flex-wrap:wrap">
+            <input type="date" id="payPeriodFrom" style="border:1px solid var(--border);border-radius:7px;padding:0.38rem 0.65rem;font-family:'Karla',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;color:var(--ink)" onchange="renderPayPeriodLabel()">
+            <span style="font-size:0.78rem;color:var(--muted);font-weight:600">to</span>
+            <input type="date" id="payPeriodTo" style="border:1px solid var(--border);border-radius:7px;padding:0.38rem 0.65rem;font-family:'Karla',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;color:var(--ink)" onchange="renderPayPeriodLabel()">
+            <span id="payPeriodLabel" style="font-size:0.75rem;color:var(--burg);font-weight:700;white-space:nowrap"></span>
+          </div>
+          <div style="display:flex;gap:0.3rem;flex-wrap:wrap">
+            <button class="btn bs bsm" onclick="setPayPeriodPreset('month')">Full Month</button>
+            <button class="btn bs bsm" onclick="setPayPeriodPreset('first')">1–15</button>
+            <button class="btn bs bsm" onclick="setPayPeriodPreset('second')">16–End</button>
           </div>
         </div>
         <!-- Roster sync bar -->
@@ -6763,7 +6778,7 @@ function printStockTemplate(){
         <table>
           <thead>
             <tr class="sec-head">
-              <th class="item-h">${d.emoji} ${d.name}</th>
+              <th class="item-h">${d.name}</th>
               ${DAYS.map(dy=>`<th class="day-h">${dy}</th>`).join('')}
               <th class="notes-h">NOTES</th>
             </tr>
@@ -6781,61 +6796,120 @@ function printStockTemplate(){
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@400;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Karla',Arial,sans-serif;color:#1a0d10;background:#fff;padding:10mm;}
-.brand{font-family:'Bebas Neue',sans-serif;font-size:22pt;color:#7a1528;letter-spacing:0.05em;}
-.header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #7a1528;padding-bottom:4mm;margin-bottom:5mm;}
-.meta{font-size:8pt;color:#9a8070;text-align:right;}
-.meta-line{display:flex;gap:20mm;font-size:8pt;color:#1a0d10;margin-bottom:6mm;}
-.meta-line span{border-bottom:1px solid #aaa;min-width:55mm;padding-bottom:1mm;}
-.meta-line label{color:#9a8070;font-size:7pt;margin-right:2mm;}
-.section{margin-bottom:4mm;}
-table{width:100%;border-collapse:collapse;font-size:8pt;}
-.sec-head th{background:#7a1528;color:#fff;padding:3mm 2mm;text-align:center;border:1px solid #5a1020;font-family:'Bebas Neue',sans-serif;font-size:9pt;letter-spacing:0.05em;}
-.sec-head .item-h{text-align:left;padding-left:3mm;width:28%;}
+body{
+  font-family:'Karla',Arial,sans-serif;
+  color:#000;
+  background:#fff;
+  print-color-adjust:exact;
+  -webkit-print-color-adjust:exact;
+}
+/* ── PRINT BUTTON BAR ── */
+.no-print{text-align:center;padding:10mm;background:#f5f5f5;border-bottom:1px solid #ccc;}
+.no-print button{background:#7a1528;color:#fff;border:none;padding:10px 28px;border-radius:8px;
+  font-size:13px;cursor:pointer;font-weight:700;font-family:'Karla',sans-serif;margin:4px;}
+.no-print .note{font-size:11px;color:#666;margin-top:6px;}
+/* ── PAGE CONTENT ── */
+.page{padding:12mm 14mm;}
+/* ── HEADER ── */
+.header{display:flex;justify-content:space-between;align-items:flex-end;
+  border-bottom:2.5pt solid #000;padding-bottom:4mm;margin-bottom:4mm;}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:24pt;color:#000;letter-spacing:0.05em;line-height:1;}
+.brand-sub{font-size:8pt;color:#333;letter-spacing:0.12em;text-transform:uppercase;margin-top:1mm;}
+.header-right{text-align:right;font-size:8pt;color:#333;}
+/* ── FILL-IN META LINE ── */
+.meta-line{display:flex;gap:8mm;margin-bottom:6mm;}
+.meta-field{display:flex;flex-direction:column;gap:1mm;flex:1;}
+.meta-field label{font-size:6.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#555;}
+.meta-field .line{border-bottom:1.5pt solid #000;min-height:6mm;}
+/* ── SECTION TABLE ── */
+.section{margin-bottom:5mm;}
+table{width:100%;border-collapse:collapse;}
+/* Section header row — solid black so it prints reliably in B&W */
+.sec-head th{
+  background:#000 !important;
+  color:#fff !important;
+  padding:2.5mm 2mm;
+  text-align:center;
+  border:1pt solid #000;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:10pt;
+  letter-spacing:0.08em;
+}
+.sec-head .item-h{text-align:left;padding-left:3mm;width:30%;}
 .day-h{width:8%;}
-.notes-h{width:12%;}
-td{border:0.5pt solid #d0c0b8;padding:2mm 2mm;}
-td.item{font-size:7.5pt;font-weight:600;padding-left:3mm;width:28%;}
-td.day{width:8%;background:#fdf9f6;}
-td.notes{width:12%;background:#fffcf8;}
-tr.even td{background:#f7f1ec;}
-tr.even td.day{background:#f2ece6;}
-tr.even td.notes{background:#faf6f2;}
-.footer{margin-top:5mm;border-top:0.5pt solid #d0c0b8;padding-top:3mm;display:flex;justify-content:space-between;font-size:7pt;color:#9a8070;}
-.no-print{text-align:center;padding:8mm;background:#faf7f4;}
-.no-print button{background:#7a1528;color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:700;font-family:'Karla',sans-serif;margin:4px;}
-.no-print .note{font-size:11px;color:#9a8070;margin-top:6px;}
+.notes-h{width:14%;}
+/* Data rows — solid dark borders, alternating gray for B&W clarity */
+td{
+  border:0.75pt solid #555;
+  padding:1.8mm 2mm;
+  min-height:7mm;
+  vertical-align:middle;
+}
+td.item{
+  font-size:8pt;
+  font-weight:600;
+  padding-left:3mm;
+  width:30%;
+  border-right:1.5pt solid #000;
+}
+td.day{
+  width:8%;
+  background:#fff;
+  text-align:center;
+}
+td.notes{
+  width:14%;
+  background:#fff;
+}
+tr.even td{background:#efefef !important;}
+tr.even td.day,tr.even td.notes{background:#efefef !important;}
+/* ── FOOTER ── */
+.footer{
+  margin-top:5mm;
+  border-top:1pt solid #000;
+  padding-top:3mm;
+  display:flex;
+  justify-content:space-between;
+  font-size:7pt;
+  color:#333;
+}
+/* ── PRINT RULES ── */
 @media print{
-  body{padding:8mm;}
   .no-print{display:none;}
+  .page{padding:0;}
   .section{page-break-inside:avoid;}
-  @page{size:A4 landscape;margin:8mm;}
+  @page{size:A4 landscape;margin:12mm 14mm;}
 }
 </style>
 </head>
 <body>
 <div class="no-print">
   <button onclick="window.print()">🖨️ Print / Save as PDF</button>
-  <button onclick="window.close()" style="background:#e8ddd5;color:#1a0d10">✕ Close</button>
-  <div class="note">To save as PDF: click Print → change destination to "Save as PDF"</div>
+  <button onclick="window.close()" style="background:#555;color:#fff">✕ Close</button>
+  <div class="note">Landscape A4 · To save as PDF: Print → Save as PDF</div>
 </div>
+<div class="page">
 <div class="header">
   <div>
     <div class="brand">DIE AKKER KOFFIEHUIS</div>
-    <div style="font-size:8pt;color:#9a8070">Weekly Stock Take Sheet</div>
+    <div class="brand-sub">Weekly Stock Take Sheet</div>
   </div>
-  <div class="meta">Print · Count · Sign off</div>
+  <div class="header-right">
+    <div style="font-size:9pt;font-weight:700">Print · Count · Sign off</div>
+    <div style="margin-top:1mm">Printed: ${new Date().toLocaleDateString('en-ZA')}</div>
+  </div>
 </div>
 <div class="meta-line">
-  <span><label>Week of:</label></span>
-  <span><label>Completed by:</label></span>
-  <span><label>Manager sign-off:</label></span>
+  <div class="meta-field"><label>Week of</label><div class="line"></div></div>
+  <div class="meta-field"><label>Completed by</label><div class="line"></div></div>
+  <div class="meta-field"><label>Manager sign-off</label><div class="line"></div></div>
+  <div class="meta-field"><label>Time completed</label><div class="line"></div></div>
 </div>
 ${sectionHtml}
 <div class="footer">
   <span>Die Akker Koffiehuis — Potchefstroom</span>
-  <span>Instructions: Count each item at close of day · Circle anything below minimum level · Upload a photo to the app</span>
-  <span>Printed: ${new Date().toLocaleDateString('en-ZA')}</span>
+  <span>Count each item at close of day · Circle anything below minimum level · Upload photo to the app</span>
+</div>
 </div>
 </body>
 </html>`;
@@ -9956,8 +10030,52 @@ function renderPayCalendar(){
   grid.innerHTML=html;
 }
 
+// ── Pay Period selector ───────────────────────────────────────────────────────
+function initPayPeriod(){
+  const now=new Date();
+  const yr=now.getFullYear(), mo=String(now.getMonth()+1).padStart(2,'0');
+  const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const fromEl=document.getElementById('payPeriodFrom');
+  const toEl=document.getElementById('payPeriodTo');
+  if(!fromEl||!toEl) return;
+  // Default to full current month if not already set
+  if(!fromEl.value) fromEl.value=`${yr}-${mo}-01`;
+  if(!toEl.value)   toEl.value=`${yr}-${mo}-${String(lastDay).padStart(2,'0')}`;
+  renderPayPeriodLabel();
+}
+function setPayPeriodPreset(preset){
+  const now=new Date();
+  const yr=now.getFullYear(), mo=String(now.getMonth()+1).padStart(2,'0');
+  const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const fromEl=document.getElementById('payPeriodFrom');
+  const toEl=document.getElementById('payPeriodTo');
+  if(!fromEl||!toEl) return;
+  if(preset==='month'){ fromEl.value=`${yr}-${mo}-01`; toEl.value=`${yr}-${mo}-${String(lastDay).padStart(2,'0')}`; }
+  else if(preset==='first'){ fromEl.value=`${yr}-${mo}-01`; toEl.value=`${yr}-${mo}-15`; }
+  else if(preset==='second'){ fromEl.value=`${yr}-${mo}-16`; toEl.value=`${yr}-${mo}-${String(lastDay).padStart(2,'0')}`; }
+  renderPayPeriodLabel();
+}
+function renderPayPeriodLabel(){
+  const fromEl=document.getElementById('payPeriodFrom');
+  const toEl=document.getElementById('payPeriodTo');
+  const lbl=document.getElementById('payPeriodLabel');
+  if(!fromEl||!toEl||!lbl) return;
+  const f=fromEl.value, t=toEl.value;
+  if(!f||!t){lbl.textContent='';return;}
+  const from=new Date(f), to=new Date(t);
+  const days=Math.max(0,Math.round((to-from)/(1000*60*60*24))+1);
+  const fmt=d=>d.toLocaleDateString('en-ZA',{day:'numeric',month:'short'});
+  lbl.textContent=`${fmt(from)} – ${fmt(to)} · ${days} day${days!==1?'s':''}`;
+}
+function getPayPeriod(){
+  const f=document.getElementById('payPeriodFrom')?.value;
+  const t=document.getElementById('payPeriodTo')?.value;
+  return {from:f||null,to:t||null};
+}
+
 function renderPaymentDate(){
   renderPayCalendar(); // draw the calendar picker first
+  initPayPeriod();
   const now = new Date();
   const yr = now.getFullYear();
   const mo = now.getMonth() + 1;
