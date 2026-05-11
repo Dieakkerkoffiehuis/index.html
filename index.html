@@ -5344,8 +5344,10 @@ async function saveStf(){
     active:true
   };
   setSyncStatus('syncing');
-  if(id){await SB.from('staff').update(rec).eq('id',id);}
-  else{await SB.from('staff').insert(rec);}
+  let error;
+  if(id){({error}=await SB.from('staff').update(rec).eq('id',id));}
+  else{({error}=await SB.from('staff').insert(rec));}
+  if(error){setSyncStatus('err');showToast('Error saving staff: '+(error.message||'unknown error'),true);console.error('saveStf error',error);return;}
   closeMo('moAddStaff'); await loadAllData(); setSyncStatus('ok'); showToast(`${nm} saved ✓`);
 }
 
