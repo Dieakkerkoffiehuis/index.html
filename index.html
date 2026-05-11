@@ -2287,6 +2287,11 @@ function setSyncStatus(state){
 // DATA STORE
 // ═══════════════════════════════════════════
 let DB=[], stfD=[], pendingS=[], varianceD=[], payD={mgr:[],kit:[]}, leaveData=[], docsData={}, rosterData={}, rosterFlags={}, kpiData=[];
+let payPaid={}; // {staffName: true} — who's been marked as paid for the current period
+function _payPaidKey(){const pp=getPayPeriod();return`payPaid_${pp.from||'cur'}_${pp.to||'cur'}`;}
+function loadPayPaid(){try{payPaid=JSON.parse(localStorage.getItem(_payPaidKey())||'{}')}catch(e){payPaid={};}}
+function savePayPaid(){try{localStorage.setItem(_payPaidKey(),JSON.stringify(payPaid));}catch(e){}}
+function togglePayPaid(name){payPaid[name]=!payPaid[name];savePayPaid();renderPayoutSummary();}
 let stC={}, dbCat='All', varF='all', rosterGroup='Kitchen', rosterWeekOf=getMonday(new Date());
 let yesterdayStock={}; // {item_id: qty} from most recent previous stocktake
 let anPeriodDays=30, anActiveTab='usage', anReorderFilt='all', anHistoryData=[], anVarianceData=[];
@@ -5013,8 +5018,12 @@ function calcNetForEntry(s, grp){
 }
 
 function renderPayoutSummary(){
+  loadPayPaid();
+  const pp=getPayPeriod();
   const now = new Date();
-  const monthLabel = now.toLocaleDateString('en-ZA',{month:'long',year:'numeric'});
+  const monthLabel = pp.from&&pp.to
+    ? `${new Date(pp.from+'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'long'})} – ${new Date(pp.to+'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}`
+    : now.toLocaleDateString('en-ZA',{month:'long',year:'numeric'});
   const el = document.getElementById('payoutMonth');
   if(el) el.textContent = monthLabel;
 
@@ -5042,15 +5051,24 @@ function renderPayoutSummary(){
       const net = calcNetForEntry(s, sec.grp);
       grandTotal += net;
       const initials = (s.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      html += `<div style="display:flex;align-items:center;padding:0.78rem 1.3rem;border-bottom:1px solid var(--border-s);gap:0.9rem">
-        <div style="width:36px;height:36px;border-radius:50%;background:${sec.color};display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
+      const paid = !!payPaid[s.name];
+      const nameSafe = (s.name||'').replace(/'/g,"\\'");
+      html += `<div style="display:flex;align-items:center;padding:0.78rem 1.3rem;border-bottom:1px solid var(--border-s);gap:0.9rem;${paid?'background:#f4f4f4;opacity:0.6;':''}">
+        <div style="width:36px;height:36px;border-radius:50%;background:${paid?'#bbb':sec.color};display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:0.95rem">${s.name}</div>
+          <div style="font-weight:700;font-size:0.95rem;${paid?'color:var(--muted);text-decoration:line-through;':''}">${s.name}</div>
           <div style="font-size:0.72rem;color:var(--muted)">${s.role||sec.label}${s.hrs?` · ${s.hrs} hrs`:''}</div>
         </div>
-        <div style="text-align:right">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.45rem;color:${net>0?'var(--green)':'var(--muted)'}">R ${net.toFixed(2)}</div>
-          <div style="font-size:0.68rem;color:var(--muted)">net pay</div>
+        <div style="display:flex;align-items:center;gap:0.8rem">
+          <div style="text-align:right">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.45rem;color:${paid?'var(--muted)':net>0?'var(--green)':'var(--muted)'}">R ${net.toFixed(2)}</div>
+            <div style="font-size:0.68rem;color:var(--muted)">${paid?'✓ paid':'net pay'}</div>
+          </div>
+          <button onclick="togglePayPaid('${nameSafe}')" title="${paid?'Mark as unpaid':'Mark as paid'}"
+            style="width:34px;height:34px;border-radius:50%;border:2px solid ${paid?'#2d8a4e':'var(--border)'};
+            background:${paid?'#2d8a4e':'transparent'};color:${paid?'#fff':'var(--muted)'};
+            font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;transition:all 0.15s">✓</button>
         </div>
       </div>`;
     });
@@ -10099,6 +10117,7 @@ async function loadPayrollForPeriod(){
   const pp=getPayPeriod();
   if(!pp.from||!pp.to){showToast('Please select a From and To date first.',true);return;}
   if(pp.from>pp.to){showToast('Start date must be before end date.',true);return;}
+  loadPayPaid(); // load paid state for this period before rendering
   showToast('Loading payroll for selected period…');
   await syncRosterHoursToPayroll();
   await loadWaiterSalesForMonth();
