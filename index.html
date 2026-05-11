@@ -1259,12 +1259,13 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
             <button class="btn bs bsm" onclick="setPayPeriodPreset('month')">Full Month</button>
             <button class="btn bs bsm" onclick="setPayPeriodPreset('first')">1–15</button>
             <button class="btn bs bsm" onclick="setPayPeriodPreset('second')">16–End</button>
+            <button class="btn bp bsm" onclick="loadPayrollForPeriod()" style="font-weight:700">▶ Load Payroll</button>
           </div>
         </div>
         <!-- Roster sync bar -->
         <div style="background:var(--green-l);border:1px solid var(--green-b);border-radius:8px;padding:0.6rem 1rem;margin-bottom:0.8rem;font-size:0.78rem;color:var(--green);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem">
-          <span>🔄 Hours pulled automatically from Shift Roster for this month.</span>
-          <button class="btn bs bsm" onclick="syncRosterHoursToPayroll().then(()=>showToast('Hours synced from roster ✓'))">↻ Sync Now</button>
+          <span id="payPeriodSyncLabel">🔄 Hours pulled from Shift Roster for the selected pay period.</span>
+          <button class="btn bs bsm" onclick="loadPayrollForPeriod()">↻ Reload</button>
         </div>
         <div class="stitle">Managers Payroll</div>
         <div class="card">
@@ -2381,7 +2382,7 @@ function go(id){
   document.getElementById('tbTitle').textContent=TTLS[id]||id;
   document.getElementById('tbSub').textContent=TSUBS[id]||'';
   if(id==='roster') initRosterPanel();
-  if(id==='payroll'){ syncRosterHoursToPayroll(); loadWaiterSalesForMonth().then(()=>renderPay()); renderPaymentDate(); }
+  if(id==='payroll'){ renderPaymentDate(); initPayPeriod(); loadPayrollForPeriod(); }
   if(id==='waiterlog'){ wlToday(); initLeaderboard(); initScheduling(); }
   if(id==='auditlog') loadAuditLog();
   if(id==='invoices') initInvoicesPanel();
@@ -4514,8 +4515,9 @@ async function saveRoster(){
     Object.entries(names).forEach(([staffName,days])=>{
       Object.entries(days).forEach(([dayIdx,sh])=>{
         if(sh.start||sh.end){
-          rowsWithGrp.push({group_type:grp,staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0});
-          rowsWithoutGrp.push({staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0});
+          const fl=rosterFlags[wk]?.[grp]?.[staffName]?.[parseInt(dayIdx)]||{};
+          rowsWithGrp.push({group_type:grp,staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0,flags:fl});
+          rowsWithoutGrp.push({staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0,flags:fl});
         }
       });
     });
@@ -4565,6 +4567,13 @@ async function loadRosterWeek(){
     if(!rosterData[wk][grp])rosterData[wk][grp]={};
     if(!rosterData[wk][grp][r.staff_name])rosterData[wk][grp][r.staff_name]={};
     rosterData[wk][grp][r.staff_name][r.day_index]={start:r.start_time||'',end:r.end_time||'',brk:r.break_hours||''};
+    // Restore PH / leave flags from DB
+    if(r.flags&&(r.flags.ph||r.flags.leave)){
+      if(!rosterFlags[wk])rosterFlags[wk]={};
+      if(!rosterFlags[wk][grp])rosterFlags[wk][grp]={};
+      if(!rosterFlags[wk][grp][r.staff_name])rosterFlags[wk][grp][r.staff_name]={};
+      rosterFlags[wk][grp][r.staff_name][r.day_index]=r.flags;
+    }
   });
   renderRGrid();updRSummary();
 }
@@ -4645,19 +4654,30 @@ function buildPayData(rows){
 }
 
 async function syncRosterHoursToPayroll(){
-  // Pull all roster records for current month and sum hours per staff member
-  const mo=new Date().toISOString().slice(0,7);
-  const [yr,mth]=mo.split('-').map(Number);
+  // Use selected pay period dates, fall back to current month
+  const pp=getPayPeriod();
+  let monthStart, monthEnd;
+  if(pp.from && pp.to){
+    monthStart=new Date(pp.from+'T00:00:00Z');
+    monthEnd  =new Date(pp.to+'T00:00:00Z');
+  } else {
+    const mo=new Date().toISOString().slice(0,7);
+    const [yr,mth]=mo.split('-').map(Number);
+    monthStart=new Date(Date.UTC(yr,mth-1,1));
+    monthEnd  =new Date(Date.UTC(yr,mth,0));
+  }
 
-  // Month boundaries (UTC midnight so date comparisons are consistent)
-  const monthStart=new Date(Date.UTC(yr,mth-1,1));
-  const monthEnd  =new Date(Date.UTC(yr,mth,0));  // last day of month
-
-  // Extend query start back 6 days: a Mon-start week beginning on e.g. March 30
-  // still contributes April shifts — we must not miss those weeks.
+  // Extend query start back 6 days so Mon-start weeks that straddle the period start aren't missed
   const queryStart=new Date(monthStart);
   queryStart.setUTCDate(queryStart.getUTCDate()-6);
   const fmt=d=>d.toISOString().slice(0,10);
+
+  // Update sync label with the active period
+  const lbl=document.getElementById('payPeriodSyncLabel');
+  if(lbl){
+    const fmtD=d=>d.toLocaleDateString('en-ZA',{day:'numeric',month:'short'});
+    lbl.textContent=`🔄 Hours pulled from Shift Roster for ${fmtD(monthStart)} – ${fmtD(monthEnd)}.`;
+  }
 
   try {
     const {data}=await SB.from('roster').select('*')
@@ -4682,7 +4702,8 @@ async function syncRosterHoursToPayroll(){
       const payGrp=GRP_TO_PAY[rowGrp];
       if(!payGrp) return;
 
-      const flags=(rosterFlags[r.week_start]?.[rowGrp]?.[r.staff_name]?.[r.day_index])||{ph:false};
+      // Prefer flags stored in DB row; fall back to in-memory rosterFlags (current session edits)
+      const flags=r.flags||(rosterFlags[r.week_start]?.[rowGrp]?.[r.staff_name]?.[r.day_index])||{ph:false};
       const raw=calcShiftHours(r.start_time,r.end_time,r.break_hours);
       if(!raw||raw<=0) return;
 
@@ -4842,7 +4863,9 @@ function editPayName(cId,i,tId){const l=getPayList(cId);const v=prompt(`Edit nam
 
 async function savePay(){
   setSyncStatus('syncing');
-  const mo=new Date().toISOString().slice(0,7);
+  const pp=getPayPeriod();
+  // Use the pay period start date as the month key (YYYY-MM), falling back to current month
+  const mo=pp.from?pp.from.slice(0,7):new Date().toISOString().slice(0,7);
   const toRows=(grp,label)=>(payD[grp]||[]).map(s=>({staff_name:s.name,group_type:label,position:s.pos,hourly_rate:s.hourly_rate,hours:s.hrs,sun_hours:s.sun_hrs||0,holiday_hours:s.hol_hrs||0,taxi:s.taxi||0,borrowed:s.borrowed||0,saccawu:s.saccawu||0,breakage:s.breakage||0,month:mo}));
   const rows=[...toRows('mgr','manager'),...toRows('kit','kitchen'),...toRows('bar','bar'),...toRows('waitph','waitph')];
   const{error}=await SB.from('payroll').upsert(rows,{onConflict:'staff_name,month,group_type'});
@@ -4866,9 +4889,9 @@ function resolveWaiterName(name){
 }
 
 async function loadWaiterSalesForMonth(){
-  const mo=new Date().toISOString().slice(0,7);
-  const lastDay=new Date(parseInt(mo.split('-')[0]),parseInt(mo.split('-')[1]),0).getDate();
-  const from=`${mo}-01`, to=`${mo}-${String(lastDay).padStart(2,'0')}`;
+  const pp=getPayPeriod();
+  const from=pp.from||(()=>{const mo=new Date().toISOString().slice(0,7);return`${mo}-01`;})();
+  const to=pp.to||(()=>{const mo=new Date().toISOString().slice(0,7);const lastDay=new Date(parseInt(mo.split('-')[0]),parseInt(mo.split('-')[1]),0).getDate();return`${mo}-${String(lastDay).padStart(2,'0')}`;})();
   try {
     // Try waiter_sales table first
     let {data}=await SB.from('waiter_sales').select('*').gte('date',from).lte('date',to);
@@ -10071,6 +10094,16 @@ function getPayPeriod(){
   const f=document.getElementById('payPeriodFrom')?.value;
   const t=document.getElementById('payPeriodTo')?.value;
   return {from:f||null,to:t||null};
+}
+async function loadPayrollForPeriod(){
+  const pp=getPayPeriod();
+  if(!pp.from||!pp.to){showToast('Please select a From and To date first.',true);return;}
+  if(pp.from>pp.to){showToast('Start date must be before end date.',true);return;}
+  showToast('Loading payroll for selected period…');
+  await syncRosterHoursToPayroll();
+  await loadWaiterSalesForMonth();
+  renderPay();
+  renderPayPeriodLabel();
 }
 
 function renderPaymentDate(){
