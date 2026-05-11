@@ -2035,6 +2035,20 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
     <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin:0.5rem 0 0.4rem">Emergency Contact</div>
     <div class="fg"><label>Contact Name</label><input type="text" id="stfEmergName" placeholder="e.g. Johan Bruwer (Husband)"></div>
     <div class="fg"><label>Contact Phone</label><input type="tel" id="stfEmergPhone" placeholder="e.g. 083 222 4567"></div>
+    <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#b85c00;margin:0.8rem 0 0.4rem;padding-top:0.6rem;border-top:1px solid var(--border)">🏥 Medical Information</div>
+    <div class="fg2">
+      <div class="fg"><label>Blood Type</label>
+        <select id="stfBloodType" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+          <option value="">Unknown</option>
+          <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+          <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+        </select>
+      </div>
+      <div class="fg"><label>Medical Aid</label><input type="text" id="stfMedicalAid" placeholder="e.g. Discovery Health 12345"></div>
+    </div>
+    <div class="fg"><label>Known Allergies</label><input type="text" id="stfAllergies" placeholder="e.g. Penicillin, Latex, Peanuts — or None"></div>
+    <div class="fg"><label>Medical Conditions / Chronic Diseases</label><textarea id="stfConditions" rows="3" placeholder="e.g. Type 2 Diabetes, Hypertension, Epilepsy — or None" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;resize:vertical;box-sizing:border-box"></textarea></div>
+    <div class="fg"><label>Current Medication</label><input type="text" id="stfMedication" placeholder="e.g. Metformin 500mg, Amlodipine — or None"></div>
     <button class="btn bp" onclick="saveStf()" style="width:100%;margin-top:0.3rem">Save</button>
   </div>
 </div>
@@ -2089,9 +2103,17 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
       <div id="docChecklist"></div>
     </div>
     <!-- Emergency contact display -->
-    <div id="docEmergSection" style="background:var(--red-l,#fff5f5);border:1px solid var(--red-b,#f5c0c0);border-radius:10px;padding:0.8rem;margin-bottom:1rem">
+    <div id="docEmergSection" style="background:var(--red-l,#fff5f5);border:1px solid var(--red-b,#f5c0c0);border-radius:10px;padding:0.8rem;margin-bottom:0.7rem">
       <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--red);margin-bottom:0.4rem">🆘 Emergency Contact</div>
       <div id="docEmergInfo" style="font-size:0.82rem;color:var(--ink)">—</div>
+    </div>
+    <!-- Medical information display -->
+    <div id="docMedSection" style="background:#fff8f0;border:1px solid #f0c080;border-radius:10px;padding:0.8rem;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#b85c00">🏥 Medical Information</div>
+        <button onclick="printMedicalCard()" style="background:#b85c00;color:#fff;border:none;border-radius:6px;padding:0.22rem 0.6rem;font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">🖨 Print for Paramedics</button>
+      </div>
+      <div id="docMedInfo" style="font-size:0.82rem;color:var(--ink);display:grid;gap:0.35rem"></div>
     </div>
     <div id="docAddSection" style="background:var(--surface);border-radius:10px;padding:0.9rem;margin-bottom:1rem">
       <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.6rem">Add Document</div>
@@ -5325,6 +5347,11 @@ function openEditStf(id){
   document.getElementById('stfDiv').value=s?.division||'Floor';
   document.getElementById('stfEmergName').value=s?.emergency_name||'';
   document.getElementById('stfEmergPhone').value=s?.emergency_phone||'';
+  document.getElementById('stfBloodType').value=s?.blood_type||'';
+  document.getElementById('stfMedicalAid').value=s?.medical_aid||'';
+  document.getElementById('stfAllergies').value=s?.allergies||'';
+  document.getElementById('stfConditions').value=s?.conditions||'';
+  document.getElementById('stfMedication').value=s?.medication||'';
   openMo('moAddStaff');
 }
 
@@ -5341,6 +5368,11 @@ async function saveStf(){
     division:document.getElementById('stfDiv').value,
     emergency_name:document.getElementById('stfEmergName').value.trim()||null,
     emergency_phone:document.getElementById('stfEmergPhone').value.trim()||null,
+    blood_type:document.getElementById('stfBloodType').value||null,
+    medical_aid:document.getElementById('stfMedicalAid').value.trim()||null,
+    allergies:document.getElementById('stfAllergies').value.trim()||null,
+    conditions:document.getElementById('stfConditions').value.trim()||null,
+    medication:document.getElementById('stfMedication').value.trim()||null,
     active:true
   };
   setSyncStatus('syncing');
@@ -6048,6 +6080,45 @@ function renderDocs(){
   }).join('');
 }
 
+function printMedicalCard(){
+  const nm=document.getElementById('docStaffName').value;
+  const s=stfD.find(x=>x.name===nm);
+  if(!s){showToast('Staff record not found.',true);return;}
+  const row=(icon,label,val,highlight)=>val?`
+    <tr style="${highlight?'background:#fff0f0;':''}">
+      <td style="padding:8px 12px;font-size:11pt;width:30%;color:#666;font-weight:600;border-bottom:1px solid #eee">${icon} ${label}</td>
+      <td style="padding:8px 12px;font-size:11pt;font-weight:700;color:#111;border-bottom:1px solid #eee">${val}</td>
+    </tr>`:'';
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Medical Card — ${nm}</title>
+  <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;padding:20mm;color:#111;}
+  @page{size:A5;margin:15mm;}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}</style>
+  </head><body>
+  <div style="border:3px solid #b85c00;border-radius:8px;overflow:hidden">
+    <div style="background:#b85c00;color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:9pt;letter-spacing:0.15em;text-transform:uppercase;opacity:0.8">Die Akker Koffiehuis — Staff Medical Card</div>
+        <div style="font-size:18pt;font-weight:900;margin-top:2px">${nm}</div>
+        <div style="font-size:9pt;opacity:0.85">${s.role||''} · ${s.division||''}</div>
+      </div>
+      ${s.blood_type?`<div style="background:#fff;color:#b85c00;font-size:22pt;font-weight:900;border-radius:6px;padding:6px 14px;text-align:center"><div style="font-size:7pt;font-weight:600;margin-bottom:2px">BLOOD TYPE</div>${s.blood_type}</div>`:''}
+    </div>
+    <table style="width:100%;border-collapse:collapse;background:#fff">
+      ${row('📞','Emergency Contact', s.emergency_name?(s.emergency_name+(s.emergency_phone?' — '+s.emergency_phone:'')):s.emergency_phone, false)}
+      ${row('🏥','Medical Aid',   s.medical_aid, false)}
+      ${row('⚠️','ALLERGIES',     s.allergies, true)}
+      ${row('💊','Conditions',    s.conditions, false)}
+      ${row('💉','Medication',    s.medication, false)}
+      ${row('🪪','SA ID Number',  s.id_number, false)}
+    </table>
+    <div style="background:#fff8f0;padding:8px 14px;font-size:8pt;color:#888;border-top:1px solid #eee">
+      Printed ${new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})} · Die Akker Koffiehuis · Potchefstroom
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:20px"><button onclick="window.print()" style="background:#b85c00;color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:700">🖨 Print</button> <button onclick="window.close()" style="background:#eee;border:1px solid #ccc;padding:10px 22px;border-radius:8px;font-size:13px;cursor:pointer">Close</button></div>
+  </body></html>`;
+  const w=window.open('','_blank','width=700,height=600');w.document.write(html);w.document.close();
+}
+
 function openDocModal(nm){
   document.getElementById('docModalName').textContent=nm+' — Documents';
   document.getElementById('docStaffName').value=nm;
@@ -6061,6 +6132,19 @@ function openDocModal(nm){
     emergDiv.innerHTML=s?.emergency_name||s?.emergency_phone
       ?`<strong>${s.emergency_name||'—'}</strong>${s.emergency_phone?` <a href="tel:${s.emergency_phone}" style="color:var(--burg);font-weight:700">📞 ${s.emergency_phone}</a>`:''}`
       :'<span style="color:var(--muted)">No emergency contact on file — add in Staff Management</span>';
+  }
+  // Medical information
+  const medDiv=document.getElementById('docMedInfo');
+  if(medDiv){
+    const row=(icon,label,val)=>val?`<div style="display:flex;gap:0.5rem"><span style="flex-shrink:0">${icon}</span><span><strong style="font-size:0.72rem;color:#b85c00">${label}:</strong> ${val}</span></div>`:'';
+    const medHtml=[
+      row('🩸','Blood Type', s?.blood_type),
+      row('🏥','Medical Aid', s?.medical_aid),
+      row('⚠️','Allergies',   s?.allergies),
+      row('💊','Conditions',  s?.conditions),
+      row('💉','Medication',  s?.medication),
+    ].filter(Boolean).join('');
+    medDiv.innerHTML=medHtml||'<span style="color:var(--muted);font-size:0.8rem">No medical information on file — add in Staff Management</span>';
   }
   // Populate manager dropdown
   const mgrSel=document.getElementById('newDocManager');
