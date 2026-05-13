@@ -668,6 +668,8 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
             <div class="stat cr"><div class="snum nr" id="ds-out">—</div><div class="slbl">Out of Stock</div></div>
           </div>
         </div>
+        <div class="stitle">GP Alerts</div>
+        <div id="dashGPAlerts"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
         <div class="stitle">Low Stock Alerts</div>
         <div class="card" id="dashAl"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
         <div class="stitle">Recent Activity</div>
@@ -1018,6 +1020,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
         <div class="ctabs" id="recipeMainTabs" style="margin-bottom:0.8rem">
           <button class="ct act" onclick="switchRecipeTab('dishes',this)">🍳 Dishes</button>
           <button class="ct" onclick="switchRecipeTab('ingredients',this)">🥩 Ingredient Prices</button>
+          <button class="ct" onclick="switchRecipeTab('gphealth',this)" id="gpHealthTabBtn">📊 GP Health</button>
         </div>
 
         <!-- DISHES TAB -->
@@ -1039,6 +1042,20 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
             <div class="stat cr"><div class="snum nr" id="rc-theoretical">—</div><div class="slbl">Theoretical Cost</div></div>
           </div>
           <div id="recipeList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading recipes...</div></div>
+        </div>
+
+        <!-- GP HEALTH TAB -->
+        <div id="recipeTabGPHealth" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem">
+            <div style="font-size:0.82rem;color:var(--muted)">Every dish ranked by GP health. Target: food cost ≤35% · GP ≥65%.</div>
+            <div style="display:flex;align-items:center;gap:0.5rem">
+              <label style="font-size:0.75rem;color:var(--muted)">GP Target %</label>
+              <input type="number" id="gpTargetInput" value="65" min="1" max="99" onchange="renderGPHealth()"
+                style="width:60px;border:1px solid var(--border);border-radius:7px;padding:0.3rem 0.5rem;font-size:0.85rem;font-family:inherit;text-align:center">
+            </div>
+          </div>
+          <div class="sgrid" style="margin-bottom:1rem" id="gpHealthSummary"></div>
+          <div id="gpHealthList"></div>
         </div>
 
         <!-- INGREDIENT PRICES TAB -->
@@ -2556,6 +2573,37 @@ function renderDash(){
   document.getElementById('ds-ok').textContent=DB.filter(i=>i.stock>i.min_level).length;
   document.getElementById('ds-low').textContent=low.filter(i=>i.stock>0).length;
   document.getElementById('ds-out').textContent=low.filter(i=>i.stock<=0).length;
+  // GP Alerts widget
+  const gpEl=document.getElementById('dashGPAlerts');
+  if(gpEl){
+    const problems=recipeData.map(r=>{
+      const cost=calcRecipeCost(r);const price=r.price||0;
+      const gp=price>0?Math.round(100-(cost/price*100)):null;
+      return{...r,cost,gp};
+    }).filter(r=>r.gp!==null&&r.gp<65).sort((a,b)=>a.gp-b.gp);
+    if(!problems.length){
+      gpEl.innerHTML='<div class="card" style="text-align:center;padding:1.2rem;color:var(--green)">✅ All dishes above 65% GP — looking healthy!</div>';
+    } else {
+      gpEl.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
+        ${problems.slice(0,5).map(r=>{
+          const col=r.gp<0?'var(--red)':r.gp<45?'var(--red)':'var(--gold)';
+          const bg=r.gp<0?'#fff0f0':r.gp<45?'#fff5f5':'#fffbe6';
+          const tag=r.gp<0?'🚨 Negative GP':r.gp<45?'⚠️ Critical':'🟡 Low GP';
+          return `<div style="display:flex;align-items:center;padding:0.7rem 1rem;border-bottom:1px solid var(--border-s);background:${bg};gap:0.8rem">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:0.88rem">${r.name}</div>
+              <div style="font-size:0.7rem;color:var(--muted)">R${r.price} · Cost R${r.cost.toFixed(2)}</div>
+            </div>
+            <span style="font-size:0.68rem;font-weight:700;color:${col};white-space:nowrap">${tag}</span>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:${col};min-width:48px;text-align:right">${r.gp}%</div>
+            <button onclick="go('recipes');setTimeout(()=>{switchRecipeTab('gphealth',document.getElementById('gpHealthTabBtn'));},200)"
+              style="background:none;border:1px solid var(--border);border-radius:6px;padding:0.25rem 0.6rem;font-size:0.7rem;cursor:pointer;color:var(--muted);white-space:nowrap">Review →</button>
+          </div>`;
+        }).join('')}
+        ${problems.length>5?`<div style="text-align:center;padding:0.5rem;font-size:0.75rem;color:var(--muted)">${problems.length-5} more dishes below 65% GP — <button onclick="go('recipes');setTimeout(()=>{switchRecipeTab('gphealth',document.getElementById('gpHealthTabBtn'));},200)" style="background:none;border:none;color:var(--burg);font-weight:700;cursor:pointer">View all →</button></div>`:''}
+      </div>`;
+    }
+  }
   // Low stock alerts
   const el=document.getElementById('dashAl');
   if(!low.length){
@@ -9167,12 +9215,139 @@ function initIngredientDB(){
 }
 
 function switchRecipeTab(tab, btn){
-  document.getElementById('recipeTabDishes').style.display = tab==='dishes'?'block':'none';
-  document.getElementById('recipeTabIngredients').style.display = tab==='ingredients'?'block':'none';
+  document.getElementById('recipeTabDishes').style.display       = tab==='dishes'?'block':'none';
+  document.getElementById('recipeTabIngredients').style.display  = tab==='ingredients'?'block':'none';
+  document.getElementById('recipeTabGPHealth').style.display     = tab==='gphealth'?'block':'none';
   document.querySelectorAll('#recipeMainTabs .ct').forEach(b=>b.classList.remove('act'));
   if(btn) btn.classList.add('act');
   if(tab==='ingredients') renderIngPrices();
+  if(tab==='gphealth') renderGPHealth();
 }
+
+function renderGPHealth(){
+  const targetGP = parseFloat(document.getElementById('gpTargetInput')?.value||65);
+  const targetFoodCost = 100 - targetGP;
+
+  // Score every dish that has a price set
+  const scored = recipeData.map(r=>{
+    const cost = calcRecipeCost(r);
+    const price = r.price||0;
+    const foodCostPct = price>0 ? (cost/price*100) : null;
+    const gpPct = foodCostPct!==null ? 100-foodCostPct : null;
+    const gpRand = price>0 ? price-cost : null;
+    // Find biggest cost driver ingredient
+    const ings = (r.ingredients||[]).map(i=>({name:i.name, cost:getIngCost(i.name,i.qty,i.unit)})).sort((a,b)=>b.cost-a.cost);
+    const topIng = ings[0]||null;
+    // Suggested price to hit target GP
+    const suggestedPrice = targetFoodCost>0 ? Math.ceil(cost/(targetFoodCost/100)/5)*5 : null;
+    // Status
+    let status;
+    if(gpPct===null) status='unknown';
+    else if(gpPct<0) status='negative';
+    else if(gpPct<targetGP*0.7) status='critical';
+    else if(gpPct<targetGP) status='warning';
+    else status='healthy';
+    return {...r, cost, price, foodCostPct, gpPct, gpRand, topIng, suggestedPrice, status};
+  }).sort((a,b)=>{
+    const ord={negative:0,critical:1,warning:2,healthy:3,unknown:4};
+    return (ord[a.status]-ord[b.status]) || (a.gpPct??999)-(b.gpPct??999);
+  });
+
+  const counts = {negative:0,critical:0,warning:0,healthy:0,unknown:0};
+  scored.forEach(r=>counts[r.status]++);
+
+  // Summary cards
+  const sumEl = document.getElementById('gpHealthSummary');
+  if(sumEl) sumEl.innerHTML = `
+    <div class="stat cr" style="cursor:pointer" onclick="gpHealthFilter='negative';renderGPHealth()">
+      <div class="snum nr">${counts.negative}</div><div class="slbl">🚨 Negative GP</div></div>
+    <div class="stat cr" style="cursor:pointer;opacity:0.8" onclick="gpHealthFilter='critical';renderGPHealth()">
+      <div class="snum nr">${counts.critical}</div><div class="slbl">⚠️ Critical</div></div>
+    <div class="stat co" style="cursor:pointer" onclick="gpHealthFilter='warning';renderGPHealth()">
+      <div class="snum no">${counts.warning}</div><div class="slbl">🟡 Below Target</div></div>
+    <div class="stat cg" style="cursor:pointer" onclick="gpHealthFilter='healthy';renderGPHealth()">
+      <div class="snum ng">${counts.healthy}</div><div class="slbl">✅ Healthy</div></div>`;
+
+  const filt = window.gpHealthFilter||'all';
+  const visible = filt==='all' ? scored : scored.filter(r=>r.status===filt);
+
+  // Filter bar
+  const listEl = document.getElementById('gpHealthList');
+  if(!listEl) return;
+
+  const filterBar = `<div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.8rem">
+    ${[['all','All Dishes'],['negative','🚨 Negative'],['critical','⚠️ Critical'],['warning','🟡 Below Target'],['healthy','✅ Healthy'],['unknown','❓ No Price']].map(([v,l])=>
+      `<button class="ct ${(window.gpHealthFilter||'all')===v?'act':''}" onclick="gpHealthFilter='${v}';renderGPHealth()">${l}</button>`
+    ).join('')}
+  </div>`;
+
+  if(!visible.length){
+    listEl.innerHTML = filterBar+'<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No dishes in this category.</div>';
+    return;
+  }
+
+  const rows = visible.map(r=>{
+    const statusColor = {negative:'var(--red)',critical:'var(--red)',warning:'var(--gold)',healthy:'var(--green)',unknown:'var(--muted)'}[r.status];
+    const statusBg    = {negative:'#fff0f0',critical:'#fff5f5',warning:'#fffbe6',healthy:'#f0faf3',unknown:'var(--surface)'}[r.status];
+    const gpLabel = r.gpPct===null?'—':`${r.gpPct<0?'':r.gpPct.toFixed(1)}${r.gpPct<0?r.gpPct.toFixed(1)+'%':'%'}`;
+    const gpColor = r.gpPct===null?'var(--muted)':r.gpPct<0?'var(--red)':r.gpPct<targetGP?'var(--gold)':'var(--green)';
+
+    // Diagnosis line
+    let diagnosis = '';
+    if(r.status==='negative') diagnosis = `Selling price (R${r.price}) is <strong style="color:var(--red)">lower than ingredient cost</strong> (R${r.cost.toFixed(2)}).`;
+    else if(r.status==='critical'||r.status==='warning'){
+      const gap = r.price - (r.suggestedPrice||0);
+      diagnosis = `Food cost is ${r.foodCostPct?.toFixed(1)}% — needs to be ≤${targetFoodCost}%.${r.topIng?` Biggest driver: <strong>${r.topIng.name}</strong> (R${r.topIng.cost.toFixed(2)}).`:''}`;
+    }
+    const needsFix = r.status==='negative'||r.status==='critical'||r.status==='warning';
+    const priceFix = needsFix && r.suggestedPrice && r.suggestedPrice!==r.price
+      ? `<div style="margin-top:0.5rem;padding:0.4rem 0.7rem;background:rgba(0,0,0,0.04);border-radius:7px;font-size:0.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem">
+          <span>💡 To reach <strong>${targetGP}% GP</strong>, price should be at least <strong style="color:var(--ink)">R${r.suggestedPrice}</strong></span>
+          ${canEdit()?`<button onclick="quickFixPrice(${r.id},${r.suggestedPrice})" style="background:var(--burg);color:#fff;border:none;border-radius:6px;padding:0.25rem 0.7rem;font-size:0.72rem;font-weight:700;cursor:pointer">Apply Price →</button>`:''}
+        </div>` : '';
+
+    return `<div style="background:${statusBg};border:1px solid ${r.status==='healthy'?'var(--border)':statusColor+'44'};border-radius:10px;padding:0.8rem 1rem;margin-bottom:0.5rem">
+      <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px">
+          <div style="font-weight:700;font-size:0.92rem">${r.name}</div>
+          <div style="font-size:0.7rem;color:var(--muted)">${r.category||r.cat||'—'} · R${r.price||'no price'}</div>
+        </div>
+        <div style="display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap">
+          <div style="text-align:center">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:${gpColor};line-height:1">${gpLabel}</div>
+            <div style="font-size:0.6rem;color:var(--muted)">GP</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--ink);line-height:1">R${r.cost.toFixed(2)}</div>
+            <div style="font-size:0.6rem;color:var(--muted)">cost</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:${r.gpRand>=0?'var(--green)':'var(--red)'};line-height:1">${r.gpRand!==null?'R'+r.gpRand.toFixed(2):'—'}</div>
+            <div style="font-size:0.6rem;color:var(--muted)">profit/plate</div>
+          </div>
+          ${canEdit()?`<button onclick="openEditRecipe(${r.id})" style="background:none;border:1px solid var(--border);border-radius:7px;padding:0.3rem 0.7rem;font-size:0.72rem;cursor:pointer;color:var(--muted)">Edit ›</button>`:''}
+        </div>
+      </div>
+      ${diagnosis?`<div style="font-size:0.78rem;color:var(--ink);margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid ${statusColor}22">${diagnosis}</div>`:''}
+      ${priceFix}
+    </div>`;
+  }).join('');
+
+  listEl.innerHTML = filterBar + rows;
+}
+
+async function quickFixPrice(recipeId, newPrice){
+  if(!confirm(`Set selling price to R${newPrice}?`)) return;
+  const {error} = await SB.from('recipes').update({price:newPrice}).eq('id',recipeId);
+  if(error){showToast('Error updating price.',true);return;}
+  const r = recipeData.find(x=>x.id===recipeId);
+  if(r) r.price=newPrice;
+  showToast(`Price updated to R${newPrice} ✓`);
+  renderGPHealth();
+  renderRecipes();
+}
+
+let gpHealthFilter = 'all';
 
 const ING_CATS = ['All','Meat','Dairy','Produce','Bakery','Sauces','Bar','Dry Goods','Other'];
 
