@@ -238,7 +238,9 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .fg{margin-bottom:0.9rem;}
 .fg label{display:block;font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
   color:var(--muted);margin-bottom:0.36rem;}
-.fg input,.fg select,.fg textarea{width:100%;background:var(--cream);border:1.5px solid var(--border);
+select{background:var(--surface)!important;color:var(--ink)!important;border-color:var(--border)!important;}
+select option{background:#1e1e28;color:var(--ink);}
+.fg input,.fg select,.fg textarea{width:100%;background:var(--surface);border:1.5px solid var(--border);
   border-radius:var(--r);padding:0.7rem 0.95rem;font-family:'Karla',sans-serif;font-size:0.93rem;
   color:var(--ink);outline:none;transition:var(--t);}
 .fg input:focus,.fg select:focus,.fg textarea:focus{
@@ -461,9 +463,9 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .recipe-cost-pct.warn{color:var(--gold);}
 .recipe-cost-pct.bad{color:var(--red);}
 .recipe-ing-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;}
-.recipe-ing-row input[type=text]{flex:2;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.6rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;}
-.recipe-ing-row input[type=number]{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;text-align:center;}
-.recipe-ing-row select{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;}
+.recipe-ing-row input[type=text]{flex:2;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.6rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--surface);color:var(--ink);outline:none;}
+.recipe-ing-row input[type=number]{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--surface);color:var(--ink);outline:none;text-align:center;}
+.recipe-ing-row select{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.82rem;background:var(--surface);color:var(--ink);outline:none;}
 
 /* ── ANALYTICS ── */
 .an-bar-wrap{margin-bottom:0.65rem;}
@@ -485,9 +487,9 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .roster-flag-btn:hover{opacity:1;border-color:var(--burg);}
 .roster-flag-btn.active-leave{background:var(--gold-l);border-color:#f0d090;opacity:1;}
 .roster-flag-btn.active-ph{background:var(--red-l);border-color:var(--red-b);opacity:1;}
-.roster-day.leave-day{background:#fffbef!important;border-left:3px solid var(--gold);}
-.roster-day.ph-day{background:#fff5f5!important;border-left:3px solid var(--red);}
-.roster-day.pending-leave-day{background:#fffdf0!important;border-left:3px dashed #f0d090;opacity:0.85;}
+.roster-day.leave-day{background:rgba(232,184,75,0.08)!important;border-left:3px solid var(--gold);}
+.roster-day.ph-day{background:rgba(224,58,58,0.1)!important;border-left:3px solid var(--red);}
+.roster-day.pending-leave-day{background:rgba(232,184,75,0.05)!important;border-left:3px dashed rgba(232,184,75,0.4);opacity:0.85;}
 
 /* ── WAITER LOG ── */
 .wl-summary-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);padding:0.9rem 1rem;margin-bottom:0.6rem;box-shadow:var(--sh);}
@@ -2129,7 +2131,7 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
       <div id="docEmergInfo" style="font-size:0.82rem;color:var(--ink)">—</div>
     </div>
     <!-- Medical information display -->
-    <div id="docMedSection" style="background:#fff8f0;border:1px solid #f0c080;border-radius:10px;padding:0.8rem;margin-bottom:1rem">
+    <div id="docMedSection" style="background:rgba(232,184,75,0.07);border:1px solid rgba(232,184,75,0.2);border-radius:10px;padding:0.8rem;margin-bottom:1rem">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
         <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#b85c00">🏥 Medical Information</div>
         <button onclick="printMedicalCard()" style="background:#b85c00;color:#fff;border:none;border-radius:6px;padding:0.22rem 0.6rem;font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">🖨 Print for Paramedics</button>
@@ -2164,7 +2166,7 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
         </div>
       </div>
       <!-- Incident-specific fields — shown only for Incident Report -->
-      <div id="incidentFields" style="display:none;background:#fff8f0;border:1px solid #f0c080;border-radius:10px;padding:0.9rem 1rem;margin-top:0.5rem">
+      <div id="incidentFields" style="display:none;background:rgba(232,184,75,0.07);border:1px solid rgba(232,184,75,0.2);border-radius:10px;padding:0.9rem 1rem;margin-top:0.5rem">
         <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#b85c00;margin-bottom:0.7rem">🚑 Incident Details</div>
         <div class="fg2">
           <div class="fg"><label>Date &amp; Time of Incident <span style="color:var(--red)">*</span></label>
@@ -2726,7 +2728,7 @@ function renderDB(){
     const pct=i.min_level>0?Math.min(100,Math.round(i.stock/i.min_level*100)):100;
     const col=i.stock<=0?'var(--red)':i.stock<=i.min_level?'var(--orange)':'var(--green)';
     const isDup=names.filter(n=>n===i.name.toLowerCase().trim()).length>1;
-    return `<div style="display:flex;align-items:center;padding:0.7rem 0;border-bottom:1px solid var(--surface);gap:0.7rem;cursor:${ce?'pointer':'default'}${isDup?';background:#fff9f0':''}" onclick="${ce?`openEditStock(${i.id})`:''}" >
+    return `<div style="display:flex;align-items:center;padding:0.7rem 0;border-bottom:1px solid var(--surface);gap:0.7rem;cursor:${ce?'pointer':'default'}${isDup?';background:rgba(232,100,30,0.1)':''}" onclick="${ce?`openEditStock(${i.id})`:''}" >
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:0.88rem">${i.name}${isDup?'<span style="font-size:0.6rem;background:var(--gold-l);color:var(--gold);border:1px solid #f0d090;padding:0.1rem 0.4rem;border-radius:4px;margin-left:0.4rem;font-weight:700">DUP</span>':''}</div>
         <div style="font-size:0.7rem;color:var(--muted)">${CEM[i.category]||''} ${i.category} · <span style="background:var(--surface);padding:0.1rem 0.4rem;border-radius:3px;font-size:0.68rem">${i.supplier}</span>${i.section?`<span style="margin-left:0.4rem;background:var(--burg-l,#f9eff1);color:var(--burg);border:1px solid #eac8d0;padding:0.1rem 0.4rem;border-radius:3px;font-size:0.65rem;font-weight:700">${i.section}</span>`:''}</div>
@@ -3872,12 +3874,12 @@ function renderCUCards(){
         <div class="cf"><label>Staff 25%</label><input type="number" inputmode="decimal" placeholder="0.00" value="${w.s2||''}" oninput="cuU(${i},'s2',this.value)"></div>
       </div>
       <!-- Cash Tips Taken row -->
-      <div style="padding:0.5rem 0.8rem;border-top:1px solid var(--surface);background:#fffbf0">
+      <div style="padding:0.5rem 0.8rem;border-top:1px solid var(--surface);background:rgba(232,184,75,0.06)">
         <div style="display:flex;align-items:center;gap:0.7rem">
           <span style="font-size:0.8rem;font-weight:700;color:#b85c10;white-space:nowrap">💵 Cash Tips Taken</span>
           <input type="number" inputmode="decimal" placeholder="0.00" value="${ct||''}"
             oninput="cuU(${i},'ct',this.value)"
-            style="flex:1;border:1px solid #e8c87a;border-radius:6px;padding:0.4rem 0.6rem;font-size:0.88rem;background:#fff;font-family:'Karla',sans-serif;text-align:right;max-width:140px">
+            style="flex:1;border:1px solid rgba(232,184,75,0.3);border-radius:6px;padding:0.4rem 0.6rem;font-size:0.88rem;background:var(--surface);color:var(--ink);font-family:'Karla',sans-serif;text-align:right;max-width:140px">
           <span style="font-size:0.72rem;color:var(--muted)">${ct>0?'Already paid out':'Amount waiter already took in cash'}</span>
         </div>
       </div>
@@ -3961,7 +3963,7 @@ function updCUTots(){
       <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${tc}">${totalTips>=0?'R ':'−R '}${Math.abs(totalTips).toFixed(2)}</span>
     </div>
     ${tCT>0?`<div class="sr"><span>💵 Cash Tips Already Taken</span><span class="am" style="color:#b85c10;font-weight:700">−R ${tCT.toFixed(2)}</span></div>`:''}
-    ${tCT>0?`<div style="background:#fffbf0;border:1px solid #e8c87a;border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin:0.2rem 0 0.4rem">
+    ${tCT>0?`<div style="background:rgba(232,184,75,0.08);border:1px solid rgba(232,184,75,0.25);border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin:0.2rem 0 0.4rem">
       <span style="font-weight:700">Tips Still to Pay Out</span>
       <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#b85c10">R ${Math.max(0,totalTips-tCT).toFixed(2)}</span>
     </div>`:''}
@@ -4522,7 +4524,7 @@ function renderRGrid(){
           <div class="roster-day-date">${d.getDate()}</div>
           ${pendingLeave?`
             <div style="display:flex;flex-direction:column;align-items:center;padding:0.3rem 0;gap:0.3rem">
-              <div style="background:#fff8e6;border:1px solid #f0d090;border-radius:6px;padding:0.25rem 0.5rem;font-size:0.65rem;font-weight:700;color:var(--gold)">⏳ PENDING</div>
+              <div style="background:rgba(232,184,75,0.12);border:1px solid rgba(232,184,75,0.3);border-radius:6px;padding:0.25rem 0.5rem;font-size:0.65rem;font-weight:700;color:var(--gold)">⏳ PENDING</div>
               <div style="font-size:0.65rem;color:var(--muted)">awaiting approval</div>
             </div>
           `:isLeave?`
@@ -5141,8 +5143,8 @@ function renderPayoutSummary(){
       const initials = (s.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const paid = !!payPaid[s.name];
       const nameSafe = (s.name||'').replace(/'/g,"\\'");
-      html += `<div style="display:flex;align-items:center;padding:0.78rem 1.3rem;border-bottom:1px solid var(--border-s);gap:0.9rem;${paid?'background:#f4f4f4;opacity:0.6;':''}">
-        <div style="width:36px;height:36px;border-radius:50%;background:${paid?'#bbb':sec.color};display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
+      html += `<div style="display:flex;align-items:center;padding:0.78rem 1.3rem;border-bottom:1px solid var(--border-s);gap:0.9rem;${paid?'background:rgba(255,255,255,0.03);opacity:0.55;':''}">
+        <div style="width:36px;height:36px;border-radius:50%;background:${paid?'rgba(255,255,255,0.15)':sec.color};display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:0.95rem;${paid?'color:var(--muted);text-decoration:line-through;':''}">${s.name}</div>
           <div style="font-size:0.72rem;color:var(--muted)">${s.role||sec.label}${s.hrs?` · ${s.hrs} hrs`:''}</div>
@@ -5687,7 +5689,7 @@ function renderLeaveCalendar(){
       ${cells}
     </div>
     <div style="display:flex;gap:1rem;margin-top:1rem;font-size:0.75rem;align-items:center;flex-wrap:wrap">
-      <span style="display:flex;align-items:center;gap:0.4rem"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#fde8e8;border:1px solid #f5c0c0"></span> Leave / Absent</span>
+      <span style="display:flex;align-items:center;gap:0.4rem"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:rgba(224,58,58,0.25);border:1px solid rgba(224,58,58,0.4)"></span> Leave / Absent</span>
       <span style="display:flex;align-items:center;gap:0.4rem"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:var(--burg)"></span> Today</span>
       <span style="color:var(--muted)">Hover a date to see who's on leave</span>
     </div>
