@@ -3958,7 +3958,7 @@ function updCUTots(){
     <div class="sr"><span>Total Staff 25%</span><span class="am">R ${tS.toFixed(2)}</span></div>
     ${tBkUnpaid>0?`<div class="sr"><span>⚠️ Breakage Deducted from Tips (${cuD.waiters.filter(w=>!w.bk).length} × R10 not paid)</span><span class="am nr">−R ${tBkUnpaid.toFixed(2)}</span></div>`:''}
     ${tBkPaid>0?`<div class="sr"><span>✅ Breakage Collected in Cash (${cuD.waiters.filter(w=>w.bk).length} × R10 paid)</span><span class="am" style="color:var(--green)">R ${tBkPaid.toFixed(2)}</span></div>`:''}
-    <div style="background:${totalTips>=0?'#f0faf4':'var(--red-l)'};border:1px solid ${totalTips>=0?'var(--green-b)':'var(--red-b)'};border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin:0.4rem 0">
+    <div style="background:${totalTips>=0?'var(--green-l)':'var(--red-l)'};border:1px solid ${totalTips>=0?'var(--green-b)':'var(--red-b)'};border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin:0.4rem 0">
       <span style="font-weight:700">Total Tips</span>
       <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${tc}">${totalTips>=0?'R ':'−R '}${Math.abs(totalTips).toFixed(2)}</span>
     </div>
