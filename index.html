@@ -120,11 +120,13 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .lv-dot{width:5px;height:5px;border-radius:50%;background:var(--burg);flex-shrink:0;}
 .lv-cal-day.today .lv-dot{background:#fff;}
 .ni{display:flex;align-items:center;gap:0.75rem;padding:0.62rem 0.88rem;border-radius:9px;cursor:pointer;
-  color:rgba(255,255,255,0.65);font-size:0.9rem;font-weight:500;transition:var(--t);margin-bottom:0.1rem;}
-.ni:hover{background:rgba(255,255,255,0.12);color:#fff;}
-.ni.act{background:rgba(255,255,255,0.2);color:#fff;font-weight:700;
-  border:1px solid rgba(255,255,255,0.25);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);}
-.ni .ic{font-size:1.05rem;width:22px;text-align:center;flex-shrink:0;}
+  color:rgba(255,255,255,0.38);font-size:0.9rem;font-weight:500;transition:var(--t);margin-bottom:0.1rem;}
+.ni:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);}
+.ni.act{background:rgba(255,255,255,0.07);color:#fff;font-weight:600;
+  border-left:2px solid var(--burg2);padding-left:calc(0.88rem - 2px);}
+.ni .ic{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;opacity:0.7;}
+.ni.act .ic{opacity:1;}
+.ni .ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
 .ni .lb{flex:1;}
 .ni .bdg{background:var(--gold);color:#1c1015;font-size:0.6rem;font-weight:700;padding:0.12rem 0.5rem;border-radius:20px;}
 .ngh{display:flex;align-items:center;gap:0.75rem;padding:0.56rem 0.88rem;border-radius:9px;cursor:pointer;
@@ -611,18 +613,18 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
       </div>
     </div>
     <div class="sb-nav">
-      <div class="ni act" onclick="goGroup('overview',this)" id="ng-overview"><span class="ic">📊</span><span class="lb">Overview</span></div>
-      <div class="ni" onclick="goGroup('operations',this)" id="ng-operations"><span class="ic">📦</span><span class="lb">Operations</span></div>
-      <div class="ni" onclick="goGroup('finance',this)" id="ng-finance"><span class="ic">💰</span><span class="lb">Finance</span></div>
-      <div class="ni" onclick="goGroup('people',this)" id="ng-people"><span class="ic">👥</span><span class="lb">HR</span></div>
-      <div class="ni" onclick="goGroup('system',this)" id="ng-system"><span class="ic">⚙️</span><span class="lb">System</span></div>
+      <div class="ni act" onclick="goGroup('overview',this)" id="ng-overview"><span class="ic"><svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1.2"/><rect x="9" y="1" width="6" height="6" rx="1.2"/><rect x="1" y="9" width="6" height="6" rx="1.2"/><rect x="9" y="9" width="6" height="6" rx="1.2"/></svg></span><span class="lb">Overview</span></div>
+      <div class="ni" onclick="goGroup('operations',this)" id="ng-operations"><span class="ic"><svg viewBox="0 0 16 16"><path d="M8 1.5L14 5v6L8 14.5L2 11V5L8 1.5Z"/><path d="M8 1.5V14.5"/><path d="M2 5l6 3.5L14 5"/></svg></span><span class="lb">Operations</span></div>
+      <div class="ni" onclick="goGroup('finance',this)" id="ng-finance"><span class="ic"><svg viewBox="0 0 16 16"><polyline points="2,12 5.5,7.5 9,9.5 14,4"/><line x1="2" y1="14" x2="14" y2="14"/></svg></span><span class="lb">Finance</span></div>
+      <div class="ni" onclick="goGroup('people',this)" id="ng-people"><span class="ic"><svg viewBox="0 0 16 16"><circle cx="8" cy="5" r="3"/><path d="M2 14.5c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg></span><span class="lb">HR</span></div>
+      <div class="ni" onclick="goGroup('system',this)" id="ng-system"><span class="ic"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.2 3.2l1 1M11.8 11.8l1 1M12.8 3.2l-1 1M4.2 11.8l-1 1"/></svg></span><span class="lb">System</span></div>
 
       <!-- Hidden badge carrier so pending count badge still works -->
       <span id="pendBdg" style="display:none">0</span>
       <span id="xeroBadge" style="display:none"></span>
       <span id="pricingAlertBdg" style="display:none"></span>
     </div>
-    <div class="sb-ft"><div class="lout" onclick="doLogout()"><span>🚪</span> Sign Out</div></div>
+    <div class="sb-ft"><div class="lout" onclick="doLogout()"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/><polyline points="11,5 14,8 11,11"/><line x1="14" y1="8" x2="6" y2="8"/></svg> Sign Out</div></div>
   </nav>
 
   <div class="main">
