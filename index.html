@@ -2593,7 +2593,7 @@ function renderDash(){
       gpEl.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
         ${problems.slice(0,5).map(r=>{
           const col=r.gp<0?'var(--red)':r.gp<45?'var(--red)':'var(--gold)';
-          const bg=r.gp<0?'#fff0f0':r.gp<45?'#fff5f5':'#fffbe6';
+          const bg=r.gp<0?'rgba(224,58,58,0.08)':r.gp<45?'rgba(224,58,58,0.05)':'rgba(232,184,75,0.07)';
           const tag=r.gp<0?'🚨 Negative GP':r.gp<45?'⚠️ Critical':'🟡 Low GP';
           return `<div style="display:flex;align-items:center;padding:0.7rem 1rem;border-bottom:1px solid var(--border-s);background:${bg};gap:0.8rem">
             <div style="flex:1;min-width:0">
@@ -3845,7 +3845,7 @@ function renderCUCards(){
     const shiftColors={Morning:'#1a4a7a',Afternoon:'#b85c10',Evening:'#7a1528'};
     const hdrBg=shiftColors[wShift]||'var(--burg)';
     const bkBorderCol=bkPaid?'var(--green)':'#c0392b';
-    const bkBgCol=bkPaid?'var(--green-l)':'#fff0f0';
+    const bkBgCol=bkPaid?'var(--green-l)':'rgba(224,58,58,0.08)';
     const bkTxtCol=bkPaid?'var(--green)':'#c0392b';
     const bkIcon=bkPaid?'✅':'⚠️';
     const bkLabel=bkPaid?'Breakage R10 — Paid':'Breakage R10 — Not Paid (deducted)';
@@ -3906,7 +3906,7 @@ function cuToggleBreakage(i){
   if(btn){
     // Paid = green, Not Paid = red warning
     btn.style.borderColor=bkPaid?'var(--green)':'#c0392b';
-    btn.style.background=bkPaid?'var(--green-l)':'#fff0f0';
+    btn.style.background=bkPaid?'var(--green-l)':'rgba(224,58,58,0.08)';
     btn.style.color=bkPaid?'var(--green)':'#c0392b';
     btn.innerHTML=`<span style="font-size:1rem">${bkPaid?'✅':'⚠️'}</span><span>Breakage R10 ${bkPaid?'— Paid':'— Not Paid (deducted)'}</span>`;
   }
@@ -9313,7 +9313,7 @@ function renderGPHealth(){
 
   const rows = visible.map(r=>{
     const statusColor = {negative:'var(--red)',critical:'var(--red)',warning:'var(--gold)',healthy:'var(--green)',unknown:'var(--muted)'}[r.status];
-    const statusBg    = {negative:'#fff0f0',critical:'#fff5f5',warning:'#fffbe6',healthy:'#f0faf3',unknown:'var(--surface)'}[r.status];
+    const statusBg    = {negative:'rgba(224,58,58,0.08)',critical:'rgba(224,58,58,0.05)',warning:'rgba(232,184,75,0.07)',healthy:'rgba(45,186,101,0.06)',unknown:'var(--surface)'}[r.status];
     const gpLabel = r.gpPct===null?'—':`${r.gpPct<0?'':r.gpPct.toFixed(1)}${r.gpPct<0?r.gpPct.toFixed(1)+'%':'%'}`;
     const gpColor = r.gpPct===null?'var(--muted)':r.gpPct<0?'var(--red)':r.gpPct<targetGP?'var(--gold)':'var(--green)';
 
@@ -9326,7 +9326,7 @@ function renderGPHealth(){
     }
     const needsFix = r.status==='negative'||r.status==='critical'||r.status==='warning';
     const priceFix = needsFix && r.suggestedPrice && r.suggestedPrice!==r.price
-      ? `<div style="margin-top:0.5rem;padding:0.4rem 0.7rem;background:rgba(0,0,0,0.04);border-radius:7px;font-size:0.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem">
+      ? `<div style="margin-top:0.5rem;padding:0.4rem 0.7rem;background:rgba(255,255,255,0.04);border-radius:7px;font-size:0.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem">
           <span>💡 To reach <strong>${targetGP}% GP</strong>, price should be at least <strong style="color:var(--ink)">R${r.suggestedPrice}</strong></span>
           ${canEdit()?`<button onclick="quickFixPrice(${r.id},${r.suggestedPrice})" style="background:var(--burg);color:#fff;border:none;border-radius:6px;padding:0.25rem 0.7rem;font-size:0.72rem;font-weight:700;cursor:pointer">Apply Price →</button>`:''}
         </div>` : '';
