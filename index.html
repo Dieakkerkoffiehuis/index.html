@@ -215,8 +215,8 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
   text-transform:uppercase;padding:0.18rem 0.58rem;border-radius:20px;line-height:1.4;}
 .bgg{background:var(--green-l);color:var(--green);border:1px solid var(--green-b);}
 .bgr{background:var(--red-l);color:var(--red);border:1px solid var(--red-b);}
-.bgo{background:var(--gold-l);color:var(--gold);border:1px solid #f0d090;}
-.bgb{background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;}
+.bgo{background:var(--gold-l);color:var(--gold);border:1px solid rgba(232,184,75,0.3);}
+.bgb{background:var(--blue-l);color:var(--blue);border:1px solid rgba(77,143,212,0.25);}
 .bgm{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
 
 /* ── BUTTONS ── */
@@ -404,7 +404,7 @@ select option{background:#1e1e28;color:var(--ink);}
 .leave-row:hover{box-shadow:var(--sh2);}
 .leave-row-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem;}
 .leave-row-meta{font-size:0.72rem;color:var(--muted);line-height:1.6;}
-.lp-annual{background:#e8f0f8;color:var(--blue);border:1px solid #b8cfe8;}
+.lp-annual{background:var(--blue-l);color:var(--blue);border:1px solid rgba(77,143,212,0.25);}
 .lp-sick{background:var(--red-l);color:var(--red);border:1px solid var(--red-b);}
 .lp-unpaid{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
 .lp-family{background:var(--green-l);color:var(--green);border:1px solid var(--green-b);}
@@ -5544,7 +5544,7 @@ function renderSickCycleGrid(){
     const annPct =Math.min(100,Math.round(b.annTaken/(ANNUAL_LEAVE_ALLOWANCE+(b.carryOver||0))*100));
     const sickCol=sickPct>=80?'var(--red)':sickPct>=50?'var(--orange)':'var(--green)';
     const annCol =b.annRem<=2?'var(--red)':b.annRem<=5?'var(--orange)':'var(--blue)';
-    const carryStr=b.carryOver>0?`<span style="font-size:0.62rem;background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;padding:0.1rem 0.4rem;border-radius:20px;font-weight:700">+${b.carryOver} carry</span>`:'';
+    const carryStr=b.carryOver>0?`<span style="font-size:0.62rem;background:var(--blue-l);color:var(--blue);border:1px solid rgba(77,143,212,0.25);padding:0.1rem 0.4rem;border-radius:20px;font-weight:700">+${b.carryOver} carry</span>`:'';
     return `<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.75rem 0.9rem">
       <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
         <div style="width:26px;height:26px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
