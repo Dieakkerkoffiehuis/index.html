@@ -508,12 +508,32 @@ select option{background:#1e1e28;color:var(--ink);}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(10px);
-  background:var(--ink);color:#fff;padding:0.72rem 1.4rem;border-radius:50px;font-size:0.84rem;
-  font-weight:600;z-index:9999;display:none;white-space:nowrap;max-width:90vw;
-  box-shadow:0 8px 30px rgba(0,0,0,0.22),0 2px 8px rgba(0,0,0,0.15);}
-.toast.err{background:var(--red);}
-.toast.on{display:block;animation:toastPop .3s cubic-bezier(0.34,1.4,0.64,1) forwards;}
-@keyframes toastPop{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+  background:#1e1e2e;color:#fff;padding:0.72rem 1.4rem 0.72rem 1.1rem;border-radius:12px;font-size:0.84rem;
+  font-weight:500;z-index:9999;display:none;max-width:min(480px,90vw);
+  box-shadow:0 8px 30px rgba(0,0,0,0.4),0 2px 8px rgba(0,0,0,0.2);
+  border:1px solid rgba(255,255,255,0.08);
+  display:none;align-items:center;gap:0.6rem;cursor:pointer;}
+.toast .toast-icon{font-size:1rem;flex-shrink:0;}
+.toast .toast-msg{flex:1;line-height:1.4;white-space:pre-wrap;word-break:break-word;}
+.toast .toast-close{opacity:0.5;font-size:1.1rem;flex-shrink:0;padding:0 0.2rem;}
+.toast.err{background:#3a1010;border-color:rgba(224,58,58,0.3);color:#fca5a5;}
+.toast.warn{background:#2a1f08;border-color:rgba(232,184,75,0.3);color:#fde68a;}
+.toast.ok{background:#0d2417;border-color:rgba(45,186,101,0.3);color:#6ee7b7;}
+.toast.on{display:flex;animation:toastPop .3s cubic-bezier(0.34,1.4,0.64,1) forwards;}
+@keyframes toastPop{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ── SKELETON LOADING ── */
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.skel{border-radius:6px;background:linear-gradient(90deg,var(--surface) 25%,rgba(255,255,255,0.06) 50%,var(--surface) 75%);
+  background-size:800px 100%;animation:shimmer 1.4s infinite;}
+.skel-line{height:14px;margin-bottom:10px;border-radius:4px;}
+.skel-line.w60{width:60%;}
+.skel-line.w80{width:80%;}
+.skel-line.w40{width:40%;}
+.skel-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);padding:1rem;margin-bottom:0.6rem;}
+.skel-row{display:flex;align-items:center;gap:0.8rem;padding:0.8rem 0;border-bottom:1px solid var(--border-s);}
+.skel-avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;}
+.skel-stat{height:80px;border-radius:var(--r2);flex:1;}
 
 /* ── BOTTOM TAB BAR (mobile only, hidden on desktop) ── */
 .btab-bar{display:none;position:fixed;bottom:0;left:0;right:0;height:58px;background:var(--white);
@@ -578,7 +598,11 @@ select option{background:#1e1e28;color:var(--ink);}
   <p>CONNECTING...</p>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" onclick="this.classList.remove('on')">
+  <span class="toast-icon" id="toastIcon">✓</span>
+  <span class="toast-msg" id="toastMsg"></span>
+  <span class="toast-close">✕</span>
+</div>
 
 <!-- LOGIN -->
 <div id="ls">
@@ -713,7 +737,7 @@ select option{background:#1e1e28;color:var(--ink);}
           <option>Frozen</option><option>Beverages</option><option>Cleaning</option>
         </select>
         <div class="sb2"><span>🔍</span><input type="text" id="stSrch" placeholder="Search items..." oninput="renderST()"></div>
-        <div id="stList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading stock...</div></div>
+        <div id="stList"><div class="skel-card"><div class="skel skel-line w80"></div><div class="skel skel-line w60"></div><div class="skel skel-line w40"></div></div><div class="skel-card"><div class="skel skel-line w60"></div><div class="skel skel-line w80"></div></div></div>
       </div>
 
       <!-- STOCK DB -->
@@ -1364,7 +1388,7 @@ select option{background:#1e1e28;color:var(--ink);}
               <button class="btn bp bsm" onclick="openEditStf(null)">+ Add Staff</button>
             </div>
           </div>
-          <div class="card" style="padding:0.5rem 1rem" id="staffList"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
+          <div class="card" style="padding:0.5rem 1rem" id="staffList"><div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w60"></div><div class="skel skel-line w40"></div></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w80"></div><div class="skel skel-line w40"></div></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w60"></div><div class="skel skel-line w40"></div></div></div></div>
         </div>
 
         <!-- USER LOGINS TAB -->
@@ -1873,18 +1897,13 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
           <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('stockSectionSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
         <div class="card" id="aiSettingsCard">
-          <div class="card-title">🤖 AI Photo Scan — API Key</div>
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">The <strong>📸 Scan Form</strong> feature uses Claude AI to read handwritten stock counts from a photo of the printed form. Enter your Anthropic API key below to enable it.</div>
-          <div class="fg">
-            <label>Anthropic API Key</label>
-            <input type="password" id="anthropicKeyInput" placeholder="sk-ant-api03-..."
-              style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box"
-              oninput="localStorage.setItem('anthropicKey',this.value)">
+          <div class="card-title">🤖 AI Photo Scan</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">The <strong>📸 Scan Form</strong> feature uses Claude AI to read handwritten stock counts from a photo of the printed form.</div>
+          <div style="background:var(--green-l);border:1px solid var(--green-b);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.82rem;color:var(--green);margin-bottom:0.8rem">
+            ✅ <strong>API key secured.</strong> The Anthropic key is stored server-side in Cloudflare — it never touches your browser.
           </div>
-          <div style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;margin-bottom:0.7rem">Get your API key at <strong>console.anthropic.com</strong> → API Keys. The key is stored only on this device.</div>
           <div id="aiKeyStatus" style="font-size:0.78rem;padding:0.5rem 0.7rem;border-radius:8px;display:none"></div>
           <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap">
-            <button class="btn bp bsm" onclick="saveAnthropicKey()">💾 Save Key</button>
             <button class="btn bs bsm" onclick="printStockTemplate()">📥 Download Stock Form</button>
           </div>
         </div>
@@ -1974,7 +1993,8 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
     <button class="md-close" onclick="closeMo('moAddStock')">✕</button>
     <div class="md-title" id="stockMoTitle">Add Stock Item</div>
     <input type="hidden" id="nsId">
-    <div class="fg"><label>Name</label><input type="text" id="nsNm" placeholder="e.g. Chicken Breast"></div>
+    <div class="fg"><label>Name</label><input type="text" id="nsNm" placeholder="e.g. Chicken Breast"
+      oninput="showFieldError('nsNm',this.value.trim()?'':'Item name is required.')"></div>
     <div class="fg2">
       <div class="fg"><label>Category</label>
         <select id="nsCat">
@@ -2045,8 +2065,10 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
     <input type="hidden" id="stfId">
     <div class="fg"><label>Full Name</label><input type="text" id="stfName" placeholder="e.g. Reanne Bruwer"></div>
     <div class="fg2">
-      <div class="fg"><label>SA ID Number</label><input type="text" id="stfIdNum" placeholder="e.g. 0503180361084" maxlength="13" inputmode="numeric"></div>
-      <div class="fg"><label>Phone Number</label><input type="tel" id="stfPhone" placeholder="e.g. 082 555 1234"></div>
+      <div class="fg"><label>SA ID Number</label><input type="text" id="stfIdNum" placeholder="e.g. 0503180361084" maxlength="13" inputmode="numeric"
+      oninput="const r=validateSAID(this.value.trim());showFieldError('stfIdNum',this.value.length>0&&!r.valid?r.msg:'');if(r.valid&&r.dob&&this.value.length===13){const h=this.parentNode.querySelector('.field-ok');if(!h){const d=document.createElement('div');d.className='field-ok';d.style.cssText='font-size:0.7rem;color:var(--green);margin-top:0.25rem;';this.parentNode.appendChild(d);}this.parentNode.querySelector('.field-ok').textContent='✓ Valid — DOB: '+r.dob;}else{const h=this.parentNode.querySelector('.field-ok');if(h)h.remove();}"></div>
+      <div class="fg"><label>Phone Number</label><input type="tel" id="stfPhone" placeholder="e.g. 082 555 1234"
+      oninput="const r=validateSAPhone(this.value.trim());showFieldError('stfPhone',this.value.length>4&&!r.valid?r.msg:'');"></div>
     </div>
     <div class="fg"><label>EFT Account</label><input type="text" id="stfEft" placeholder="e.g. FNB 123456789"></div>
     <div class="fg"><label>Role / Position</label>
@@ -2241,11 +2263,18 @@ async function doLogin(){
   const p   = document.getElementById('lp').value;
   const err = document.getElementById('lerr');
 
-  // All logins — including owners — come from Supabase
+  // Step 1: check custom credentials table
   const {data, error} = await SB.from('staff_logins')
     .select('*').eq('username', u).eq('password', p).eq('active', true).single();
 
   if(error || !data){ err.style.display='block'; return; }
+
+  // Step 2: sign into Supabase Auth so RLS policies pass
+  // Create user app@dieakker.local in Supabase Auth → Users first
+  const APP_AUTH_EMAIL = 'app@dieakker.local';
+  const APP_AUTH_PASS  = 'DieAkker-App-2026!';
+  await SB.auth.signInWithPassword({ email: APP_AUTH_EMAIL, password: APP_AUTH_PASS })
+    .catch(()=>{}); // silent — app still works without RLS if not yet set up
   err.style.display='none';
 
   CU = {
@@ -2404,8 +2433,14 @@ async function loadAllData(){
     document.getElementById('pendBdg').textContent = pendingS.length || '';
   } catch(err) {
     setSyncStatus('err');
-    showToast('Database connection error. Check internet.', true);
-    console.error(err);
+    const hint = !navigator.onLine
+      ? 'You appear to be offline.'
+      : err?.message?.includes('JWT')
+        ? 'Session expired — please refresh and log in again.'
+        : err?.message?.includes('relation') || err?.message?.includes('column')
+          ? 'Database schema mismatch — a table or column may be missing. Check Supabase.'
+          : err?.message || 'Unknown error.';
+    showError('Failed to load data', { message: hint });
   }
 }
 
@@ -2426,9 +2461,12 @@ function goGroup(grpKey,el){
   if(first) go(first.id);
   else showToast('No sections available.',true);
 }
+// Track which panels have been loaded at least once this session
+const _panelLoaded = {};
+
 function go(id){
   const userAccess = CU?.access || [];
-  if(!userAccess.includes(id)){showToast('No access to this section.',true);return;}
+  if(!userAccess.includes(id)){showToast('No access to this section.','err');return;}
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('act'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
   document.getElementById('p-'+id).classList.add('act');
@@ -2437,26 +2475,30 @@ function go(id){
   if(grpKey){const g=document.getElementById('ng-'+grpKey);if(g)g.classList.add('act');}
   document.getElementById('tbTitle').textContent=TTLS[id]||id;
   document.getElementById('tbSub').textContent=TSUBS[id]||'';
+
+  // Lazy-load: panels that fetch fresh data on every visit (time-sensitive)
+  const alwaysRefresh = ['roster','payroll','waiterlog','auditlog','reports','analytics'];
+  // Panels that only load once per session (data doesn't change minute-to-minute)
+  const loadOnce = ['staff','invoices','recipes','pricing','orders','settings'];
+
+  const firstVisit = !_panelLoaded[id];
+  if(firstVisit) _panelLoaded[id] = true;
+
   if(id==='roster') initRosterPanel();
   if(id==='payroll'){ renderPaymentDate(); initPayPeriod(); loadPayrollForPeriod(); }
   if(id==='waiterlog'){ wlToday(); initLeaderboard(); initScheduling(); }
   if(id==='auditlog') loadAuditLog();
-  if(id==='invoices') initInvoicesPanel();
-  if(id==='staff') loadStaffLogins();
+  if(id==='invoices' && firstVisit) initInvoicesPanel();
+  if(id==='staff' && firstVisit) loadStaffLogins();
   if(id==='reports'){ initReportDates(); loadReports(); }
   if(id==='analytics'){ initAnalytics(); loadAnalytics(); }
-  if(id==='recipes') renderRecipes();
-  if(id==='pricing'){ renderPricingPanel(); }
+  if(id==='recipes' && firstVisit) renderRecipes();
+  if(id==='pricing' && firstVisit){ renderPricingPanel(); }
   if(id==='orders'){ renderSups(); }
-  if(id==='settings'){
+  if(id==='settings' && firstVisit){
     const sqlCard=document.getElementById('pendingOrdersSQL');
     if(sqlCard) sqlCard.style.display=CU?.role==='owner'?'block':'none';
-    // Populate AI key input from localStorage
-    const keyInp=document.getElementById('anthropicKeyInput');
-    if(keyInp){ const k=localStorage.getItem('anthropicKey')||''; keyInp.value=k; updateAiKeyStatus(k); }
-    // Check if section column exists by seeing if any DB item has the key
     checkSectionColStatus();
-    // Load Xero settings into form
     xeroLoadSettings();
   }
   updateSectionTabBar(id);
@@ -2756,6 +2798,7 @@ function openAddStock(){
   document.getElementById('nsSup').value='Chubby Chick';
   document.getElementById('nsSection').value='';
   document.getElementById('nsDeleteBtn').style.display='none';
+  ['nsNm','nsQty','nsMn'].forEach(id=>showFieldError(id,''));
   openMo('moAddStock');
 }
 
@@ -2780,20 +2823,30 @@ function openEditStock(id){
   setSelectVal(document.getElementById('nsSup'), it.supplier);
   document.getElementById('nsSection').value=it.section||'';
   document.getElementById('nsDeleteBtn').style.display='inline-flex';
+  ['nsNm','nsQty','nsMn'].forEach(id=>showFieldError(id,''));
   openMo('moAddStock');
 }
 
 async function saveNS(){
   const nm=document.getElementById('nsNm').value.trim();
-  if(!nm){showToast('Enter an item name.',true);return;}
+  const qtyRaw=document.getElementById('nsQty').value;
+  const mnRaw=document.getElementById('nsMn').value;
+  let valid=true;
+  if(!nm){showFieldError('nsNm','Item name is required.');valid=false;}
+  else showFieldError('nsNm','');
+  if(qtyRaw!==''&&isNaN(parseFloat(qtyRaw))){showFieldError('nsQty','Must be a number.');valid=false;}
+  else showFieldError('nsQty','');
+  if(mnRaw!==''&&isNaN(parseFloat(mnRaw))){showFieldError('nsMn','Must be a number.');valid=false;}
+  else showFieldError('nsMn','');
+  if(!valid) return;
   const id=document.getElementById('nsId').value;
   const sectionVal = document.getElementById('nsSection').value||null;
   const rec={
     name:nm,
     category:document.getElementById('nsCat').value,
     unit:document.getElementById('nsUn').value,
-    stock:parseFloat(document.getElementById('nsQty').value)||0,
-    min_level:parseFloat(document.getElementById('nsMn').value)||0,
+    stock:parseFloat(qtyRaw)||0,
+    min_level:parseFloat(mnRaw)||0,
     supplier:document.getElementById('nsSup').value,
     section:sectionVal,
     updated_at:new Date().toISOString(),
@@ -5434,14 +5487,64 @@ function openEditStf(id){
   openMo('moAddStaff');
 }
 
+// ── Validation helpers ────────────────────────────────────────
+function validateSAID(id){
+  if(!id) return {valid:true, msg:''}; // optional field
+  const d=id.replace(/\s/g,'');
+  if(!/^\d{13}$/.test(d)) return {valid:false, msg:'SA ID must be exactly 13 digits.'};
+  // Luhn check
+  let sum=0;
+  for(let i=0;i<12;i++){
+    let n=parseInt(d[i]);
+    if(i%2!==0){ n*=2; if(n>9) n-=9; }
+    sum+=n;
+  }
+  const check=(10-(sum%10))%10;
+  if(check!==parseInt(d[12])) return {valid:false, msg:'SA ID number is invalid (check digit failed).'};
+  // Extract birth date for display
+  const yr=parseInt(d.slice(0,2)); const mo=parseInt(d.slice(2,4)); const dy=parseInt(d.slice(4,6));
+  const fullYr = yr>parseInt(new Date().getFullYear().toString().slice(2))? 1900+yr : 2000+yr;
+  return {valid:true, msg:'', dob:`${dy}/${mo}/${fullYr}`};
+}
+function validateSAPhone(p){
+  if(!p) return {valid:true,msg:''};
+  const d=p.replace(/\s|-/g,'');
+  if(!/^(\+27|0)[0-9]{9}$/.test(d)) return {valid:false,msg:'Enter a valid SA phone number (e.g. 082 555 1234).'};
+  return {valid:true,msg:''};
+}
+function showFieldError(elId, msg){
+  const el=document.getElementById(elId);
+  if(!el) return;
+  el.style.borderColor = msg ? 'var(--red)' : 'var(--border)';
+  let hint=el.parentNode.querySelector('.field-err');
+  if(msg){
+    if(!hint){hint=document.createElement('div');hint.className='field-err';hint.style.cssText='font-size:0.7rem;color:var(--red);margin-top:0.25rem;';el.parentNode.appendChild(hint);}
+    hint.textContent=msg;
+  } else if(hint){ hint.remove(); }
+}
+
 async function saveStf(){
   const nm=document.getElementById('stfName').value.trim();
-  if(!nm){alert('Enter a name.');return;}
+  const idNum=document.getElementById('stfIdNum').value.trim();
+  const phone=document.getElementById('stfPhone').value.trim();
+
+  // Validate
+  let hasErr=false;
+  if(!nm){ showFieldError('stfName','Name is required.'); hasErr=true; } else showFieldError('stfName','');
+  const idCheck=validateSAID(idNum);
+  if(!idCheck.valid){ showFieldError('stfIdNum',idCheck.msg); hasErr=true; } else {
+    showFieldError('stfIdNum','');
+    if(idCheck.dob) showToast(`DOB extracted from ID: ${idCheck.dob}`,'ok');
+  }
+  const phCheck=validateSAPhone(phone);
+  if(!phCheck.valid){ showFieldError('stfPhone',phCheck.msg); hasErr=true; } else showFieldError('stfPhone','');
+  if(hasErr) return;
+
   const id=document.getElementById('stfId').value;
   const rec={
     name:nm,
-    id_number:document.getElementById('stfIdNum').value.trim()||null,
-    phone:document.getElementById('stfPhone').value.trim()||null,
+    id_number:idNum||null,
+    phone:phone||null,
     eft_account:document.getElementById('stfEft').value.trim()||null,
     role:document.getElementById('stfRole').value,
     division:document.getElementById('stfDiv').value,
@@ -5773,8 +5876,11 @@ function editLeave(id){
 async function saveLeave(){
   const editId=document.getElementById('leaveEditId').value;
   const staff=document.getElementById('leaveStaff').value,type=document.getElementById('leaveType').value,start=document.getElementById('leaveStart').value,end=document.getElementById('leaveEnd').value,status=document.getElementById('leaveStatus').value,notes=document.getElementById('leaveNotes').value.trim();
-  if(!staff||!start||!end){showToast('Fill in all fields.',true);return;}
-  if(new Date(end)<new Date(start)){showToast('End date must be after start date.',true);return;}
+  if(!staff){showFieldError('leaveStaff','Select a staff member.');return;}else showFieldError('leaveStaff','');
+  if(!start){showFieldError('leaveStart','Start date is required.');return;}else showFieldError('leaveStart','');
+  if(!end){showFieldError('leaveEnd','End date is required.');return;}else showFieldError('leaveEnd','');
+  if(new Date(end)<new Date(start)){showFieldError('leaveEnd','End date must be after start date.');return;}
+  else showFieldError('leaveEnd','');
   // Warn if date range looks suspiciously long (>30 days)
   const dayCount=Math.round((new Date(end)-new Date(start))/(1000*60*60*24))+1;
   if(dayCount>30&&!confirm(`This leave spans ${dayCount} days — is that correct?`))return;
@@ -7481,9 +7587,7 @@ function readInvFile(file){
 function invRescan(){ invPhotos=[]; invLineData=[]; document.getElementById('invStep1').style.display='block'; document.getElementById('invStep2').style.display='none'; renderInvPhotoSlots(); }
 
 async function scanInvoice(){
-  if(!invPhotos.length){showToast('Add at least one photo of the invoice.',true);return;}
-  const apiKey=localStorage.getItem('anthropicKey')||'';
-  if(!apiKey){showToast('Add your Anthropic API key in Settings → AI Photo Scan.',true);return;}
+  if(!invPhotos.length){showToast('Add at least one photo of the invoice.','err');return;}
   const btn=document.getElementById('invScanBtn');
   const status=document.getElementById('invScanStatus');
   btn.disabled=true; status.style.display='block'; status.textContent=`Reading invoice${invPhotos.length>1?' ('+invPhotos.length+' pages)':''}...`;
@@ -7518,9 +7622,9 @@ Rules:
 - If prices shown incl VAT, back-calculate excl VAT amounts`});
 
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    const resp=await fetch('/ai-proxy',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:3000,messages:[{role:'user',content}]})
     });
     const data=await resp.json();
@@ -7755,9 +7859,7 @@ function readPhotoFile(file){
 }
 
 async function scanStPhoto(){
-  if(!photoSTPhotos.length){ showToast('Add at least one photo first.',true); return; }
-  const apiKey = localStorage.getItem('anthropicKey')||'';
-  if(!apiKey){ showToast('Add your Anthropic API key in Settings → AI Photo Scan first.',true); return; }
+  if(!photoSTPhotos.length){ showToast('Add at least one photo first.','err'); return; }
   const btn = document.getElementById('scanBtn');
   const status = document.getElementById('scanStatus');
   btn.disabled=true;
@@ -7792,13 +7894,10 @@ Only include items where a quantity number is clearly visible. Match item names 
 
   try {
     status.textContent = `Reading ${photoSTPhotos.length} photo${photoSTPhotos.length>1?'s':''}...`;
-    const response = await fetch('https://api.anthropic.com/v1/messages',{
+    const response = await fetch('/ai-proxy',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body:JSON.stringify({
         model:'claude-haiku-4-5-20251001',
@@ -10495,7 +10594,27 @@ function openMo(id){document.getElementById(id).classList.add('open');}
 function closeMo(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 let tT;
-function showToast(m,e=false){const el=document.getElementById('toast');el.textContent=m;el.className='toast'+(e?' err':'');el.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>el.classList.remove('on'),3500);}
+function showToast(m, type=false){
+  // type: false/'ok' = success, true/'err' = error, 'warn' = warning
+  const isErr = type===true||type==='err';
+  const isWarn = type==='warn';
+  const el  = document.getElementById('toast');
+  const msg = document.getElementById('toastMsg');
+  const ico = document.getElementById('toastIcon');
+  if(!el||!msg) return;
+  msg.textContent = m;
+  ico.textContent = isErr ? '⚠' : isWarn ? '⚡' : '✓';
+  el.className = 'toast on' + (isErr?' err':isWarn?' warn':' ok');
+  clearTimeout(tT);
+  // Errors stay 7s so you can read them; success toasts clear in 3.5s
+  tT = setTimeout(()=>el.classList.remove('on'), isErr ? 7000 : 3500);
+}
+// Improved error toast helper — shows what actually went wrong
+function showError(context, err){
+  const msg = err?.message || err?.error_description || (typeof err==='string'?err:'Unknown error');
+  showToast(`${context}: ${msg}`, 'err');
+  console.error(context, err);
+}
 
 // ═══════════════════════════════════════════
 // BOOT

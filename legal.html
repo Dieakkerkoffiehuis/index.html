@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Legal — VDW Technologies</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0d0d0d;
+      --paper: #f5f2ed;
+      --accent: #1a1a2e;
+      --gold: #c9a84c;
+      --rule: #d0c8bb;
+      --muted: #6b6560;
+      --section-bg: #eeebe4;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+    header {
+      background: var(--accent);
+      color: #fff;
+      padding: 60px 40px 50px;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 300px; height: 300px;
+      border: 1px solid rgba(201,168,76,0.18);
+      border-radius: 50%;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      top: -20px; right: -20px;
+      width: 180px; height: 180px;
+      border: 1px solid rgba(201,168,76,0.28);
+      border-radius: 50%;
+    }
+    .header-inner {
+      max-width: 820px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    .brand-tag {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 18px;
+      display: block;
+    }
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+    header p {
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      max-width: 460px;
+    }
+    .effective-badge {
+      display: inline-block;
+      margin-top: 24px;
+      background: rgba(201,168,76,0.12);
+      border: 1px solid rgba(201,168,76,0.35);
+      color: var(--gold);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 2px;
+    }
+    nav.tabs {
+      background: var(--accent);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 0 40px;
+    }
+    .tabs-inner {
+      max-width: 820px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: rgba(255,255,255,0.45);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn:hover { color: rgba(255,255,255,0.75); }
+    .tab-btn.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+    main {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 60px 40px 100px;
+    }
+    .section { display: none; animation: fadeIn 0.3s ease; }
+    .section.active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .section-intro {
+      border-left: 3px solid var(--gold);
+      padding-left: 20px;
+      margin-bottom: 48px;
+    }
+    .section-intro h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .section-intro p { color: var(--muted); font-size: 13px; }
+    .clause {
+      margin-bottom: 36px;
+      padding-bottom: 36px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .clause:last-child { border-bottom: none; }
+    .clause-header {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    .clause-num {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--gold);
+      font-weight: 500;
+      min-width: 28px;
+    }
+    .clause h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .clause p, .clause li {
+      color: #3a3630;
+      line-height: 1.9;
+      font-size: 14.5px;
+    }
+    .clause ul, .clause ol { padding-left: 20px; margin-top: 10px; }
+    .clause li { margin-bottom: 6px; }
+    .highlight-box {
+      background: var(--section-bg);
+      border-left: 4px solid var(--gold);
+      padding: 20px 24px;
+      margin: 20px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .highlight-box p { font-size: 13.5px; color: var(--accent); font-weight: 400; }
+    .highlight-box strong { font-weight: 500; color: var(--ink); }
+    .ip-seal {
+      text-align: center;
+      padding: 48px 32px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 4px;
+      margin: 40px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .ip-seal::before {
+      content: '©';
+      position: absolute;
+      font-size: 200px;
+      font-family: 'Playfair Display', serif;
+      color: rgba(255,255,255,0.04);
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      line-height: 1;
+    }
+    .ip-seal .seal-label {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+    .ip-seal h2 { font-family: 'Playfair Display', serif; font-size: 26px; margin-bottom: 12px; }
+    .ip-seal p { color: rgba(255,255,255,0.6); font-size: 13px; max-width: 480px; margin: 0 auto; line-height: 1.8; }
+    .contact-block {
+      background: var(--section-bg);
+      padding: 32px;
+      border-radius: 4px;
+      margin-top: 40px;
+    }
+    .contact-block h4 { font-family: 'Playfair Display', serif; font-size: 16px; margin-bottom: 14px; }
+    .contact-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13.5px;
+      color: var(--muted);
+    }
+    .contact-row strong { color: var(--ink); min-width: 130px; }
+    footer {
+      text-align: center;
+      padding: 32px 40px;
+      border-top: 1px solid var(--rule);
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+    footer strong { color: var(--ink); }
+    @media (max-width: 600px) {
+      header, nav.tabs, main { padding-left: 20px; padding-right: 20px; }
+      .tab-btn { padding: 14px 12px; font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="brand-tag">VDW Technologies · Legal Documentation</span>
+    <h1>Terms, Privacy &amp;<br/>Intellectual Property</h1>
+    <p>Official legal documentation governing the use, ownership, and data practices of all software products developed by VDW Technologies.</p>
+    <span class="effective-badge">Effective: 15 May 2026</span>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tabs-inner">
+    <button class="tab-btn active" onclick="showTab('terms', this)">Terms &amp; Conditions</button>
+    <button class="tab-btn" onclick="showTab('popia', this)">POPIA Privacy Policy</button>
+    <button class="tab-btn" onclick="showTab('ip', this)">Intellectual Property</button>
+  </div>
+</nav>
+
+<main>
+  <!-- TERMS & CONDITIONS -->
+  <div id="terms" class="section active">
+    <div class="section-intro">
+      <h2>Terms &amp; Conditions</h2>
+      <p>Please read these terms carefully before accessing or using any software product developed by VDW Technologies.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">01</span><h3>Definitions &amp; Parties</h3></div>
+      <p>In these Terms and Conditions, the following definitions apply:</p>
+      <ul>
+        <li><strong>"VDW Technologies"</strong> refers to the software development entity owned and operated by Zaviér van der Westhuizen, registered and operating under the laws of the Republic of South Africa.</li>
+        <li><strong>"Software" / "Application" / "Product"</strong> refers to any web application, mobile application, management system, digital tool, or software solution developed, owned, or distributed by VDW Technologies.</li>
+        <li><strong>"User"</strong> refers to any individual, organisation, or entity that accesses, installs, or uses any Product.</li>
+        <li><strong>"Licence"</strong> refers to the limited, non-exclusive, non-transferable right to use a Product as granted by VDW Technologies.</li>
+      </ul>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">02</span><h3>Acceptance of Terms</h3></div>
+      <p>By accessing or using any Product developed by VDW Technologies, the User agrees to be bound by these Terms and Conditions in their entirety. If the User does not agree to these terms, they must immediately cease use of the Product. These Terms constitute a binding legal agreement between the User and VDW Technologies.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">03</span><h3>Grant of Licence</h3></div>
+      <p>VDW Technologies grants the User a limited, revocable, non-exclusive, non-transferable licence to use the Product solely for its intended purpose and in accordance with these Terms. This licence does not constitute a sale or transfer of ownership of the Product or any part thereof.</p>
+      <div class="highlight-box">
+        <p><strong>This licence is personal to the User.</strong> It may not be sublicensed, assigned, sold, transferred, or otherwise disposed of without the prior written consent of VDW Technologies.</p>
+      </div>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">04</span><h3>Prohibited Conduct</h3></div>
+      <p>The User is strictly prohibited from:</p>
+      <ul>
+        <li>Copying, reproducing, modifying, adapting, translating, or creating derivative works based on any Product;</li>
+        <li>Reverse engineering, disassembling, decompiling, or otherwise attempting to derive the source code of any Product;</li>
+        <li>Removing, altering, or obscuring any copyright, trademark, or other proprietary notices;</li>
+        <li>Distributing, selling, sublicensing, renting, leasing, or otherwise commercialising any Product without express written authorisation from VDW Technologies;</li>
+        <li>Using any Product for unlawful purposes or in violation of any applicable South African legislation;</li>
+        <li>Claiming ownership of, or representing, any Product as their own creation.</li>
+      </ul>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">05</span><h3>Ownership &amp; Reservation of Rights</h3></div>
+      <p>All Products, including their design, architecture, code, logic, branding, and content, are and shall remain the exclusive intellectual property of VDW Technologies and its owner, Zaviér van der Westhuizen. All rights not expressly granted in these Terms are reserved. Nothing in these Terms shall be construed as transferring any ownership rights to the User.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">06</span><h3>Disclaimer of Warranties</h3></div>
+      <p>Products are provided on an "as is" and "as available" basis. VDW Technologies makes no warranties, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement. VDW Technologies does not warrant that any Product will be uninterrupted, error-free, or free of harmful components.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">07</span><h3>Limitation of Liability</h3></div>
+      <p>To the maximum extent permitted by South African law, VDW Technologies shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from or related to the use of, or inability to use, any Product. VDW Technologies' total cumulative liability shall in no event exceed the amount paid by the User for the specific Product giving rise to the claim in the twelve (12) months preceding the claim.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">08</span><h3>Termination</h3></div>
+      <p>VDW Technologies reserves the right to terminate or suspend the User's access to any Product immediately, without prior notice, if the User breaches any provision of these Terms. Upon termination, the User must cease all use of the Product and destroy any copies in their possession. Clauses relating to intellectual property, limitation of liability, and governing law shall survive termination.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">09</span><h3>Amendments</h3></div>
+      <p>VDW Technologies reserves the right to amend these Terms at any time. Amended Terms will be published with a revised effective date. Continued use of any Product after such amendments constitutes acceptance of the revised Terms.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">10</span><h3>Governing Law &amp; Jurisdiction</h3></div>
+      <p>These Terms and Conditions are governed by and construed in accordance with the laws of the Republic of South Africa. Any dispute arising from or related to these Terms shall be subject to the exclusive jurisdiction of the courts of South Africa, specifically the courts of the North West Province, without prejudice to VDW Technologies' right to seek urgent relief in any competent court.</p>
+    </div>
+    <div class="contact-block">
+      <h4>Legal Enquiries</h4>
+      <div class="contact-row"><strong>Entity:</strong> VDW Technologies</div>
+      <div class="contact-row"><strong>Owner:</strong> Zaviér van der Westhuizen</div>
+      <div class="contact-row"><strong>Jurisdiction:</strong> Republic of South Africa</div>
+      <div class="contact-row"><strong>Contact:</strong> legal@vdwtechnologies.co.za</div>
+    </div>
+  </div>
+
+  <!-- POPIA PRIVACY POLICY -->
+  <div id="popia" class="section">
+    <div class="section-intro">
+      <h2>POPIA Privacy Policy</h2>
+      <p>VDW Technologies is committed to protecting your personal information in accordance with the Protection of Personal Information Act 4 of 2013 (POPIA).</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">01</span><h3>Responsible Party &amp; Information Officer</h3></div>
+      <p>The Responsible Party for the processing of personal information is:</p>
+      <div class="highlight-box">
+        <p><strong>VDW Technologies</strong><br/>
+        Owner &amp; Information Officer: Zaviér van der Westhuizen<br/>
+        Republic of South Africa<br/>
+        Email: privacy@vdwtechnologies.co.za</p>
+      </div>
+      <p>As the Responsible Party, VDW Technologies determines the purpose and means of processing your personal information and is accountable for ensuring that processing is conducted lawfully and in accordance with POPIA.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">02</span><h3>Personal Information Collected</h3></div>
+      <p>Depending on the specific Product used, VDW Technologies may collect the following categories of personal information:</p>
+      <ul>
+        <li><strong>Identity information:</strong> Full name, employee number, role designation;</li>
+        <li><strong>Contact information:</strong> Email address, telephone number;</li>
+        <li><strong>Employment information:</strong> Work hours, shift records, payroll data (where applicable);</li>
+        <li><strong>Usage data:</strong> Login timestamps, actions performed within the application, device type;</li>
+        <li><strong>Financial information:</strong> Transaction records, sales data (where applicable and only to the extent necessary for system functionality).</li>
+      </ul>
+      <p style="margin-top:12px;">VDW Technologies collects only the minimum personal information necessary for the lawful and specific purposes of the Product.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">03</span><h3>Purpose of Processing</h3></div>
+      <p>Personal information is collected and processed for the following specific, explicitly defined, and lawful purposes:</p>
+      <ul>
+        <li>To provide, operate, and maintain the functionality of the Product;</li>
+        <li>To authenticate and manage User access and permissions;</li>
+        <li>To generate reports, records, and operational data required by the User's organisation;</li>
+        <li>To comply with applicable South African legal and regulatory obligations;</li>
+        <li>To improve and develop Products and services offered by VDW Technologies.</li>
+      </ul>
+      <p style="margin-top:12px;">VDW Technologies will not process personal information for any purpose incompatible with the purposes listed above without obtaining prior consent.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">04</span><h3>Lawful Basis for Processing</h3></div>
+      <p>Processing of personal information is conducted on one or more of the following lawful grounds as provided by POPIA:</p>
+      <ul>
+        <li>The data subject has given voluntary, specific, and informed consent;</li>
+        <li>Processing is necessary for the performance of a contract to which the data subject is party;</li>
+        <li>Processing is necessary to comply with a legal obligation applicable to VDW Technologies;</li>
+        <li>Processing is necessary to protect the legitimate interests of the data subject or a third party.</li>
+      </ul>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">05</span><h3>Storage, Security &amp; Retention</h3></div>
+      <p>VDW Technologies takes reasonable technical and organisational measures to protect personal information against loss, damage, unauthorised access, disclosure, or destruction. Personal information is stored on secure, cloud-based infrastructure (including but not limited to Supabase and Cloudflare) with industry-standard encryption in transit and at rest.</p>
+      <p style="margin-top:12px;">Personal information is retained only for as long as is necessary to fulfil the purposes for which it was collected, or as required by applicable law. Upon expiry of the retention period, personal information will be securely deleted or anonymised.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">06</span><h3>Sharing of Personal Information</h3></div>
+      <p>VDW Technologies will not sell, rent, or trade personal information to third parties. Personal information may be shared in the following limited circumstances:</p>
+      <ul>
+        <li>With third-party service providers (operators) who process data on behalf of VDW Technologies, subject to appropriate data processing agreements;</li>
+        <li>Where required by South African law, court order, or regulatory authority;</li>
+        <li>With the express written consent of the data subject.</li>
+      </ul>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">07</span><h3>Your Rights as a Data Subject</h3></div>
+      <p>In terms of POPIA, you have the following rights regarding your personal information:</p>
+      <ul>
+        <li><strong>Right of Access:</strong> To request confirmation of whether VDW Technologies holds your personal information and to obtain a copy thereof;</li>
+        <li><strong>Right to Correction:</strong> To request the correction or deletion of inaccurate, irrelevant, or outdated personal information;</li>
+        <li><strong>Right to Objection:</strong> To object to the processing of your personal information on reasonable grounds;</li>
+        <li><strong>Right to Withdraw Consent:</strong> To withdraw consent previously given for the processing of personal information;</li>
+        <li><strong>Right to Complain:</strong> To lodge a complaint with the Information Regulator of South Africa should you believe your rights have been infringed.</li>
+      </ul>
+      <p style="margin-top:12px;">To exercise any of these rights, please contact the Information Officer at privacy@vdwtechnologies.co.za.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">08</span><h3>Information Regulator</h3></div>
+      <p>You have the right to lodge a complaint with the Information Regulator of South Africa if you believe that your personal information has been processed in violation of POPIA:</p>
+      <div class="highlight-box">
+        <p><strong>The Information Regulator (South Africa)</strong><br/>
+        Website: <a href="https://www.inforegulator.org.za" style="color:var(--accent)">www.inforegulator.org.za</a><br/>
+        Email: inforeg@justice.gov.za<br/>
+        Physical: JD House, 27 Stiemens Street, Braamfontein, Johannesburg, 2001</p>
+      </div>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">09</span><h3>Cookies &amp; Tracking</h3></div>
+      <p>VDW Technologies Products may use session-based cookies or local storage mechanisms solely for the purpose of maintaining User authentication and session state. No third-party advertising or behavioural tracking technologies are employed. Users may configure their browser to refuse cookies, however this may affect the functionality of the Product.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">10</span><h3>Updates to this Policy</h3></div>
+      <p>This Privacy Policy may be updated from time to time to reflect changes in legislation, technology, or business practices. The revised policy will be published with an updated effective date. Continued use of any Product after such revisions constitutes acceptance of the updated Policy.</p>
+    </div>
+  </div>
+
+  <!-- INTELLECTUAL PROPERTY -->
+  <div id="ip" class="section">
+    <div class="section-intro">
+      <h2>Intellectual Property Notice</h2>
+      <p>A formal declaration of ownership and rights over all software, designs, and digital products created by VDW Technologies.</p>
+    </div>
+    <div class="ip-seal">
+      <p class="seal-label">Ownership Declaration</p>
+      <h2>All Rights Reserved</h2>
+      <p>All software products, systems, applications, interfaces, and digital assets created under the VDW Technologies brand are the exclusive intellectual property of Zaviér van der Westhuizen, protected under the laws of the Republic of South Africa.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">01</span><h3>Copyright Ownership</h3></div>
+      <p>All software products, applications, systems, user interfaces, source code, object code, algorithms, databases, documentation, and associated materials created by VDW Technologies are protected by copyright in terms of the <strong>Copyright Act 98 of 1978</strong> (as amended) of the Republic of South Africa.</p>
+      <p style="margin-top:12px;">Copyright subsists automatically in all original works created by Zaviér van der Westhuizen under the VDW Technologies brand. The copyright owner is:</p>
+      <div class="highlight-box">
+        <p><strong>Zaviér van der Westhuizen</strong><br/>
+        Trading as / Operating under: <strong>VDW Technologies</strong><br/>
+        Republic of South Africa<br/>
+        © 2024 – 2026 VDW Technologies. All rights reserved.</p>
+      </div>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">02</span><h3>Scope of Protected Works</h3></div>
+      <p>The following categories of works are expressly claimed as the intellectual property of VDW Technologies:</p>
+      <ul>
+        <li>All web applications, management systems, and digital platforms developed by or for VDW Technologies;</li>
+        <li>All source code, scripts, stylesheets, databases, and configuration files;</li>
+        <li>All user interface designs, wireframes, prototypes, and visual design assets;</li>
+        <li>All business logic, system architectures, and data structures;</li>
+        <li>All documentation, SOPs, training materials, and written content related to the Products;</li>
+        <li>The VDW Technologies name, logo, and associated brand assets.</li>
+      </ul>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">03</span><h3>Prohibition on Unauthorised Use</h3></div>
+      <p>No person, entity, or organisation may, without the prior written consent of VDW Technologies:</p>
+      <ul>
+        <li>Copy, reproduce, distribute, or transmit any Product or portion thereof;</li>
+        <li>Modify, adapt, translate, or create derivative works from any Product;</li>
+        <li>Claim authorship of, or represent ownership over, any Product;</li>
+        <li>Use any Product for commercial purposes beyond the scope of the granted licence;</li>
+        <li>Reverse engineer or extract the source code of any compiled or deployed Product.</li>
+      </ul>
+      <p style="margin-top:12px;">Any unauthorised use constitutes an infringement of copyright and may result in civil and/or criminal proceedings under South African law.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">04</span><h3>Applicable Legislation</h3></div>
+      <p>The intellectual property rights of VDW Technologies are protected under, and VDW Technologies reserves all rights afforded by, the following South African legislation:</p>
+      <ul>
+        <li><strong>Copyright Act 98 of 1978</strong> — Governing original literary, artistic, and computer program works;</li>
+        <li><strong>Trade Marks Act 194 of 1993</strong> — Governing the VDW Technologies brand identity and marks;</li>
+        <li><strong>Electronic Communications and Transactions Act 25 of 2002 (ECT Act)</strong> — Governing digital transactions and online conduct;</li>
+        <li><strong>Protection of Personal Information Act 4 of 2013 (POPIA)</strong> — Governing the processing of personal data within Products;</li>
+        <li><strong>Computer Misuse provisions of the ECT Act</strong> — Protecting against unauthorised system access.</li>
+      </ul>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">05</span><h3>Enforcement &amp; Remedies</h3></div>
+      <p>VDW Technologies will actively enforce its intellectual property rights. In the event of infringement, VDW Technologies reserves the right to pursue all available legal remedies, including but not limited to:</p>
+      <ul>
+        <li>Urgent interdictory relief to prevent ongoing infringement;</li>
+        <li>Damages for loss suffered as a result of infringement;</li>
+        <li>An account of profits made by the infringing party;</li>
+        <li>Delivery up or destruction of infringing copies;</li>
+        <li>Criminal prosecution where applicable under South African law.</li>
+      </ul>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">06</span><h3>Third-Party Components</h3></div>
+      <p>Certain Products may incorporate open-source libraries or third-party components, which are subject to their own respective licences. The inclusion of such components does not diminish VDW Technologies' intellectual property rights in the original portions of the Products. VDW Technologies acknowledges and complies with all applicable open-source licences.</p>
+    </div>
+    <div class="clause">
+      <div class="clause-header"><span class="clause-num">07</span><h3>Reporting Infringement</h3></div>
+      <p>If you become aware of any unauthorised use, copying, or distribution of any VDW Technologies Product, or if you wish to report a potential infringement, please contact us immediately:</p>
+      <div class="contact-block" style="margin-top:16px">
+        <div class="contact-row"><strong>Entity:</strong> VDW Technologies</div>
+        <div class="contact-row"><strong>Owner:</strong> Zaviér van der Westhuizen</div>
+        <div class="contact-row"><strong>Subject Line:</strong> IP Infringement Report</div>
+        <div class="contact-row"><strong>Email:</strong> legal@vdwtechnologies.co.za</div>
+        <div class="contact-row"><strong>Jurisdiction:</strong> Republic of South Africa</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>© 2026 <strong>VDW Technologies</strong> · Zaviér van der Westhuizen · Republic of South Africa</p>
+  <p style="margin-top:6px;">All rights reserved. Governed by the laws of South Africa. |
+    <a href="#" onclick="showTab('terms', document.querySelectorAll('.tab-btn')[0])" style="color:inherit">Terms</a> ·
+    <a href="#" onclick="showTab('popia', document.querySelectorAll('.tab-btn')[1])" style="color:inherit">Privacy</a> ·
+    <a href="#" onclick="showTab('ip', document.querySelectorAll('.tab-btn')[2])" style="color:inherit">IP Notice</a>
+  </p>
+</footer>
+
+<script>
+  function showTab(id, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (btn) btn.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
