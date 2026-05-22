@@ -8750,6 +8750,7 @@ const INGR_COST = {
   'green pepper':10,'onion':2,'spinach':2.17,'olives':88.91,
   'waffle mix':2.33,'strawberry':5,'caramel':106.5,'chocolate sauce':106.5,
   'vanilla':98.95,'cream':68.19,'ice cream':19.52,'flake':0.14,
+  'beef patty':25,'cheese russian':5.50,
 };
 
 function getIngCost(name, qty, unit) {
@@ -9262,6 +9263,7 @@ const ING_META = {
   'hickory ham':{cat:'Meat',unit:'kg',supplier:'Vision Meats'},
   'biltong':{cat:'Meat',unit:'kg',supplier:'Other'},
   'beef patty':{cat:'Meat',unit:'each',supplier:'Impala'},
+  'cheese russian':{cat:'Meat',unit:'each',supplier:'Impala'},
   'pork sausage':{cat:'Meat',unit:'kg',supplier:'Impala'},
   // Dairy
   'cream cheese':{cat:'Dairy',unit:'kg',supplier:'Golden Valley Cheese'},
@@ -9341,6 +9343,17 @@ function initIngredientDB(){
       seen[key]=true;
       if(ingredientDB[key]) ingredientDB[key].price = pc.new_price;
     }
+  });
+  // Ensure every ingredient used in any recipe appears — even those missing from INGR_COST
+  const allRecipes = (recipeData && recipeData.length ? recipeData : PRESET_RECIPES);
+  allRecipes.forEach(r=>{
+    (r.ingredients||[]).forEach(i=>{
+      const key = i.name.toLowerCase().trim();
+      if(!ingredientDB[key]){
+        const meta = ING_META[key] || {cat:'Other', unit:i.unit||'each', supplier:'Other'};
+        ingredientDB[key] = {name:key, price:INGR_COST[key]||0, ...meta};
+      }
+    });
   });
 }
 
