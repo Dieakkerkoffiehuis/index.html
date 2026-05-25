@@ -4,41 +4,45 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Die Akker — Management System</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Karla:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   /* Brand */
-  --burg:#9e2a42;--burg2:#c0334f;--burg-l:rgba(158,42,66,0.18);
-  /* Neutrals — dark theme */
-  --cream:#0e0e11;--white:#17171b;--ink:#f0eef5;
-  --border:rgba(255,255,255,0.09);--border-s:rgba(255,255,255,0.05);
-  --surface:#1e1e24;--muted:rgba(190,182,210,0.55);
+  --burg:#6B2737;--burg2:#8B3549;--burg-l:rgba(107,39,55,0.10);
+  --burg-dark:#4A1A27;--burg-deep:#3A1020;
+  /* Neutrals — light/warm theme */
+  --cream:#FDF8F0;        /* page background */
+  --white:#FFFFFF;        /* card backgrounds */
+  --ink:#3D2B22;          /* primary text */
+  --border:#E8DECE;       /* card borders */
+  --border-s:#F0E8D8;     /* subtle borders */
+  --surface:#F5EDD6;      /* secondary surface / input bg */
+  --muted:#8B7060;        /* secondary text */
   /* Accents */
-  --gold:#e8b84b;--gold2:#f5d070;--gold-l:rgba(232,184,75,0.15);
-  --green:#2dba65;--green-l:rgba(45,186,101,0.12);--green-b:rgba(45,186,101,0.3);
-  --orange:#e07820;--red:#e03a3a;--red-l:rgba(224,58,58,0.12);--red-b:rgba(224,58,58,0.3);
-  --blue:#4d8fd4;--blue-l:rgba(77,143,212,0.15);
-  --navy:#0c1929;--navy2:#14223a;
-  /* Shadow system */
-  --sh:0 1px 3px rgba(0,0,0,0.5),0 4px 16px rgba(0,0,0,0.25);
-  --sh2:0 4px 12px rgba(0,0,0,0.55),0 16px 40px rgba(0,0,0,0.3);
-  --sh3:0 8px 24px rgba(0,0,0,0.65),0 32px 64px rgba(0,0,0,0.35);
+  --gold:#C9A84C;--gold2:#E2C46E;--gold-l:rgba(201,168,76,0.15);
+  --green:#1A8A55;--green-l:rgba(26,138,85,0.10);--green-b:rgba(26,138,85,0.25);
+  --orange:#C06010;--red:#C0392B;--red-l:rgba(192,57,43,0.10);--red-b:rgba(192,57,43,0.25);
+  --blue:#2A6CB4;--blue-l:rgba(42,108,180,0.12);
+  /* Shadow system — warm */
+  --sh:0 1px 3px rgba(74,26,39,0.08),0 2px 8px rgba(74,26,39,0.04);
+  --sh2:0 4px 12px rgba(74,26,39,0.10),0 8px 24px rgba(74,26,39,0.06);
+  --sh3:0 8px 24px rgba(74,26,39,0.14),0 16px 40px rgba(74,26,39,0.08);
   /* Radius system */
-  --r:8px;--r2:13px;--r3:20px;
+  --r:8px;--r2:14px;--r3:20px;
   --sw:262px;
   /* Transition */
   --t:all 0.18s cubic-bezier(0.4,0,0.2,1);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow:hidden;}
-body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;font-size:15px;line-height:1.5;}
+body{background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.5;}
 
 /* ── LOADING ── */
-#loadScreen{position:fixed;inset:0;background:var(--cream);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:1.2rem;}
-#loadScreen h1{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;color:#fff;letter-spacing:0.12em;}
-#loadScreen p{color:rgba(255,255,255,0.35);font-size:0.8rem;letter-spacing:0.18em;text-transform:uppercase;}
-.spinner{width:34px;height:34px;border:2.5px solid rgba(255,255,255,0.1);border-top-color:var(--gold);border-radius:50%;animation:spin 0.75s linear infinite;}
+#loadScreen{position:fixed;inset:0;background:linear-gradient(160deg,#3A1020 0%,#6B2737 55%,#4A1A27 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:1.2rem;}
+#loadScreen h1{font-family:'Cormorant Garamond',serif;font-size:3rem;color:#F5EDD6;letter-spacing:0.08em;font-weight:700;}
+#loadScreen p{color:rgba(245,237,214,0.45);font-size:0.75rem;letter-spacing:0.22em;text-transform:uppercase;font-family:'DM Sans',sans-serif;}
+.spinner{width:34px;height:34px;border:2.5px solid rgba(245,237,214,0.15);border-top-color:var(--gold);border-radius:50%;animation:spin 0.75s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── LOGIN ── */
@@ -170,12 +174,12 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 
 /* ── MAIN ── */
 .main{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;overflow:hidden;}
-.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;height:66px;
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;height:60px;
   display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
-  box-shadow:0 1px 0 var(--border-s),0 2px 14px rgba(0,0,0,0.04);}
+  box-shadow:0 1px 0 var(--border-s),0 2px 10px rgba(74,26,39,0.06);}
 .tb-l{display:flex;align-items:center;gap:0.9rem;}
 .tb-title-wrap{display:flex;flex-direction:column;gap:0.06rem;}
-.tb-title{font-family:'Bebas Neue',sans-serif;font-size:1.45rem;letter-spacing:0.07em;color:var(--ink);line-height:1.1;}
+.tb-title{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;letter-spacing:0.03em;color:var(--ink);line-height:1.1;}
 .tb-sub{font-size:0.76rem;color:var(--muted);font-weight:500;letter-spacing:0.01em;line-height:1;}
 .tb-r{display:flex;align-items:center;gap:0.7rem;}
 .tb-date{font-size:0.72rem;color:var(--muted);font-weight:600;letter-spacing:0.03em;}
@@ -199,8 +203,8 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 /* ── CARDS ── */
 .card{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);
   padding:1.3rem 1.4rem;box-shadow:var(--sh);margin-bottom:1rem;}
-.card-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.07em;color:var(--burg);margin-bottom:0.85rem;}
-.stitle{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.08em;color:var(--burg);
+.card-title{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:700;letter-spacing:0.02em;color:var(--burg);margin-bottom:0.85rem;}
+.stitle{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:700;letter-spacing:0.02em;color:var(--burg);
   margin:1.6rem 0 0.8rem;display:flex;align-items:center;gap:0.75rem;}
 .stitle::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
 
@@ -214,7 +218,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .stat.cg::after{background:var(--green);}
 .stat.co::after{background:linear-gradient(90deg,var(--gold),var(--gold2));}
 .stat.cr::after{background:var(--red);}
-.snum{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;line-height:1;margin-top:0.1rem;}
+.snum{font-family:'DM Mono',monospace;font-size:2rem;font-weight:500;line-height:1;margin-top:0.1rem;letter-spacing:-0.02em;}
 .slbl{font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-top:0.3rem;}
 .nb{color:var(--burg);}.ng{color:var(--green);}.no{color:var(--gold);}.nr{color:var(--red);}
 
@@ -228,7 +232,7 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .bgm{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
 
 /* ── BUTTONS ── */
-.btn{font-family:'Karla',sans-serif;font-weight:700;font-size:0.82rem;letter-spacing:0.06em;
+.btn{font-family:'DM Sans',sans-serif;font-weight:600;font-size:0.82rem;letter-spacing:0.05em;
   text-transform:uppercase;padding:0.65rem 1.2rem;border:none;border-radius:9px;cursor:pointer;
   transition:var(--t);display:inline-flex;align-items:center;gap:0.4rem;white-space:nowrap;}
 .bp{background:linear-gradient(135deg,var(--burg) 0%,var(--burg2) 100%);color:#fff;
@@ -247,9 +251,9 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .fg label{display:block;font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
   color:var(--muted);margin-bottom:0.36rem;}
 select{background:var(--surface)!important;color:var(--ink)!important;border-color:var(--border)!important;}
-select option{background:#1e1e28;color:var(--ink);}
+select option{background:var(--white);color:var(--ink);}
 .fg input,.fg select,.fg textarea{width:100%;background:var(--surface);border:1.5px solid var(--border);
-  border-radius:var(--r);padding:0.7rem 0.95rem;font-family:'Karla',sans-serif;font-size:0.93rem;
+  border-radius:var(--r);padding:0.7rem 0.95rem;font-family:'DM Sans',sans-serif;font-size:0.93rem;
   color:var(--ink);outline:none;transition:var(--t);}
 .fg input:focus,.fg select:focus,.fg textarea:focus{
   border-color:var(--burg);background:var(--surface);
@@ -271,13 +275,13 @@ select option{background:#1e1e28;color:var(--ink);}
 .sb2{display:flex;align-items:center;background:var(--white);border:1.5px solid var(--border);
   border-radius:10px;padding:0.58rem 0.9rem;margin-bottom:0.85rem;gap:0.5rem;transition:var(--t);}
 .sb2:focus-within{border-color:var(--burg);box-shadow:0 0 0 3px rgba(122,21,40,0.07);}
-.sb2 input{flex:1;border:none;background:none;font-family:'Karla',sans-serif;font-size:0.88rem;color:var(--ink);outline:none;}
+.sb2 input{flex:1;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:0.88rem;color:var(--ink);outline:none;}
 .sb2 input::placeholder{color:var(--muted);}
 
 /* ── CAT TABS ── */
 .ctabs{display:flex;gap:0.4rem;overflow-x:auto;padding-bottom:0.45rem;margin-bottom:0.9rem;scrollbar-width:none;}
 .ctabs::-webkit-scrollbar{display:none;}
-.ct{background:var(--white);border:1.5px solid var(--border);color:var(--muted);font-family:'Karla',sans-serif;
+.ct{background:var(--white);border:1.5px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;
   font-size:0.76rem;font-weight:700;padding:0.34rem 0.88rem;border-radius:20px;cursor:pointer;
   white-space:nowrap;transition:var(--t);}
 .ct.act{background:var(--burg);color:#fff;border-color:var(--burg);box-shadow:0 2px 8px rgba(122,21,40,0.22);}
@@ -293,7 +297,7 @@ select option{background:#1e1e28;color:var(--ink);}
 .sti-meta{font-size:0.7rem;color:var(--muted);margin-top:0.12rem;}
 .sti-ctrl{display:flex;flex-direction:column;align-items:flex-end;gap:0.1rem;}
 .sti-in{width:70px;text-align:center;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.3rem;
-  font-family:'Bebas Neue',sans-serif;font-size:1.25rem;color:var(--burg);background:var(--cream);
+  font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;color:var(--burg);background:var(--cream);
   outline:none;-moz-appearance:textfield;transition:var(--t);}
 .sti-in::-webkit-outer-spin-button,.sti-in::-webkit-inner-spin-button{-webkit-appearance:none;}
 .sti-in:focus{border-color:var(--burg);background:var(--surface);box-shadow:0 0 0 3px rgba(158,42,66,0.15);}
@@ -302,13 +306,13 @@ select option{background:#1e1e28;color:var(--ink);}
 /* ── CASHUP ── */
 .cu-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:0.8rem;overflow:hidden;box-shadow:var(--sh);}
 .cu-hdr{background:linear-gradient(135deg,var(--burg),var(--burg2));padding:0.78rem 1rem;display:flex;align-items:center;justify-content:space-between;}
-.cu-hdr input{border:none;background:transparent;font-family:'Karla',sans-serif;font-weight:700;font-size:0.95rem;color:#fff;outline:none;flex:1;}
+.cu-hdr input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-weight:600;font-size:0.95rem;color:#fff;outline:none;flex:1;}
 .cu-hdr input::placeholder{color:rgba(255,255,255,0.45);}
 .cu-pill{background:rgba(255,255,255,0.18);border-radius:20px;padding:0.2rem 0.75rem;font-size:0.75rem;font-weight:700;color:#fff;white-space:nowrap;}
 .cu-flds{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;padding:0.85rem;}
 .cf{display:flex;flex-direction:column;gap:0.22rem;}
 .cf label{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
-.cf input{border:1.5px solid var(--border);border-radius:7px;padding:0.45rem 0.6rem;font-family:'Karla',sans-serif;
+.cf input{border:1.5px solid var(--border);border-radius:7px;padding:0.45rem 0.6rem;font-family:'DM Sans',sans-serif;
   font-size:0.9rem;color:var(--ink);background:var(--cream);outline:none;text-align:right;transition:var(--t);}
 .cf input:focus{border-color:var(--burg);background:var(--surface);box-shadow:0 0 0 3px rgba(158,42,66,0.2);}
 .cu-ft{background:var(--surface);padding:0.58rem 1rem;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);font-size:0.8rem;color:var(--muted);}
@@ -319,7 +323,7 @@ select option{background:#1e1e28;color:var(--ink);}
 .di{display:flex;flex-direction:column;align-items:center;gap:0.2rem;}
 .di-l{font-size:0.65rem;font-weight:700;color:var(--muted);}
 .di-i{width:100%;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.3rem;text-align:center;
-  font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--burg);background:var(--cream);
+  font-family:'DM Mono',monospace;font-size:0.95rem;font-weight:500;color:var(--burg);background:var(--cream);
   outline:none;-moz-appearance:textfield;transition:var(--t);}
 .di-i::-webkit-outer-spin-button,.di-i::-webkit-inner-spin-button{-webkit-appearance:none;}
 .di-i:focus{border-color:var(--burg);background:var(--surface);box-shadow:0 0 0 2px rgba(158,42,66,0.2);}
@@ -329,7 +333,7 @@ select option{background:#1e1e28;color:var(--ink);}
 .sr{display:flex;justify-content:space-between;align-items:center;padding:0.58rem 0;border-bottom:1px solid var(--border-s);font-size:0.84rem;}
 .sr:last-child{border-bottom:none;}
 .sr.tot{font-weight:700;font-size:0.93rem;padding:0.72rem 0;border-top:1.5px solid var(--border);border-bottom:none;margin-top:0.2rem;}
-.am{font-family:'Bebas Neue',sans-serif;font-size:1.08rem;}
+.am{font-family:'DM Mono',monospace;font-size:0.95rem;font-weight:500;}
 
 /* ── VARIANCE ── */
 .vc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.72rem 0.95rem;
@@ -338,7 +342,7 @@ select option{background:#1e1e28;color:var(--ink);}
 .vc-i{flex:1;min-width:0;}
 .vc-nm{font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .vc-mt{font-size:0.68rem;color:var(--muted);margin-top:0.1rem;}
-.vc-d{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;min-width:50px;text-align:right;}
+.vc-d{font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;min-width:50px;text-align:right;}
 .vpos{color:var(--green);}.vneg{color:var(--red);}.vzero{color:var(--muted);}
 
 /* ── PAYROLL ── */
@@ -354,7 +358,7 @@ select option{background:#1e1e28;color:var(--ink);}
 .hi{width:52px;text-align:center;border:1.5px solid var(--border);border-radius:7px;padding:0.32rem;
   font-size:0.88rem;color:var(--burg);background:var(--cream);outline:none;transition:var(--t);}
 .hi:focus{border-color:var(--burg);box-shadow:0 0 0 2px rgba(122,21,40,0.1);}
-.pnet{font-family:'Bebas Neue',sans-serif;font-size:1.08rem;color:var(--green);min-width:80px;text-align:right;}
+.pnet{font-family:'DM Mono',monospace;font-size:0.95rem;font-weight:500;color:var(--green);min-width:80px;text-align:right;}
 
 /* ── SUPPLIER ── */
 .sc{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);padding:0.95rem 1rem;
@@ -388,13 +392,13 @@ select option{background:#1e1e28;color:var(--ink);}
 .roster-time-group{display:flex;align-items:center;gap:0.35rem;flex-shrink:0;}
 /* font-size:16px prevents iOS from zooming on input focus (stops the jump) */
 .rtime{width:80px;border:1.5px solid var(--border);border-radius:7px;padding:0.3rem 0.4rem;
-  font-family:'Karla',sans-serif;font-size:16px;color:var(--ink);background:var(--cream);
+  font-family:'DM Mono',monospace;font-size:16px;color:var(--ink);background:var(--cream);
   outline:none;text-align:center;transition:var(--t);}
 .rtime:focus{border-color:var(--burg);background:var(--surface);box-shadow:0 0 0 2px rgba(158,42,66,0.2);}
 .rbreak{width:48px;border:1.5px solid var(--border);border-radius:7px;padding:0.3rem 0.35rem;
-  font-family:'Karla',sans-serif;font-size:16px;color:var(--orange);background:var(--surface);outline:none;text-align:center;}
+  font-family:'DM Mono',monospace;font-size:16px;color:var(--orange);background:var(--surface);outline:none;text-align:center;}
 .rbreak:focus{border-color:var(--orange);}
-.roster-day-hrs{min-width:38px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--green);flex-shrink:0;}
+.roster-day-hrs{min-width:38px;text-align:right;font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:500;color:var(--green);flex-shrink:0;}
 .roster-day-hrs.zero{color:var(--border-s);}
 .rt-lbl{font-size:0.57rem;color:var(--muted);text-align:center;display:block;margin-top:1px;letter-spacing:0.06em;}
 /* Scheduling queue nav bar */
@@ -404,7 +408,7 @@ select option{background:#1e1e28;color:var(--ink);}
 .sum-table td{padding:0.55rem 0.7rem;border-bottom:1px solid var(--border-s);vertical-align:middle;}
 .sum-table tr:last-child td{border-bottom:none;}
 .sum-table .r{text-align:right;font-weight:600;}
-.sum-table .earn{color:var(--green);font-family:'Bebas Neue',sans-serif;font-size:1rem;}
+.sum-table .earn{color:var(--green);font-family:'DM Mono',monospace;font-size:0.88rem;font-weight:500;}
 
 /* ── LEAVE ── */
 .leave-summary{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);padding:0.9rem 1rem;margin-bottom:0.6rem;box-shadow:var(--sh);}
@@ -447,7 +451,7 @@ select option{background:#1e1e28;color:var(--ink);}
 .md::before{content:'';display:block;width:36px;height:4px;background:var(--border);
   border-radius:2px;margin:1rem auto 1.1rem;}
 @keyframes sheetUp{from{transform:translateY(55px);opacity:0}to{transform:translateY(0);opacity:1}}
-.md-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--burg);letter-spacing:0.06em;margin-bottom:1.1rem;}
+.md-title{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;color:var(--burg);letter-spacing:0.02em;margin-bottom:1.1rem;}
 .md-close{float:right;background:var(--surface);border:none;font-size:0.85rem;cursor:pointer;
   color:var(--muted);border-radius:50%;width:28px;height:28px;display:inline-flex;align-items:center;
   justify-content:center;transition:var(--t);margin-top:-2px;}
@@ -458,7 +462,7 @@ select option{background:#1e1e28;color:var(--ink);}
 .price-alert-card.warn{border-color:var(--gold);}
 .gp-row{display:flex;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border-s);gap:0.5rem;font-size:0.82rem;}
 .gp-row:last-child{border-bottom:none;}
-.gp-pct{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;min-width:42px;text-align:right;}
+.gp-pct{font-family:'DM Mono',monospace;font-size:0.95rem;font-weight:500;min-width:42px;text-align:right;}
 .gp-arrow{font-size:0.9rem;}
 .price-hist-item{background:var(--surface);border-radius:8px;padding:0.65rem 0.9rem;margin-bottom:0.4rem;font-size:0.82rem;}
 
@@ -466,14 +470,14 @@ select option{background:#1e1e28;color:var(--ink);}
 .recipe-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);padding:0.9rem 1rem;margin-bottom:0.6rem;box-shadow:var(--sh);cursor:pointer;transition:var(--t);}
 .recipe-card:hover{border-color:var(--burg);box-shadow:var(--sh2);transform:translateY(-1px);}
 .recipe-card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;}
-.recipe-cost-pct{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;}
+.recipe-cost-pct{font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:500;}
 .recipe-cost-pct.good{color:var(--green);}
 .recipe-cost-pct.warn{color:var(--gold);}
 .recipe-cost-pct.bad{color:var(--red);}
 .recipe-ing-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;}
-.recipe-ing-row input[type=text]{flex:2;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.6rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--surface);color:var(--ink);outline:none;}
-.recipe-ing-row input[type=number]{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--surface);color:var(--ink);outline:none;text-align:center;}
-.recipe-ing-row select{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.82rem;background:var(--surface);color:var(--ink);outline:none;}
+.recipe-ing-row input[type=text]{flex:2;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.6rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--surface);color:var(--ink);outline:none;}
+.recipe-ing-row input[type=number]{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.5rem;font-family:'DM Mono',monospace;font-size:0.85rem;background:var(--surface);color:var(--ink);outline:none;text-align:center;}
+.recipe-ing-row select{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.5rem;font-family:'DM Sans',sans-serif;font-size:0.82rem;background:var(--surface);color:var(--ink);outline:none;}
 
 /* ── ANALYTICS ── */
 .an-bar-wrap{margin-bottom:0.65rem;}
@@ -483,7 +487,7 @@ select option{background:#1e1e28;color:var(--ink);}
 .an-bar-track{height:9px;background:var(--surface);border-radius:5px;overflow:hidden;}
 .an-bar-fill{height:100%;border-radius:5px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1);}
 .an-reorder-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.72rem 1rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.8rem;}
-.an-days-pill{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;min-width:50px;text-align:right;}
+.an-days-pill{font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:500;min-width:50px;text-align:right;}
 .sti-yesterday{font-size:0.67rem;color:var(--muted);margin-top:0.1rem;}
 .sti-usage{font-size:0.63rem;font-weight:700;padding:0.1rem 0.4rem;border-radius:5px;}
 .sti-usage.up{background:var(--red-l);color:var(--red);}
@@ -516,17 +520,17 @@ select option{background:#1e1e28;color:var(--ink);}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(10px);
-  background:#1e1e2e;color:#fff;padding:0.72rem 1.4rem 0.72rem 1.1rem;border-radius:12px;font-size:0.84rem;
-  font-weight:500;z-index:9999;display:none;max-width:min(480px,90vw);
-  box-shadow:0 8px 30px rgba(0,0,0,0.4),0 2px 8px rgba(0,0,0,0.2);
-  border:1px solid rgba(255,255,255,0.08);
+  background:var(--burg-dark);color:#F5EDD6;padding:0.72rem 1.4rem 0.72rem 1.1rem;border-radius:12px;font-size:0.84rem;
+  font-weight:500;z-index:9999;display:none;max-width:min(480px,90vw);font-family:'DM Sans',sans-serif;
+  box-shadow:0 8px 30px rgba(74,26,39,0.35),0 2px 8px rgba(74,26,39,0.18);
+  border:1px solid rgba(201,168,76,0.2);
   display:none;align-items:center;gap:0.6rem;cursor:pointer;}
 .toast .toast-icon{font-size:1rem;flex-shrink:0;}
 .toast .toast-msg{flex:1;line-height:1.4;white-space:pre-wrap;word-break:break-word;}
 .toast .toast-close{opacity:0.5;font-size:1.1rem;flex-shrink:0;padding:0 0.2rem;}
-.toast.err{background:#3a1010;border-color:rgba(224,58,58,0.3);color:#fca5a5;}
-.toast.warn{background:#2a1f08;border-color:rgba(232,184,75,0.3);color:#fde68a;}
-.toast.ok{background:#0d2417;border-color:rgba(45,186,101,0.3);color:#6ee7b7;}
+.toast.err{background:#5A1A1A;border-color:rgba(224,58,58,0.4);color:#fca5a5;}
+.toast.warn{background:#5A3A0A;border-color:rgba(201,168,76,0.4);color:#fde68a;}
+.toast.ok{background:#0d2417;border-color:rgba(26,138,85,0.4);color:#6ee7b7;}
 .toast.on{display:flex;animation:toastPop .3s cubic-bezier(0.34,1.4,0.64,1) forwards;}
 @keyframes toastPop{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
@@ -712,7 +716,7 @@ select option{background:#1e1e28;color:var(--ink);}
           </div>
         </div>
         <div style="display:flex;gap:0.5rem">
-          <button onclick="go('pricing');document.getElementById('globalPriceAlert').style.display='none'" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:0.35rem 0.8rem;border-radius:6px;cursor:pointer;font-family:'Karla',sans-serif;font-size:0.78rem;font-weight:700">View Alerts →</button>
+          <button onclick="go('pricing');document.getElementById('globalPriceAlert').style.display='none'" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:0.35rem 0.8rem;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.78rem;font-weight:700">View Alerts →</button>
           <button onclick="document.getElementById('globalPriceAlert').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1rem;padding:0.2rem 0.4rem">✕</button>
         </div>
       </div>
@@ -754,7 +758,7 @@ select option{background:#1e1e28;color:var(--ink);}
           <span style="flex:1;text-align:center">📆 <strong style="color:var(--muted)">Yesterday</strong> — previous count</span>
           <span style="flex:1;text-align:right">📉 <strong style="color:var(--orange)">Usage</strong> — difference</span>
         </div>
-        <select id="stDiv" onchange="renderST()" style="width:100%;padding:0.65rem 0.9rem;border:1px solid var(--border);border-radius:8px;background:var(--white);font-family:'Karla',sans-serif;font-size:0.88rem;outline:none;margin-bottom:0.8rem">
+        <select id="stDiv" onchange="renderST()" style="width:100%;padding:0.65rem 0.9rem;border:1px solid var(--border);border-radius:8px;background:var(--white);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;margin-bottom:0.8rem">
           <option value="all">All Divisions</option>
           <option>Meat</option><option>Dairy</option><option>Produce</option>
           <option>Dry Goods</option><option>Bar</option><option>Bakery</option>
@@ -791,7 +795,7 @@ select option{background:#1e1e28;color:var(--ink);}
         <!-- Pending approvals (owner only) -->
         <div id="pendingOrdersSection" style="display:none;margin-bottom:1.2rem">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.05em;color:var(--burg)">⏳ PENDING APPROVALS <span id="pendingOrdersBadge" style="font-size:0.7rem;background:var(--red);color:#fff;border-radius:50%;padding:0.1rem 0.4rem;vertical-align:middle"></span></div>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.1rem;color:var(--burg)">⏳ PENDING APPROVALS <span id="pendingOrdersBadge" style="font-size:0.7rem;background:var(--red);color:#fff;border-radius:50%;padding:0.1rem 0.4rem;vertical-align:middle"></span></div>
             <button class="btn bs bsm" onclick="loadPendingOrders()" style="font-size:0.7rem">↻ Refresh</button>
           </div>
           <div id="pendingOrdersList"><div style="text-align:center;padding:1rem;color:var(--muted);font-size:0.82rem">Loading...</div></div>
@@ -799,7 +803,7 @@ select option{background:#1e1e28;color:var(--ink);}
         <!-- Awaiting Delivery (owner only) -->
         <div id="awaitingDeliverySection" style="display:none;margin-bottom:1.2rem">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.05em;color:var(--burg)">📦 AWAITING DELIVERY <span id="awaitingDeliveryBadge" style="font-size:0.7rem;background:var(--burg);color:#fff;border-radius:50%;padding:0.1rem 0.4rem;vertical-align:middle"></span></div>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.1rem;color:var(--burg)">📦 AWAITING DELIVERY <span id="awaitingDeliveryBadge" style="font-size:0.7rem;background:var(--burg);color:#fff;border-radius:50%;padding:0.1rem 0.4rem;vertical-align:middle"></span></div>
           </div>
           <div id="awaitingDeliveryList"><div style="text-align:center;padding:1rem;color:var(--muted);font-size:0.82rem">Loading...</div></div>
         </div>
@@ -824,7 +828,7 @@ select option{background:#1e1e28;color:var(--ink);}
             <div class="fg2">
               <div class="fg"><label>Date</label><input type="date" id="cuDate" onchange="cuLoadScheduledWaiters()"></div>
               <div class="fg"><label>Shift</label>
-                <select id="cuShift" onchange="cuLoadScheduledWaiters()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+                <select id="cuShift" onchange="cuLoadScheduledWaiters()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
                   <option>Morning</option><option>Afternoon</option><option>Evening</option>
                 </select>
               </div>
@@ -833,7 +837,7 @@ select option{background:#1e1e28;color:var(--ink);}
             <div style="display:flex;gap:0.5rem;align-items:flex-end;flex-wrap:wrap">
               <div class="fg" style="flex:1;margin:0">
                 <label>Add Waiter</label>
-                <select id="cuAddWaiterSel" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+                <select id="cuAddWaiterSel" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
                   <option value="">— Select waiter —</option>
                 </select>
               </div>
@@ -870,7 +874,7 @@ select option{background:#1e1e28;color:var(--ink);}
                 <span style="font-size:1rem">🔎</span>
                 <input id="cuWaiterSearchInput" type="text" placeholder="Search waiter — type a name to filter shifts…"
                   oninput="cuFilterByWaiter()"
-                  style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:0.55rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;transition:border-color 0.2s"
+                  style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;transition:border-color 0.2s"
                   onfocus="this.style.borderColor='var(--burg)'" onblur="this.style.borderColor='var(--border)'">
                 <button onclick="cuClearWaiterSearch()" title="Clear search"
                   style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:0.45rem 0.7rem;font-size:0.8rem;cursor:pointer;color:var(--muted);transition:all 0.15s"
@@ -923,7 +927,7 @@ select option{background:#1e1e28;color:var(--ink);}
         <div id="rp-trends" style="display:none">
           <div class="fg" style="margin-bottom:0.8rem">
             <label>Select Item to Track</label>
-            <select id="trendItem" onchange="renderTrend()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"></select>
+            <select id="trendItem" onchange="renderTrend()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"></select>
           </div>
           <div class="card" id="trendChart" style="padding:1rem;min-height:200px"></div>
           <div class="stitle">Daily History</div>
@@ -958,9 +962,9 @@ select option{background:#1e1e28;color:var(--ink);}
               <button class="btn bs bsm" id="wpPdMonth" onclick="wpSetPeriod('month',this)">This Month</button>
               <button class="btn bs bsm" id="wpPdLast"  onclick="wpSetPeriod('last',this)">Last Month</button>
               <div style="display:flex;align-items:center;gap:0.4rem;margin-left:auto;flex-wrap:wrap">
-                <input type="date" id="wpFrom" style="border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.6rem;font-size:0.8rem;background:var(--cream);font-family:'Karla',sans-serif">
+                <input type="date" id="wpFrom" style="border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.6rem;font-size:0.8rem;background:var(--cream);font-family:'DM Sans',sans-serif">
                 <span style="font-size:0.75rem;color:var(--muted)">–</span>
-                <input type="date" id="wpTo"   style="border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.6rem;font-size:0.8rem;background:var(--cream);font-family:'Karla',sans-serif">
+                <input type="date" id="wpTo"   style="border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.6rem;font-size:0.8rem;background:var(--cream);font-family:'DM Sans',sans-serif">
                 <button class="btn bp bsm" onclick="loadWaiterPerf()">Apply</button>
               </div>
             </div>
@@ -1023,7 +1027,7 @@ select option{background:#1e1e28;color:var(--ink);}
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">Top items by total units consumed in this period.</div>
           <div class="fg" style="margin-bottom:0.8rem">
             <label>Filter by Category</label>
-            <select id="anUsageCat" onchange="renderAnUsage()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
+            <select id="anUsageCat" onchange="renderAnUsage()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
               <option value="all">All Categories</option>
               <option>Meat</option><option>Dairy</option><option>Produce</option>
               <option>Dry Goods</option><option>Bar</option><option>Bakery</option><option>Freezer</option><option>Cleaning</option>
@@ -1197,7 +1201,7 @@ select option{background:#1e1e28;color:var(--ink);}
             <div style="display:flex;align-items:center;gap:0.7rem;flex-wrap:wrap">
               <div class="fg" style="margin:0;flex:1">
                 <label>Month</label>
-                <input type="month" id="lbMonth" oninput="renderLeaderboard()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+                <input type="month" id="lbMonth" oninput="renderLeaderboard()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
               </div>
               <button class="btn bs bsm" onclick="lbSetMonth(0)">This Month</button>
               <button class="btn bs bsm" onclick="lbSetMonth(-1)">Last Month</button>
@@ -1226,7 +1230,7 @@ select option{background:#1e1e28;color:var(--ink);}
             </div>
             <div class="brow">
               <button class="btn bs bsm" onclick="schedWeek(-1)">‹ Prev</button>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--burg);padding:0 0.4rem" id="schedWeekLabel"></div>
+              <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:0.9rem;color:var(--burg);padding:0 0.4rem" id="schedWeekLabel"></div>
               <button class="btn bs bsm" onclick="schedWeek(1)">Next ›</button>
             </div>
           </div>
@@ -1246,7 +1250,7 @@ select option{background:#1e1e28;color:var(--ink);}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem">
           <button class="btn bs bsm" onclick="rosterWeek(-1)">‹ Prev</button>
           <div style="text-align:center">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--burg)" id="rosterWeekLabel"></div>
+            <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:0.95rem;color:var(--burg)" id="rosterWeekLabel"></div>
             <div style="font-size:0.7rem;color:var(--muted)" id="rosterWeekRange"></div>
           </div>
           <button class="btn bs bsm" onclick="rosterWeek(1)">Next ›</button>
@@ -1281,7 +1285,7 @@ select option{background:#1e1e28;color:var(--ink);}
           <div class="card" style="padding:0;overflow:hidden">
             <div style="background:linear-gradient(135deg,var(--burg),var(--burg2));padding:1rem 1.3rem;display:flex;align-items:center;justify-content:space-between">
               <div style="color:#fff">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.07em">Monthly Payout Summary</div>
+                <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1.1rem;letter-spacing:0.07em">Monthly Payout Summary</div>
                 <div style="font-size:0.75rem;opacity:0.8" id="payoutMonth">—</div>
               </div>
               <button class="btn" onclick="switchPayrollTab('detail',document.querySelector(\'#payrollTabs .ct:last-child\'))"
@@ -1292,7 +1296,7 @@ select option{background:#1e1e28;color:var(--ink);}
             <div id="payoutSummaryList" style="padding:0.5rem 0"></div>
             <div style="background:var(--navy2);padding:1rem 1.3rem;display:flex;justify-content:space-between;align-items:center">
               <div style="color:rgba(255,255,255,0.7);font-size:0.8rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">Grand Total — All Staff</div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:1.9rem;color:#fff;letter-spacing:0.05em" id="payoutGrandTotal">R 0.00</div>
+              <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.9rem;color:#fff;letter-spacing:0.05em" id="payoutGrandTotal">R 0.00</div>
             </div>
           </div>
         </div>
@@ -1305,12 +1309,12 @@ select option{background:#1e1e28;color:var(--ink);}
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.85rem">
             <div>
               <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.2rem">NEXT PAYDAY</div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem" id="payDateDisplay">—</div>
+              <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem" id="payDateDisplay">—</div>
               <div style="font-size:0.75rem;color:var(--muted)" id="payDateSub"></div>
             </div>
             <div style="text-align:right">
               <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.2rem">DAYS REMAINING</div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;line-height:1" id="payDateCountdown">—</div>
+              <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:2.5rem;line-height:1" id="payDateCountdown">—</div>
             </div>
           </div>
           <!-- Calendar day picker -->
@@ -1327,9 +1331,9 @@ select option{background:#1e1e28;color:var(--ink);}
         <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.7rem 1rem;margin-bottom:0.8rem;display:flex;align-items:center;flex-wrap:wrap;gap:0.6rem">
           <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);flex-shrink:0">📆 Pay Period</span>
           <div style="display:flex;align-items:center;gap:0.4rem;flex:1;flex-wrap:wrap">
-            <input type="date" id="payPeriodFrom" style="border:1px solid var(--border);border-radius:7px;padding:0.38rem 0.65rem;font-family:'Karla',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;color:var(--ink)" onchange="renderPayPeriodLabel()">
+            <input type="date" id="payPeriodFrom" style="border:1px solid var(--border);border-radius:7px;padding:0.38rem 0.65rem;font-family:'DM Sans',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;color:var(--ink)" onchange="renderPayPeriodLabel()">
             <span style="font-size:0.78rem;color:var(--muted);font-weight:600">to</span>
-            <input type="date" id="payPeriodTo" style="border:1px solid var(--border);border-radius:7px;padding:0.38rem 0.65rem;font-family:'Karla',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;color:var(--ink)" onchange="renderPayPeriodLabel()">
+            <input type="date" id="payPeriodTo" style="border:1px solid var(--border);border-radius:7px;padding:0.38rem 0.65rem;font-family:'DM Sans',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;color:var(--ink)" onchange="renderPayPeriodLabel()">
             <span id="payPeriodLabel" style="font-size:0.75rem;color:var(--burg);font-weight:700;white-space:nowrap"></span>
           </div>
           <div style="display:flex;gap:0.3rem;flex-wrap:wrap">
@@ -1350,7 +1354,7 @@ select option{background:#1e1e28;color:var(--ink);}
           <div id="mgrPay"></div>
           <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
             <span style="font-weight:700;color:var(--green)">Total Manager Net Pay:</span>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="mgrTot">R 0.00</span>
+            <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:1.1rem;color:var(--green)" id="mgrTot">R 0.00</span>
           </div>
         </div>
         <div class="stitle">Kitchen Staff Payroll</div>
@@ -1359,7 +1363,7 @@ select option{background:#1e1e28;color:var(--ink);}
           <div id="kitPay"></div>
           <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
             <span style="font-weight:700;color:var(--green)">Total Kitchen Net Pay:</span>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="kitTot">R 0.00</span>
+            <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:1.1rem;color:var(--green)" id="kitTot">R 0.00</span>
           </div>
         </div>
         <div class="stitle">Bar Staff Payroll</div>
@@ -1368,7 +1372,7 @@ select option{background:#1e1e28;color:var(--ink);}
           <div id="barPay"></div>
           <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
             <span style="font-weight:700;color:var(--green)">Total Bar Staff Net Pay:</span>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="barTot">R 0.00</span>
+            <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:1.1rem;color:var(--green)" id="barTot">R 0.00</span>
           </div>
         </div>
         <div class="stitle">Waiters / Floor Staff</div>
@@ -1377,7 +1381,7 @@ select option{background:#1e1e28;color:var(--ink);}
           <div id="waiterPay"></div>
           <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
             <span style="font-weight:700;color:var(--green)">Total Waiter Net Pay:</span>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="waiterTot">R 0.00</span>
+            <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:1.1rem;color:var(--green)" id="waiterTot">R 0.00</span>
           </div>
         </div>
         <div class="stitle">Waiters Per Hour (PH)</div>
@@ -1386,7 +1390,7 @@ select option{background:#1e1e28;color:var(--ink);}
           <div id="waitphPay"></div>
           <div style="margin-top:1rem;padding:0.8rem;background:var(--green-l);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
             <span style="font-weight:700;color:var(--green)">Total Waiters PH Net Pay:</span>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green)" id="waitphTot">R 0.00</span>
+            <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:1.1rem;color:var(--green)" id="waitphTot">R 0.00</span>
           </div>
         </div>
         <div class="brow" style="margin-top:0.5rem">
@@ -1453,8 +1457,8 @@ select option{background:#1e1e28;color:var(--ink);}
         <div id="kpiTabWaiters">
           <div class="card" style="padding:0.8rem 1rem;margin-bottom:0.8rem">
             <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:flex-end">
-              <div class="fg" style="margin:0;flex:1;min-width:130px"><label>Staff Member</label><select id="kpiWaiterStaff" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('waiters')"></select></div>
-              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>Month</label><input type="month" id="kpiWaiterPeriod" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('waiters')"></div>
+              <div class="fg" style="margin:0;flex:1;min-width:130px"><label>Staff Member</label><select id="kpiWaiterStaff" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('waiters')"></select></div>
+              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>Month</label><input type="month" id="kpiWaiterPeriod" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('waiters')"></div>
             </div>
           </div>
           <div id="kpiWaiterForm"></div>
@@ -1464,8 +1468,8 @@ select option{background:#1e1e28;color:var(--ink);}
         <div id="kpiTabKitchen" style="display:none">
           <div class="card" style="padding:0.8rem 1rem;margin-bottom:0.8rem">
             <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:flex-end">
-              <div class="fg" style="margin:0;flex:1;min-width:130px"><label>Staff Member</label><select id="kpiKitchenStaff" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('kitchen')"></select></div>
-              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>Month</label><input type="month" id="kpiKitchenPeriod" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('kitchen')"></div>
+              <div class="fg" style="margin:0;flex:1;min-width:130px"><label>Staff Member</label><select id="kpiKitchenStaff" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('kitchen')"></select></div>
+              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>Month</label><input type="month" id="kpiKitchenPeriod" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('kitchen')"></div>
             </div>
           </div>
           <div id="kpiKitchenForm"></div>
@@ -1475,8 +1479,8 @@ select option{background:#1e1e28;color:var(--ink);}
         <div id="kpiTabManagers" style="display:none">
           <div class="card" style="padding:0.8rem 1rem;margin-bottom:0.8rem">
             <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:flex-end">
-              <div class="fg" style="margin:0;flex:1;min-width:130px"><label>Manager</label><select id="kpiManagerStaff" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('managers')"></select></div>
-              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>Month</label><input type="month" id="kpiManagerPeriod" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('managers')"></div>
+              <div class="fg" style="margin:0;flex:1;min-width:130px"><label>Manager</label><select id="kpiManagerStaff" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('managers')"></select></div>
+              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>Month</label><input type="month" id="kpiManagerPeriod" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadKpiForm('managers')"></div>
             </div>
           </div>
           <div id="kpiManagerForm"></div>
@@ -1486,13 +1490,13 @@ select option{background:#1e1e28;color:var(--ink);}
         <div id="kpiTabHistory" style="display:none">
           <div class="card" style="padding:0.7rem 1rem;margin-bottom:0.8rem">
             <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center">
-              <select id="kpiHistType" onchange="renderKpiHistory()" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
+              <select id="kpiHistType" onchange="renderKpiHistory()" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
                 <option value="all">All Types</option><option value="waiters">Waiters</option><option value="kitchen">Kitchen</option><option value="managers">Managers</option>
               </select>
-              <select id="kpiHistStaff" onchange="renderKpiHistory()" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;flex:1;min-width:100px">
+              <select id="kpiHistStaff" onchange="renderKpiHistory()" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;flex:1;min-width:100px">
                 <option value="all">All Staff</option>
               </select>
-              <select id="kpiHistYear" onchange="renderKpiHistory()" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
+              <select id="kpiHistYear" onchange="renderKpiHistory()" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
                 <option value="all">All Years</option>
               </select>
             </div>
@@ -1519,7 +1523,7 @@ select option{background:#1e1e28;color:var(--ink);}
           <div style="display:flex;gap:0.7rem;flex-wrap:wrap;align-items:center">
             <div class="fg" style="margin:0;flex:1;min-width:120px"><label>From</label><input type="date" id="auFrom"></div>
             <div class="fg" style="margin:0;flex:1;min-width:120px"><label>To</label><input type="date" id="auTo"></div>
-            <div class="fg" style="margin:0;flex:1;min-width:120px"><label>User</label><select id="auUser" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"><option value="">All Users</option></select></div>
+            <div class="fg" style="margin:0;flex:1;min-width:120px"><label>User</label><select id="auUser" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"><option value="">All Users</option></select></div>
           </div>
           <div class="ctabs" style="margin-top:0.7rem;margin-bottom:0">
             <button class="ct act" onclick="auFilter('all',this)">All Actions</button>
@@ -1953,19 +1957,19 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
             <div class="fg">
               <label>Client ID</label>
               <input type="text" id="xeroClientId" placeholder="ABC123..." autocomplete="off"
-                style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
+                style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
             </div>
             <div class="fg">
               <label>Client Secret</label>
               <input type="password" id="xeroClientSecret" placeholder="••••••••"
-                style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
+                style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
             </div>
           </div>
           <div class="fg" style="margin-top:0.5rem">
             <label>Redirect URI <span style="font-size:0.7rem;color:var(--muted);font-weight:400">(copy this exactly into Xero developer portal)</span></label>
             <div style="display:flex;gap:0.5rem;align-items:center">
               <input type="text" id="xeroRedirectUri" readonly
-                style="flex:1;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.78rem;background:var(--surface);outline:none;color:var(--muted);box-sizing:border-box">
+                style="flex:1;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.78rem;background:var(--surface);outline:none;color:var(--muted);box-sizing:border-box">
               <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('xeroRedirectUri').value).then(()=>showToast('Copied ✓'))">📋</button>
             </div>
           </div>
@@ -1974,7 +1978,7 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
           <div class="fg" style="margin-top:0.5rem">
             <label>Default Purchase Account Code <span style="font-size:0.7rem;color:var(--muted);font-weight:400">(from your Xero chart of accounts)</span></label>
             <input type="text" id="xeroAccountCode" placeholder="e.g. 310"
-              style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
+              style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
             <div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem">In Xero: Accounting → Chart of Accounts → find your "Food Purchases" or "Cost of Sales" account code</div>
           </div>
 
@@ -2033,7 +2037,7 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
     </div>
     <div class="fg">
       <label>Station / Section <span style="font-size:0.7rem;color:var(--muted);font-weight:400">(used to organise the printable stock take form)</span></label>
-      <select id="nsSection" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+      <select id="nsSection" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
         <option value="">— Not assigned —</option>
         <option>Grillers</option>
         <option>Orders</option>
@@ -2113,7 +2117,7 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
     <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#b85c00;margin:0.8rem 0 0.4rem;padding-top:0.6rem;border-top:1px solid var(--border)">🏥 Medical Information</div>
     <div class="fg2">
       <div class="fg"><label>Blood Type</label>
-        <select id="stfBloodType" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+        <select id="stfBloodType" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
           <option value="">Unknown</option>
           <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
           <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
@@ -2122,7 +2126,7 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
       <div class="fg"><label>Medical Aid</label><input type="text" id="stfMedicalAid" placeholder="e.g. Discovery Health 12345"></div>
     </div>
     <div class="fg"><label>Known Allergies</label><input type="text" id="stfAllergies" placeholder="e.g. Penicillin, Latex, Peanuts — or None"></div>
-    <div class="fg"><label>Medical Conditions / Chronic Diseases</label><textarea id="stfConditions" rows="3" placeholder="e.g. Type 2 Diabetes, Hypertension, Epilepsy — or None" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;resize:vertical;box-sizing:border-box"></textarea></div>
+    <div class="fg"><label>Medical Conditions / Chronic Diseases</label><textarea id="stfConditions" rows="3" placeholder="e.g. Type 2 Diabetes, Hypertension, Epilepsy — or None" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;resize:vertical;box-sizing:border-box"></textarea></div>
     <div class="fg"><label>Current Medication</label><input type="text" id="stfMedication" placeholder="e.g. Metformin 500mg, Amlodipine — or None"></div>
     <button class="btn bp" onclick="saveStf()" style="width:100%;margin-top:0.3rem">Save</button>
   </div>
@@ -2193,7 +2197,7 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
     <div id="docAddSection" style="background:var(--surface);border-radius:10px;padding:0.9rem;margin-bottom:1rem">
       <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.6rem">Add Document</div>
       <div class="fg"><label>Document Type</label>
-        <select id="newDocType" onchange="toggleWarningFields()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+        <select id="newDocType" onchange="toggleWarningFields()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
           <option>Employment Contract</option><option>ID Copy</option><option>Proof of Residence</option>
           <option>Bank Details</option><option>Verbal Warning</option><option>Written Warning</option>
           <option>Final Warning</option><option>Incident Report</option><option>Sick Note</option><option>Medical Certificate</option>
@@ -2207,11 +2211,11 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
         <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--red);margin-bottom:0.7rem">⚠️ Warning Details</div>
         <div class="fg">
           <label>Offence Description <span style="color:var(--red)">*</span></label>
-          <textarea id="newDocReason" rows="4" placeholder="Describe the offence in full detail — what happened, when, and any previous incidents..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none;resize:vertical;box-sizing:border-box"></textarea>
+          <textarea id="newDocReason" rows="4" placeholder="Describe the offence in full detail — what happened, when, and any previous incidents..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--white);outline:none;resize:vertical;box-sizing:border-box"></textarea>
         </div>
         <div class="fg2">
           <div class="fg"><label>Manager on Duty <span style="color:var(--red)">*</span></label>
-            <select id="newDocManager" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></select>
+            <select id="newDocManager" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></select>
           </div>
           <div class="fg"><label>Witness Name <span style="color:var(--red)">*</span></label>
             <input type="text" id="newDocWitness" placeholder="Full name of witness"></div>
@@ -2222,28 +2226,28 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
         <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#b85c00;margin-bottom:0.7rem">🚑 Incident Details</div>
         <div class="fg2">
           <div class="fg"><label>Date &amp; Time of Incident <span style="color:var(--red)">*</span></label>
-            <input type="datetime-local" id="incidentDateTime" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
+            <input type="datetime-local" id="incidentDateTime" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
           <div class="fg"><label>Date Management Informed <span style="color:var(--red)">*</span></label>
-            <input type="date" id="incidentDateInformed" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
+            <input type="date" id="incidentDateInformed" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
         </div>
         <div class="fg2">
           <div class="fg"><label>Date Reports Submitted</label>
-            <input type="date" id="incidentDateSubmitted" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
+            <input type="date" id="incidentDateSubmitted" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
           <div class="fg"><label>Persons Involved</label>
-            <input type="text" id="incidentPersons" placeholder="Names of all parties involved" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
+            <input type="text" id="incidentPersons" placeholder="Names of all parties involved" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
         </div>
         <div class="fg"><label>Nature of Incident <span style="color:var(--red)">*</span></label>
-          <textarea id="incidentDescription" rows="3" placeholder="Describe what happened, where it occurred, and any immediate actions taken..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none;resize:vertical;box-sizing:border-box"></textarea>
+          <textarea id="incidentDescription" rows="3" placeholder="Describe what happened, where it occurred, and any immediate actions taken..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--white);outline:none;resize:vertical;box-sizing:border-box"></textarea>
         </div>
         <div class="fg"><label>Next Steps / Follow-up Actions</label>
-          <textarea id="incidentNextSteps" rows="3" placeholder="e.g. Refer to DoL, schedule medical, complete IOD form, legal consultation..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none;resize:vertical;box-sizing:border-box"></textarea>
+          <textarea id="incidentNextSteps" rows="3" placeholder="e.g. Refer to DoL, schedule medical, complete IOD form, legal consultation..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--white);outline:none;resize:vertical;box-sizing:border-box"></textarea>
         </div>
         <div class="fg2">
           <div class="fg"><label>Reported By (Manager)</label>
-            <select id="incidentManager" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></select>
+            <select id="incidentManager" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></select>
           </div>
           <div class="fg"><label>Witness</label>
-            <input type="text" id="incidentWitness" placeholder="Witness name" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
+            <input type="text" id="incidentWitness" placeholder="Witness name" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--white);outline:none"></div>
         </div>
       </div>
       <div class="fg"><label>Upload File (optional)</label><input type="file" id="newDocFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.82rem;width:100%"></div>
@@ -2673,7 +2677,7 @@ function renderDash(){
               <div style="font-size:0.7rem;color:var(--muted)">R${r.price} · Cost R${r.cost.toFixed(2)}</div>
             </div>
             <span style="font-size:0.68rem;font-weight:700;color:${col};white-space:nowrap">${tag}</span>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:${col};min-width:48px;text-align:right">${r.gp}%</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;color:${col};min-width:48px;text-align:right">${r.gp}%</div>
             <button onclick="go('recipes');setTimeout(()=>{switchRecipeTab('gphealth',document.getElementById('gpHealthTabBtn'));},200)"
               style="background:none;border:1px solid var(--border);border-radius:6px;padding:0.25rem 0.6rem;font-size:0.7rem;cursor:pointer;color:var(--muted);white-space:nowrap">Review →</button>
           </div>`;
@@ -2806,7 +2810,7 @@ function renderDB(){
         <div style="font-size:0.7rem;color:var(--muted)">${CEM[i.category]||''} ${i.category} · <span style="background:var(--surface);padding:0.1rem 0.4rem;border-radius:3px;font-size:0.68rem">${i.supplier}</span>${i.section?`<span style="margin-left:0.4rem;background:var(--burg-l,#f9eff1);color:var(--burg);border:1px solid #eac8d0;padding:0.1rem 0.4rem;border-radius:3px;font-size:0.65rem;font-weight:700">${i.section}</span>`:''}</div>
         <div class="sbar"><div class="sbf" style="width:${pct}%;background:${col}"></div></div>
       </div>
-      <div style="text-align:right;min-width:55px"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${col}">${i.stock<=0?'OUT':i.stock}</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">${i.unit}</div></div>
+      <div style="text-align:right;min-width:55px"><div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:${col}">${i.stock<=0?'OUT':i.stock}</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">${i.unit}</div></div>
     </div>`;
   }).join('');
 }
@@ -3332,7 +3336,7 @@ function ordRenderStep1(){
       <input type="number" min="0" step="0.5" placeholder="0"
         id="sc-${i}" value="${ordStockCounts[i]!=null?ordStockCounts[i]:''}"
         oninput="ordStockCounts[${i}]=parseFloat(this.value)||0"
-        style="width:70px;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.9rem;font-weight:700;text-align:center;background:var(--cream);outline:none;-moz-appearance:textfield">
+        style="width:70px;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.5rem;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:700;text-align:center;background:var(--cream);outline:none;-moz-appearance:textfield">
     </div>`).join('');
 
   document.getElementById('ordBody').innerHTML=
@@ -3383,7 +3387,7 @@ function ordRenderStep2(){
       </div>
       <input type="number" min="0" step="1" id="oq-${i}" value="${qty}"
         oninput="ordOrderQty[${i}]=parseFloat(this.value)||0;refreshOrdMsg()"
-        style="width:70px;border:1px solid ${qty>0?'var(--burg)':'var(--border)'};border-radius:8px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.9rem;font-weight:700;text-align:center;background:var(--cream);outline:none;-moz-appearance:textfield;${qty>0?'color:var(--burg)':''}">
+        style="width:70px;border:1px solid ${qty>0?'var(--burg)':'var(--border)'};border-radius:8px;padding:0.4rem 0.5rem;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:700;text-align:center;background:var(--cream);outline:none;-moz-appearance:textfield;${qty>0?'color:var(--burg)':''}">
     </div>`;
   }).join('');
 
@@ -3394,7 +3398,7 @@ function ordRenderStep2(){
   document.getElementById('ordBtns').innerHTML=
     `<div style="margin-bottom:0.7rem">
        <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);margin-bottom:0.35rem">MESSAGE PREVIEW</div>
-       <textarea id="ordMsgEdit" rows="7" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;resize:vertical;box-sizing:border-box;color:var(--text)">${previewMsg}</textarea>
+       <textarea id="ordMsgEdit" rows="7" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;resize:vertical;box-sizing:border-box;color:var(--text)">${previewMsg}</textarea>
      </div>
      <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem">
        <button class="btn bp" style="flex:1" onclick="ordSendEdited()">📤 Send Order</button>
@@ -3629,7 +3633,7 @@ function openEditStockCount(id){
         ${it.ml!=null?`<div style="font-size:0.65rem;color:var(--muted)">Min: ${it.ml}</div>`:''}
       </div>
       <input type="number" min="0" step="0.5" value="${it.soh!=null?it.soh:0}" id="esc-${i}"
-        style="width:72px;border:1.5px solid var(--burg);border-radius:8px;padding:0.4rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.92rem;font-weight:700;text-align:center;background:var(--cream);outline:none">
+        style="width:72px;border:1.5px solid var(--burg);border-radius:8px;padding:0.4rem 0.5rem;font-family:'DM Sans',sans-serif;font-size:0.92rem;font-weight:700;text-align:center;background:var(--cream);outline:none">
     </div>`).join('')}
     <div style="display:flex;gap:0.5rem;margin-top:0.9rem">
       <button class="btn bp" style="flex:1" onclick="saveEditedStockCount()">💾 Save Changes</button>
@@ -3690,7 +3694,7 @@ function openEditOrderMsg(id){
   const html=`<div class="card" id="editOrderMsgCard" style="padding:0.9rem 1rem;margin-bottom:0.8rem;border:2px solid var(--burg)">
     <div style="font-weight:700;font-size:0.9rem;margin-bottom:0.25rem;color:var(--burg)">✏️ Edit Message — ${data.supplier}</div>
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.6rem">Edit the message below before sending, then choose how to send it.</div>
-    <textarea id="pendOrdMsgEdit" rows="8" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;resize:vertical;box-sizing:border-box;color:var(--text)">${data.message||''}</textarea>
+    <textarea id="pendOrdMsgEdit" rows="8" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;resize:vertical;box-sizing:border-box;color:var(--text)">${data.message||''}</textarea>
     <div style="display:flex;gap:0.5rem;margin-top:0.7rem;flex-wrap:wrap">
       <button class="btn bgn bsm" style="flex:1;min-width:130px" onclick="sendEditedPendingOrder('${id}')">📤 Approve & Send</button>
       <button class="btn bs bsm" style="flex:0 0 auto" onclick="copyPendingMsg('${id}')">📋 Copy Only</button>
@@ -3739,7 +3743,7 @@ function openDeliveryCheck(id){
       </div>
       <div id="dcn-${i}" style="display:none;margin-top:0.4rem">
         <input type="text" id="dcnn-${i}" placeholder="Describe the issue (e.g. wrong size, damaged)..."
-          style="width:100%;border:1.5px solid #f0a000;border-radius:8px;padding:0.35rem 0.6rem;font-size:0.8rem;font-family:'Karla',sans-serif;background:var(--cream);box-sizing:border-box;outline:none"
+          style="width:100%;border:1.5px solid #f0a000;border-radius:8px;padding:0.35rem 0.6rem;font-size:0.8rem;font-family:'DM Sans',sans-serif;background:var(--cream);box-sizing:border-box;outline:none"
           oninput="if(delivCheckItems[${i}])delivCheckItems[${i}].note=this.value">
       </div>
     </div>`).join('');
@@ -3962,20 +3966,20 @@ function renderCUCards(){
           <span style="font-size:0.8rem;font-weight:700;color:#b85c10;white-space:nowrap">💵 Cash Tips Taken</span>
           <input type="number" inputmode="decimal" placeholder="0.00" value="${ct||''}"
             oninput="cuU(${i},'ct',this.value)"
-            style="flex:1;border:1px solid rgba(232,184,75,0.3);border-radius:6px;padding:0.4rem 0.6rem;font-size:0.88rem;background:var(--surface);color:var(--ink);font-family:'Karla',sans-serif;text-align:right;max-width:140px">
+            style="flex:1;border:1px solid rgba(232,184,75,0.3);border-radius:6px;padding:0.4rem 0.6rem;font-size:0.88rem;background:var(--surface);color:var(--ink);font-family:'DM Sans',sans-serif;text-align:right;max-width:140px">
           <span style="font-size:0.72rem;color:var(--muted)">${ct>0?'Already paid out':'Amount waiter already took in cash'}</span>
         </div>
       </div>
       <!-- Breakage + Tips footer -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.8rem;border-top:1px solid var(--surface);gap:0.8rem">
         <button id="bkBtn-${i}" onclick="cuToggleBreakage(${i})"
-          style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.9rem;border-radius:8px;border:2px solid ${bkBorderCol};background:${bkBgCol};cursor:pointer;font-family:'Karla',sans-serif;font-size:0.82rem;font-weight:700;color:${bkTxtCol};transition:all 0.2s;flex:1">
+          style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.9rem;border-radius:8px;border:2px solid ${bkBorderCol};background:${bkBgCol};cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:700;color:${bkTxtCol};transition:all 0.2s;flex:1">
           <span style="font-size:1rem">${bkIcon}</span>
           <span>${bkLabel}</span>
         </button>
         <div style="text-align:right;min-width:70px">
           <div style="font-size:0.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.06em">Tips</div>
-          <strong id="cuf-${i}" style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${c===null?'var(--muted)':c<0?'var(--red)':'var(--green)'}">${cTxt}</strong>
+          <strong id="cuf-${i}" style="font-family:'DM Mono',monospace;font-weight:500;font-size:0.95rem;color:${c===null?'var(--muted)':c<0?'var(--red)':'var(--green)'}">${cTxt}</strong>
         </div>
       </div>
     </div>`;
@@ -4010,7 +4014,7 @@ function cuRemoveWaiter(i){
 // bk=false/undefined means not paid → deduct R10 from tips
 function cuCalc(w){if(!w.vk&&w.vk!==0)return null;return ((w.ks||0)+(w.kt||0)+(w.zp||0)+(w.rk||0)+(w.st||0))-(w.vk||0)-(w.bk?0:10)-(w.ct||0);}
 function cuU(i,f,v){cuD.waiters[i][f]=parseFloat(v)||0;const c=cuCalc(cuD.waiters[i]);const s=c===null?'—':(c<0?'−R '+Math.abs(c).toFixed(2):'R '+c.toFixed(2));const col=c===null?'var(--muted)':c<0?'var(--red)':'var(--green)';const cup=document.getElementById('cup-'+i);if(cup)cup.textContent=s;const cuf=document.getElementById('cuf-'+i);if(cuf){cuf.textContent=s;cuf.style.color=col;}updCUTots();}
-function renderDenoms(){document.getElementById('denomCard').innerHTML=`<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Enter the count of each note/coin</div><div class="dg">${DNS.map((d,i)=>`<div class="di"><div class="di-l">${DNL[i]}</div><input type="number" class="di-i" inputmode="numeric" min="0" value="${cuD.denoms[i]||''}" placeholder="0" oninput="cuD.denoms[${i}]=parseInt(this.value)||0;updDV(${i},${d},this.value)"><div class="di-v" id="dv-${i}">R ${((cuD.denoms[i]||0)*d).toFixed(2)}</div></div>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border)"><span style="font-weight:700;font-size:0.88rem">Total Count:</span><span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--burg)" id="dTot">R 0.00</span></div>`;updDTot();}
+function renderDenoms(){document.getElementById('denomCard').innerHTML=`<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem">Enter the count of each note/coin</div><div class="dg">${DNS.map((d,i)=>`<div class="di"><div class="di-l">${DNL[i]}</div><input type="number" class="di-i" inputmode="numeric" min="0" value="${cuD.denoms[i]||''}" placeholder="0" oninput="cuD.denoms[${i}]=parseInt(this.value)||0;updDV(${i},${d},this.value)"><div class="di-v" id="dv-${i}">R ${((cuD.denoms[i]||0)*d).toFixed(2)}</div></div>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border)"><span style="font-weight:700;font-size:0.88rem">Total Count:</span><span style="font-family:'DM Mono',monospace;font-weight:500;font-size:1.1rem;color:var(--burg)" id="dTot">R 0.00</span></div>`;updDTot();}
 function updDV(i,d,v){const e=document.getElementById('dv-'+i);if(e)e.textContent='R '+((parseInt(v)||0)*d).toFixed(2);updDTot();updCUTots();}
 function updDTot(){const t=DNS.reduce((s,d,i)=>s+(cuD.denoms[i]||0)*d,0);const e=document.getElementById('dTot');if(e)e.textContent='R '+t.toFixed(2);return t;}
 function updCUTots(){
@@ -4043,17 +4047,17 @@ function updCUTots(){
     ${tBkPaid>0?`<div class="sr"><span>✅ Breakage Collected in Cash (${cuD.waiters.filter(w=>w.bk).length} × R10 paid)</span><span class="am" style="color:var(--green)">R ${tBkPaid.toFixed(2)}</span></div>`:''}
     <div style="background:${totalTips>=0?'var(--green-l)':'var(--red-l)'};border:1px solid ${totalTips>=0?'var(--green-b)':'var(--red-b)'};border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin:0.4rem 0">
       <span style="font-weight:700">Total Tips</span>
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${tc}">${totalTips>=0?'R ':'−R '}${Math.abs(totalTips).toFixed(2)}</span>
+      <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:${tc}">${totalTips>=0?'R ':'−R '}${Math.abs(totalTips).toFixed(2)}</span>
     </div>
     ${tCT>0?`<div class="sr"><span>💵 Cash Tips Already Taken</span><span class="am" style="color:#b85c10;font-weight:700">−R ${tCT.toFixed(2)}</span></div>`:''}
     ${tCT>0?`<div style="background:rgba(232,184,75,0.08);border:1px solid rgba(232,184,75,0.25);border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin:0.2rem 0 0.4rem">
       <span style="font-weight:700">Tips Still to Pay Out</span>
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#b85c10">R ${Math.max(0,totalTips-tCT).toFixed(2)}</span>
+      <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:#b85c10">R ${Math.max(0,totalTips-tCT).toFixed(2)}</span>
     </div>`:''}
     <div class="sr tot"><span>Denomination Count Total</span><span class="am ng">R ${dT.toFixed(2)}</span></div>
     <div style="background:${db};border-radius:8px;padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;margin-top:0.4rem">
       <span style="font-weight:700">Cash Difference (Count vs Received)</span>
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${dc}">${diff>=0?'+':''}R ${diff.toFixed(2)}</span>
+      <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:0.95rem;color:${dc}">${diff>=0?'+':''}R ${diff.toFixed(2)}</span>
     </div>`;
 }async function saveCU(){
   setSyncStatus('syncing');
@@ -4213,7 +4217,7 @@ function renderCUHistoryCard(r, highlightTerm=''){
       <td style="padding:0.45rem 0.5rem;text-align:center">${w.bk?'<span style="color:var(--green);font-size:0.75rem;font-weight:700">✅ Paid</span>':'<span style="color:#c0392b;font-size:0.72rem;font-weight:700">⚠️ −R10</span>'}</td>
       <td style="padding:0.45rem 0.5rem;text-align:right;font-size:0.82rem">${hasData?fmt(netTips,netCol):'—'}</td>
       <td style="padding:0.45rem 0.5rem;text-align:right;font-size:0.82rem">${ct>0?`<span style="color:#b85c10;font-weight:700">💵 R ${ct.toFixed(2)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
-      <td style="padding:0.45rem 0.7rem;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1.05rem">${hasData?fmt(toEft,eftCol):'—'}</td>
+      <td style="padding:0.45rem 0.7rem;text-align:right;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.05rem">${hasData?fmt(toEft,eftCol):'—'}</td>
     </tr>`;
   }).join('');
 
@@ -4235,13 +4239,13 @@ function renderCUHistoryCard(r, highlightTerm=''){
   const cacheKey=r.date+'_'+r.shift;
   const editBtn=canEditCashup()
     ?`<button onclick="cuLoadForEdit('${cacheKey}')"
-        style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:0.25rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.3rem;white-space:nowrap">
+        style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:0.25rem 0.7rem;font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.3rem;white-space:nowrap">
         ✏️ Edit
       </button>`
     :'';
   return `<div class="card" style="padding:0;overflow:hidden;margin-bottom:1rem">
     <div style="background:${sc};color:#fff;padding:0.6rem 1rem;display:flex;justify-content:space-between;align-items:center;gap:0.5rem">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.05em">${dateStr} — ${r.shift} Shift</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.1rem">${dateStr} — ${r.shift} Shift</div>
       <div style="display:flex;align-items:center;gap:0.6rem">
         <div style="font-size:0.72rem;opacity:0.8">${savedAt?'Saved '+savedAt:''}</div>
         ${editBtn}
@@ -4277,9 +4281,9 @@ function renderCUHistoryCard(r, highlightTerm=''){
               ${tBkCollected>0?`<span style="color:var(--green);font-weight:700;display:block">✅ R ${tBkCollected.toFixed(2)}</span>`:''}
               ${tBkDeduct===0&&tBkCollected===0?'—':''}
             </td>
-            <td style="padding:0.5rem 0.5rem;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:${tc}">${totalNetTips>=0?'R ':'−R '}${Math.abs(totalNetTips).toFixed(2)}</td>
+            <td style="padding:0.5rem 0.5rem;text-align:right;font-family:'DM Mono',monospace;font-weight:500;font-size:0.9rem;color:${tc}">${totalNetTips>=0?'R ':'−R '}${Math.abs(totalNetTips).toFixed(2)}</td>
             <td style="padding:0.5rem 0.5rem;text-align:right;font-weight:700;font-size:0.8rem;color:#b85c10">${tCT>0?`R ${tCT.toFixed(2)}`:'—'}</td>
-            <td style="padding:0.5rem 0.7rem;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${eftc}">${totalToEft>=0?'R ':'−R '}${Math.abs(totalToEft).toFixed(2)}</td>
+            <td style="padding:0.5rem 0.7rem;text-align:right;font-family:'DM Mono',monospace;font-weight:500;font-size:0.95rem;color:${eftc}">${totalToEft>=0?'R ':'−R '}${Math.abs(totalToEft).toFixed(2)}</td>
           </tr>
         </tfoot>
       </table>
@@ -4293,11 +4297,11 @@ function renderCUHistoryCard(r, highlightTerm=''){
           const net=gross-(w.bk?0:10);
           const eft=net-(w.ct||0);
           if(eft<=0) return '';
-          return `<div style="text-align:center"><div style="color:rgba(255,255,255,0.7);font-size:0.65rem;font-weight:700;letter-spacing:0.04em">${(w.name||'?').toUpperCase()}</div><div style="color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.05em">R ${eft.toFixed(2)}</div></div>`;
+          return `<div style="text-align:center"><div style="color:rgba(255,255,255,0.7);font-size:0.65rem;font-weight:700;letter-spacing:0.04em">${(w.name||'?').toUpperCase()}</div><div style="color:#fff;font-family:'DM Mono',monospace;font-weight:500;font-size:0.95rem;letter-spacing:0.05em">R ${eft.toFixed(2)}</div></div>`;
         }).join('')}
         <div style="border-left:1px solid rgba(255,255,255,0.3);padding-left:1.5rem;text-align:center">
           <div style="color:rgba(255,255,255,0.7);font-size:0.65rem;font-weight:700;letter-spacing:0.04em">TOTAL TO EFT</div>
-          <div style="color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:0.05em">${totalToEft>=0?'R ':'−R '}${Math.abs(totalToEft).toFixed(2)}</div>
+          <div style="color:#fff;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;letter-spacing:0.05em">${totalToEft>=0?'R ':'−R '}${Math.abs(totalToEft).toFixed(2)}</div>
         </div>
       </div>
     </div>
@@ -4559,7 +4563,7 @@ function renderRGrid(){
     <span style="font-size:0.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">➕ Add person</span>
     <datalist id="allStaffDL">${allNames}</datalist>
     <input id="waitphAddInput" list="allStaffDL" placeholder="Name or pick from staff…"
-      style="flex:1;min-width:160px;border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-family:'Karla',sans-serif;font-size:0.88rem;outline:none"
+      style="flex:1;min-width:160px;border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none"
       onkeydown="if(event.key==='Enter')addWaitphPerson()">
     <button class="btn bp bsm" onclick="addWaitphPerson()">Add</button>
   </div>`:'';
@@ -4745,7 +4749,7 @@ async function loadRosterWeek(){
 function printRoster(){
   const wk=weekKey(rosterWeekOf),dates=weekDates(rosterWeekOf),opts={day:'numeric',month:'short'};
   const groups=GROUPS.map(g=>({name:g,staff:staffForGroup(g).filter(s=>s.active!==false)}));
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Shift Roster</title><style>@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@400;600;700&display=swap');*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Karla',Arial,sans-serif;color:#1a0d10;}@page{size:A4 landscape;margin:12mm;}.hdr{display:flex;justify-content:space-between;padding-bottom:4mm;border-bottom:2px solid #7a1528;margin-bottom:4mm;}.brand{font-family:'Bebas Neue',sans-serif;font-size:20pt;color:#7a1528;}.wk{font-family:'Bebas Neue',sans-serif;font-size:13pt;text-align:right;}table{width:100%;border-collapse:collapse;margin-bottom:5mm;}.gl{font-family:'Bebas Neue',sans-serif;font-size:10pt;color:#7a1528;margin:3mm 0 2mm;}th{background:#7a1528;color:#fff;font-size:7pt;padding:2mm;text-align:center;border:1px solid #9e1e35;}th.nc{text-align:left;}td{padding:1.5mm 2mm;border:1px solid #e0d5cc;font-size:8pt;text-align:center;}td.nt{text-align:left;font-weight:600;background:#faf7f4;}.we{background:#fef8f0!important;}.tot{color:#1a7a45;font-weight:700;background:#eaf5ee;}.ft{display:flex;justify-content:space-between;font-size:7pt;color:#9a8070;padding-top:3mm;border-top:1px solid #e0d5cc;margin-top:2mm;}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}</style></head><body><div class="hdr"><div><div class="brand">DIE AKKER KOFFIEHUIS</div><div style="font-size:8pt;color:#9a8070">Staff Shift Roster</div></div><div class="wk">Week of ${rosterWeekOf.toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}<br><span style="font-size:9pt">${dates[0].toLocaleDateString('en-ZA',opts)} — ${dates[6].toLocaleDateString('en-ZA',opts)}</span></div></div>${groups.map(g=>{if(!g.staff.length)return'';return`<div class="gl">${g.name}</div><table><thead><tr><th class="nc">Name</th>${dates.map((d,i)=>`<th class="${i>=5?'we':''}">${DAYS[i]}<br>${d.getDate()}</th>`).join('')}<th>TOTAL</th></tr></thead><tbody>${g.staff.map(s=>{const dh=Array.from({length:7},(_,i)=>{const sh=getShift(wk,g.name,s.name,i);return{hrs:calcShiftHours(sh.start,sh.end,sh.brk),start:sh.start,end:sh.end};});const tot=dh.reduce((a,b)=>a+b.hrs,0);return`<tr><td class="nt">${s.name}<br><span style="font-size:6.5pt;color:#9a8070;font-weight:400">${s.role}</span></td>${dh.map((d,i)=>`<td class="${i>=5?'we':''}">${d.start&&d.end?`${d.start}<br><span style="font-size:6.5pt">→${d.end}</span>`:''}</td>`).join('')}<td class="tot">${tot>0?tot.toFixed(1)+'h':'—'}</td></tr>`;}).join('')}</tbody></table>`;}).join('')}<div class="ft"><span>Die Akker Koffiehuis — Potchefstroom</span><span>Printed: ${new Date().toLocaleDateString('en-ZA')}</span><span>Manager sign-off: ___________________________</span></div><div style="text-align:center;padding:15px;font-family:sans-serif"><button onclick="window.print()" style="background:#7a1528;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Print</button>&nbsp;<button onclick="window.close()" style="background:#f2ece6;border:1px solid #e0d5cc;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer">Close</button></div></body></html>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Shift Roster</title><style>@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'DM Sans',Arial,sans-serif;color:#1a0d10;}@page{size:A4 landscape;margin:12mm;}.hdr{display:flex;justify-content:space-between;padding-bottom:4mm;border-bottom:2px solid #7a1528;margin-bottom:4mm;}.brand{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:20pt;color:#7a1528;}.wk{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:13pt;text-align:right;}table{width:100%;border-collapse:collapse;margin-bottom:5mm;}.gl{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:10pt;color:#7a1528;margin:3mm 0 2mm;}th{background:#7a1528;color:#fff;font-size:7pt;padding:2mm;text-align:center;border:1px solid #9e1e35;}th.nc{text-align:left;}td{padding:1.5mm 2mm;border:1px solid #e0d5cc;font-size:8pt;text-align:center;}td.nt{text-align:left;font-weight:600;background:#faf7f4;}.we{background:#fef8f0!important;}.tot{color:#1a7a45;font-weight:700;background:#eaf5ee;}.ft{display:flex;justify-content:space-between;font-size:7pt;color:#9a8070;padding-top:3mm;border-top:1px solid #e0d5cc;margin-top:2mm;}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}</style></head><body><div class="hdr"><div><div class="brand">DIE AKKER KOFFIEHUIS</div><div style="font-size:8pt;color:#9a8070">Staff Shift Roster</div></div><div class="wk">Week of ${rosterWeekOf.toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}<br><span style="font-size:9pt">${dates[0].toLocaleDateString('en-ZA',opts)} — ${dates[6].toLocaleDateString('en-ZA',opts)}</span></div></div>${groups.map(g=>{if(!g.staff.length)return'';return`<div class="gl">${g.name}</div><table><thead><tr><th class="nc">Name</th>${dates.map((d,i)=>`<th class="${i>=5?'we':''}">${DAYS[i]}<br>${d.getDate()}</th>`).join('')}<th>TOTAL</th></tr></thead><tbody>${g.staff.map(s=>{const dh=Array.from({length:7},(_,i)=>{const sh=getShift(wk,g.name,s.name,i);return{hrs:calcShiftHours(sh.start,sh.end,sh.brk),start:sh.start,end:sh.end};});const tot=dh.reduce((a,b)=>a+b.hrs,0);return`<tr><td class="nt">${s.name}<br><span style="font-size:6.5pt;color:#9a8070;font-weight:400">${s.role}</span></td>${dh.map((d,i)=>`<td class="${i>=5?'we':''}">${d.start&&d.end?`${d.start}<br><span style="font-size:6.5pt">→${d.end}</span>`:''}</td>`).join('')}<td class="tot">${tot>0?tot.toFixed(1)+'h':'—'}</td></tr>`;}).join('')}</tbody></table>`;}).join('')}<div class="ft"><span>Die Akker Koffiehuis — Potchefstroom</span><span>Printed: ${new Date().toLocaleDateString('en-ZA')}</span><span>Manager sign-off: ___________________________</span></div><div style="text-align:center;padding:15px;font-family:sans-serif"><button onclick="window.print()" style="background:#7a1528;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Print</button>&nbsp;<button onclick="window.close()" style="background:#f2ece6;border:1px solid #e0d5cc;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer">Close</button></div></body></html>`;
   const win=window.open('','_blank','width=1000,height=700');win.document.write(html);win.document.close();
 }
 
@@ -5234,7 +5238,7 @@ function renderPayoutSummary(){
         </div>
         <div style="display:flex;align-items:center;gap:0.8rem">
           <div style="text-align:right">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.45rem;color:${paid?'var(--muted)':net>0?'var(--green)':'var(--muted)'}">R ${net.toFixed(2)}</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.45rem;color:${paid?'var(--muted)':net>0?'var(--green)':'var(--muted)'}">R ${net.toFixed(2)}</div>
             <div style="font-size:0.68rem;color:var(--muted)">${paid?'✓ paid':'net pay'}</div>
           </div>
           <button onclick="sendPayslipWhatsApp('${nameSafe}',${net.toFixed(2)})" title="Send payslip via WhatsApp"
@@ -5345,7 +5349,7 @@ function printPayslip(){
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Karla:wght@400;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Karla',Arial,sans-serif;color:#000;background:#fff;padding:0;}
+body{font-family:'DM Sans',Arial,sans-serif;color:#000;background:#fff;padding:0;}
 @page{size:A4;margin:15mm 20mm;}
 .wrap{max-width:170mm;margin:0 auto;}
 .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6mm;padding-bottom:4mm;border-bottom:1px solid #ccc;}
@@ -5685,16 +5689,16 @@ function renderSickCycleGrid(){
       </div>
       <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
         <div style="flex:1;min-width:70px;background:var(--surface);border-radius:7px;padding:0.35rem 0.5rem;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${annCol};line-height:1">${b.annRem}</div>
+          <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:${annCol};line-height:1">${b.annRem}</div>
           <div style="font-size:0.6rem;color:var(--muted);font-weight:700;text-transform:uppercase">Annual</div>
           ${carryStr}
         </div>
         <div style="flex:1;min-width:70px;background:var(--surface);border-radius:7px;padding:0.35rem 0.5rem;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${sickCol};line-height:1">${b.sickRem}</div>
+          <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:${sickCol};line-height:1">${b.sickRem}</div>
           <div style="font-size:0.6rem;color:var(--muted);font-weight:700;text-transform:uppercase">Sick</div>
         </div>
         <div style="flex:1;min-width:70px;background:var(--surface);border-radius:7px;padding:0.35rem 0.5rem;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--green);line-height:1">${b.famRem}</div>
+          <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:var(--green);line-height:1">${b.famRem}</div>
           <div style="font-size:0.6rem;color:var(--muted);font-weight:700;text-transform:uppercase">Family</div>
         </div>
       </div>
@@ -5958,7 +5962,7 @@ function printLeaveForm(id){
   const l=leaveData.find(x=>x.id===id);if(!l)return;
   const days=leaveDays(l);const recorded=new Date(l.recorded_at||new Date()).toLocaleDateString('en-ZA');
   const s=stfD.find(x=>x.name===l.staff_name);
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Leave Form</title><style>@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@400;600;700&display=swap');*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Karla',Arial,sans-serif;color:#1a0d10;}@page{size:A4;margin:18mm;}.hdr{display:flex;justify-content:space-between;padding-bottom:6mm;border-bottom:3px solid #7a1528;margin-bottom:6mm;}.brand{font-family:'Bebas Neue',sans-serif;font-size:28pt;color:#7a1528;}.title{font-family:'Bebas Neue',sans-serif;font-size:18pt;text-align:center;margin-bottom:5mm;padding:3mm 0;border-top:1px solid #e0d5cc;border-bottom:1px solid #e0d5cc;}.sec{margin-bottom:5mm;}.sec-t{font-size:7pt;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#7a1528;margin-bottom:2.5mm;padding-bottom:1mm;border-bottom:1px solid #e0d5cc;}.row{display:flex;gap:5mm;margin-bottom:3mm;}.fld{flex:1;}.fld label{font-size:7pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9a8070;display:block;margin-bottom:1.5mm;}.val{border-bottom:1.5px solid #1a0d10;padding:1.5mm 0;font-size:11pt;font-weight:600;min-height:6mm;}.val.burg{color:#7a1528;}.tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2.5mm;}.tbox{border:1.5px solid #e0d5cc;border-radius:4px;padding:2mm 3mm;display:flex;align-items:center;gap:2mm;font-size:8.5pt;}.tbox.sel{border-color:#7a1528;background:#fdf0f3;}.ck{width:14px;height:14px;border-radius:50%;border:1.5px solid #c0b0a8;display:flex;align-items:center;justify-content:center;flex-shrink:0;}.ck.on{background:#7a1528;border-color:#7a1528;color:#fff;font-size:8px;}.rbox{border:1.5px solid #e0d5cc;border-radius:5px;min-height:16mm;padding:2.5mm;font-size:10pt;line-height:1.6;}.stamp{text-align:center;margin:4mm 0;}.st{display:inline-block;border:2.5px solid;border-radius:5px;padding:2mm 8mm;font-family:'Bebas Neue',sans-serif;font-size:15pt;letter-spacing:0.15em;}.st.app{border-color:#1a7a45;color:#1a7a45;}.st.pen{border-color:#c8922a;color:#c8922a;}.st.rej{border-color:#8e1a1a;color:#8e1a1a;}.sig{display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin-top:3mm;}.sl{font-size:7pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#9a8070;margin-bottom:6mm;}.sline{border-bottom:1.5px solid #1a0d10;margin-bottom:2mm;}.sn{font-size:7.5pt;color:#9a8070;}.ft{display:flex;justify-content:space-between;font-size:7pt;color:#9a8070;padding-top:3mm;border-top:1px solid #e0d5cc;margin-top:6mm;}.no-print{text-align:center;padding:15px;font-family:sans-serif;}@media print{.no-print{display:none;}body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}</style></head><body>
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Leave Form</title><style>@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'DM Sans',Arial,sans-serif;color:#1a0d10;}@page{size:A4;margin:18mm;}.hdr{display:flex;justify-content:space-between;padding-bottom:6mm;border-bottom:3px solid #7a1528;margin-bottom:6mm;}.brand{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:28pt;color:#7a1528;}.title{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:18pt;text-align:center;margin-bottom:5mm;padding:3mm 0;border-top:1px solid #e0d5cc;border-bottom:1px solid #e0d5cc;}.sec{margin-bottom:5mm;}.sec-t{font-size:7pt;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#7a1528;margin-bottom:2.5mm;padding-bottom:1mm;border-bottom:1px solid #e0d5cc;}.row{display:flex;gap:5mm;margin-bottom:3mm;}.fld{flex:1;}.fld label{font-size:7pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9a8070;display:block;margin-bottom:1.5mm;}.val{border-bottom:1.5px solid #1a0d10;padding:1.5mm 0;font-size:11pt;font-weight:600;min-height:6mm;}.val.burg{color:#7a1528;}.tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2.5mm;}.tbox{border:1.5px solid #e0d5cc;border-radius:4px;padding:2mm 3mm;display:flex;align-items:center;gap:2mm;font-size:8.5pt;}.tbox.sel{border-color:#7a1528;background:#fdf0f3;}.ck{width:14px;height:14px;border-radius:50%;border:1.5px solid #c0b0a8;display:flex;align-items:center;justify-content:center;flex-shrink:0;}.ck.on{background:#7a1528;border-color:#7a1528;color:#fff;font-size:8px;}.rbox{border:1.5px solid #e0d5cc;border-radius:5px;min-height:16mm;padding:2.5mm;font-size:10pt;line-height:1.6;}.stamp{text-align:center;margin:4mm 0;}.st{display:inline-block;border:2.5px solid;border-radius:5px;padding:2mm 8mm;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:15pt;letter-spacing:0.15em;}.st.app{border-color:#1a7a45;color:#1a7a45;}.st.pen{border-color:#c8922a;color:#c8922a;}.st.rej{border-color:#8e1a1a;color:#8e1a1a;}.sig{display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin-top:3mm;}.sl{font-size:7pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#9a8070;margin-bottom:6mm;}.sline{border-bottom:1.5px solid #1a0d10;margin-bottom:2mm;}.sn{font-size:7.5pt;color:#9a8070;}.ft{display:flex;justify-content:space-between;font-size:7pt;color:#9a8070;padding-top:3mm;border-top:1px solid #e0d5cc;margin-top:6mm;}.no-print{text-align:center;padding:15px;font-family:sans-serif;}@media print{.no-print{display:none;}body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}</style></head><body>
 <div class="hdr"><div><div class="brand">DIE AKKER</div><div style="font-size:8pt;color:#9a8070;letter-spacing:0.15em;text-transform:uppercase">Koffiehuis — Potchefstroom</div></div><div style="text-align:right;font-size:8pt;color:#9a8070">Leave Application / Verlofaansoek<br><strong style="font-size:10pt;color:#1a0d10">Ref: LA-${id.slice(-6).toUpperCase()}</strong><br>Recorded: ${recorded}</div></div>
 <div class="title">Leave Application / Verlofaansoek</div>
 <div class="sec"><div class="sec-t">Employee Details</div><div class="row"><div class="fld" style="flex:3"><label>Full Name</label><div class="val burg">${l.staff_name}</div></div><div class="fld"><label>Division</label><div class="val">${s?.division||'Kitchen'}</div></div><div class="fld"><label>Position</label><div class="val">${s?.role||''}</div></div></div></div>
@@ -6086,8 +6090,8 @@ function loadKpiForm(type){
     </div>`;
   };
   const extraFields=(type==='waiters')?`<div style="display:flex;gap:0.6rem;margin-bottom:0.8rem;flex-wrap:wrap">
-    <div class="fg" style="margin:0;flex:1;min-width:100px"><label>Sales (R)</label><input type="number" id="kpiSales_${type}" value="${salesVal}" placeholder="e.g. 18500" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" ${readOnly?'readonly':''}></div>
-    <div class="fg" style="margin:0;flex:1;min-width:80px"><label>Shifts Worked</label><input type="number" id="kpiShifts_${type}" value="${shiftsVal}" placeholder="e.g. 12" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" ${readOnly?'readonly':''}></div>
+    <div class="fg" style="margin:0;flex:1;min-width:100px"><label>Sales (R)</label><input type="number" id="kpiSales_${type}" value="${salesVal}" placeholder="e.g. 18500" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" ${readOnly?'readonly':''}></div>
+    <div class="fg" style="margin:0;flex:1;min-width:80px"><label>Shifts Worked</label><input type="number" id="kpiShifts_${type}" value="${shiftsVal}" placeholder="e.g. 12" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" ${readOnly?'readonly':''}></div>
   </div>`:'';
   formEl.innerHTML=`<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.8rem">
     <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.7rem">
@@ -6096,7 +6100,7 @@ function loadKpiForm(type){
         <div style="font-size:0.72rem;color:var(--muted)">${period} · ${criteria.length} criteria · Max ${maxScore} pts</div>
       </div>
       <div style="text-align:right">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:${col};line-height:1">${totalScore}<span style="font-size:0.9rem;color:var(--muted)">/${maxScore}</span></div>
+        <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.8rem;color:${col};line-height:1">${totalScore}<span style="font-size:0.9rem;color:var(--muted)">/${maxScore}</span></div>
         <div style="font-size:0.7rem;color:var(--muted)">avg ${avgScore}/5</div>
       </div>
     </div>
@@ -6107,7 +6111,7 @@ function loadKpiForm(type){
   </div>
   ${extraFields}
   <div style="margin-bottom:0.8rem">${criteria.map(scoreRow).join('')}</div>
-  <div class="fg" style="margin-bottom:0.8rem"><label>Notes & Comments</label><textarea id="kpiNotes_${type}" rows="3" placeholder="General feedback, areas for improvement, commendations..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;resize:vertical" ${readOnly?'readonly':''}>${notesVal}</textarea></div>
+  <div class="fg" style="margin-bottom:0.8rem"><label>Notes & Comments</label><textarea id="kpiNotes_${type}" rows="3" placeholder="General feedback, areas for improvement, commendations..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;resize:vertical" ${readOnly?'readonly':''}>${notesVal}</textarea></div>
   ${readOnly?'':`<div style="display:flex;gap:0.6rem"><button class="btn bp" onclick="saveKpiReview('${type}')" style="flex:1">💾 Save Review</button>${existing?`<button class="btn bs" onclick="deleteKpiReview('${existing.id}')" style="color:var(--red);border-color:var(--red-b)">🗑</button>`:''}</div>`}`;
   // Store current scores on window for live update
   window._kpiScores=window._kpiScores||{};
@@ -6233,7 +6237,7 @@ function renderKpiHistory(){
         <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem">
           <div style="width:28px;height:28px;border-radius:50%;background:var(--burg);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff;flex-shrink:0">${r.staff_name[0]}</div>
           <div style="flex:1"><div style="font-weight:700;font-size:0.83rem">${r.staff_name}</div><div style="font-size:0.65rem;color:var(--muted)">${typeLabel}</div></div>
-          <div style="text-align:right;margin-right:0.3rem"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:${col};line-height:1">${total}<span style="font-size:0.7rem;color:var(--muted)">/${max}</span></div><div style="font-size:0.6rem;color:var(--muted)">${pct}%</div></div>
+          <div style="text-align:right;margin-right:0.3rem"><div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1.1rem;color:${col};line-height:1">${total}<span style="font-size:0.7rem;color:var(--muted)">/${max}</span></div><div style="font-size:0.6rem;color:var(--muted)">${pct}%</div></div>
           ${delBtn}
         </div>
         <div style="background:var(--surface);border-radius:4px;height:5px;overflow:hidden"><div style="background:${col};height:100%;width:${pct}%;border-radius:4px"></div></div>
@@ -6254,7 +6258,7 @@ function showKpiDetail(id){
   document.getElementById('kpiDetailTitle').textContent=`${r.staff_name} — ${r.period}`;
   document.getElementById('kpiDetailBody').innerHTML=`
     <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.8rem;background:var(--surface);border-radius:10px;padding:0.7rem 0.9rem">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:${col};line-height:1">${total}<span style="font-size:1rem;color:var(--muted)">/${max}</span></div>
+      <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:2.5rem;color:${col};line-height:1">${total}<span style="font-size:1rem;color:var(--muted)">/${max}</span></div>
       <div><div style="font-size:0.82rem;font-weight:700">${pct}% — ${pct>=80?'Excellent':pct>=60?'Good':pct>=40?'Average':pct>=20?'Below Average':'Needs Improvement'}</div><div style="font-size:0.7rem;color:var(--muted)">avg ${r.avg_score||0}/5 per criterion</div>${r.sales_figure?`<div style="font-size:0.7rem;color:var(--muted)">Sales: R${r.sales_figure.toLocaleString()}</div>`:''}${r.shifts_count?`<div style="font-size:0.7rem;color:var(--muted)">Shifts: ${r.shifts_count}</div>`:''}</div>
     </div>
     <div style="background:var(--surface);border-radius:6px;height:8px;overflow:hidden;margin-bottom:0.8rem"><div style="background:${col};height:100%;width:${pct}%;border-radius:6px"></div></div>
@@ -6285,7 +6289,7 @@ function renderDocs(){
   let staff=stfD; if(q)staff=staff.filter(s=>s.name.toLowerCase().includes(q));
   document.getElementById('docStaffList').innerHTML=staff.map(s=>{
     const docs=docsData[s.name]||[];const done=DOC_REQ.filter(t=>docs.some(d=>d.doc_type===t)).length;const pct=Math.round(done/DOC_REQ.length*100);const col=pct===100?'var(--green)':pct>=50?'var(--orange)':'var(--red)';
-    return `<div class="doc-staff-row" onclick="openDocModal('${s.name.replace(/'/g,"\\'")}')"><div style="width:32px;height:32px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:0.88rem">${s.name}</div><div style="font-size:0.7rem;color:var(--muted)">${s.role} · ${s.division} · ${docs.length} doc${docs.length!==1?'s':''}</div><div class="sbar"><div class="sbf" style="width:${pct}%;background:${col}"></div></div></div><div style="text-align:right;min-width:50px"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${col}">${pct}%</div><div style="font-size:0.62rem;color:var(--muted)">required</div></div><div style="color:var(--muted)">›</div></div>`;
+    return `<div class="doc-staff-row" onclick="openDocModal('${s.name.replace(/'/g,"\\'")}')"><div style="width:32px;height:32px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:0.88rem">${s.name}</div><div style="font-size:0.7rem;color:var(--muted)">${s.role} · ${s.division} · ${docs.length} doc${docs.length!==1?'s':''}</div><div class="sbar"><div class="sbf" style="width:${pct}%;background:${col}"></div></div></div><div style="text-align:right;min-width:50px"><div style="font-family:'DM Mono',monospace;font-weight:500;font-size:0.95rem;color:${col}">${pct}%</div><div style="font-size:0.62rem;color:var(--muted)">required</div></div><div style="color:var(--muted)">›</div></div>`;
   }).join('');
 }
 
@@ -7130,10 +7134,10 @@ function printStockTemplate(){
 <meta charset="UTF-8">
 <title>Die Akker Koffiehuis — Weekly Stock Take</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
 body{
-  font-family:'Karla',Arial,sans-serif;
+  font-family:'DM Sans',Arial,sans-serif;
   color:#000;
   background:#fff;
   print-color-adjust:exact;
@@ -7142,14 +7146,14 @@ body{
 /* ── PRINT BUTTON BAR ── */
 .no-print{text-align:center;padding:10mm;background:#f5f5f5;border-bottom:1px solid #ccc;}
 .no-print button{background:#7a1528;color:#fff;border:none;padding:10px 28px;border-radius:8px;
-  font-size:13px;cursor:pointer;font-weight:700;font-family:'Karla',sans-serif;margin:4px;}
+  font-size:13px;cursor:pointer;font-weight:700;font-family:'DM Sans',sans-serif;margin:4px;}
 .no-print .note{font-size:11px;color:#666;margin-top:6px;}
 /* ── PAGE CONTENT ── */
 .page{padding:12mm 14mm;}
 /* ── HEADER ── */
 .header{display:flex;justify-content:space-between;align-items:flex-end;
   border-bottom:2.5pt solid #000;padding-bottom:4mm;margin-bottom:4mm;}
-.brand{font-family:'Bebas Neue',sans-serif;font-size:24pt;color:#000;letter-spacing:0.05em;line-height:1;}
+.brand{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:24pt;color:#000;letter-spacing:0.05em;line-height:1;}
 .brand-sub{font-size:8pt;color:#333;letter-spacing:0.12em;text-transform:uppercase;margin-top:1mm;}
 .header-right{text-align:right;font-size:8pt;color:#333;}
 /* ── FILL-IN META LINE ── */
@@ -7167,7 +7171,7 @@ table{width:100%;border-collapse:collapse;}
   padding:2.5mm 2mm;
   text-align:center;
   border:1pt solid #000;
-  font-family:'Bebas Neue',sans-serif;
+  font-family:'Cormorant Garamond',serif;font-weight:700;
   font-size:10pt;
   letter-spacing:0.08em;
 }
@@ -7544,7 +7548,7 @@ async function loadXeroInvoices(){
             <div style="font-size:0.72rem;color:var(--muted)">${inv.InvoiceNumber||'No ref'} · ${(inv.Date||'').slice(6,10)+'-'+(inv.Date||'').slice(4,6)+'-'+(inv.Date||'').slice(0,4)||'No date'}</div>
           </div>
           <div style="text-align:right">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--burg)">R ${total.toFixed(2)}</div>
+            <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:var(--burg)">R ${total.toFixed(2)}</div>
             <span class="bdg" style="background:${statusCol}22;color:${statusCol};border:1px solid ${statusCol}44;font-size:0.55rem">${status}</span>
           </div>
         </div>
@@ -7698,13 +7702,13 @@ function renderInvLineItems(){
   el.innerHTML=invLineData.map((l,i)=>`
     <div style="padding:0.6rem 0.8rem;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 70px 80px 70px 24px;gap:0.4rem;align-items:center;font-size:0.8rem">
       <input value="${l.description}" placeholder="Description"
-        style="border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.5rem;font-family:'Karla',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;width:100%;box-sizing:border-box"
+        style="border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.5rem;font-family:'DM Sans',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;width:100%;box-sizing:border-box"
         oninput="invLineData[${i}].description=this.value">
       <input type="number" value="${l.quantity}" min="0" step="0.001" placeholder="Qty"
-        style="border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.4rem;font-family:'Karla',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;text-align:center;width:100%;box-sizing:border-box"
+        style="border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.4rem;font-family:'DM Sans',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;text-align:center;width:100%;box-sizing:border-box"
         oninput="invLineData[${i}].quantity=parseFloat(this.value)||0;recalcInvLine(${i})">
       <input type="number" value="${l.unit_price.toFixed(2)}" min="0" step="0.01" placeholder="Unit Price"
-        style="border:1px solid var(--burg);border-radius:6px;padding:0.3rem 0.4rem;font-family:'Karla',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;text-align:right;width:100%;box-sizing:border-box"
+        style="border:1px solid var(--burg);border-radius:6px;padding:0.3rem 0.4rem;font-family:'DM Sans',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;text-align:right;width:100%;box-sizing:border-box"
         oninput="invLineData[${i}].unit_price=parseFloat(this.value)||0;recalcInvLine(${i})">
       <div id="invLine${i}Amt" style="text-align:right;font-weight:700;color:var(--burg)">R ${l.amount.toFixed(2)}</div>
       <button onclick="removeInvLine(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;padding:0;line-height:1">✕</button>
@@ -7975,7 +7979,7 @@ function showScanResults(){
           :`<div style="font-size:0.68rem;color:var(--red)">⚠ Not matched — won't be applied</div>`}
       </div>
       <input type="number" value="${r.quantity}" min="0" step="0.1"
-        style="width:72px;border:1px solid ${r.dbItem?'var(--burg)':'var(--border)'};border-radius:7px;padding:0.4rem;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--burg);background:${r.dbItem?'var(--cream)':'var(--surface)'};text-align:center;outline:none"
+        style="width:72px;border:1px solid ${r.dbItem?'var(--burg)':'var(--border)'};border-radius:7px;padding:0.4rem;font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:var(--burg);background:${r.dbItem?'var(--cream)':'var(--surface)'};text-align:center;outline:none"
         ${r.dbItem?'':'disabled'}
         oninput="scanResultsData[${i}].quantity=parseFloat(this.value)||0">
       ${r.dbItem?`<span style="font-size:0.65rem;color:var(--muted)">${r.dbItem.unit}</span>`:''}
@@ -8188,7 +8192,7 @@ function renderLossRanking(){
           <div style="width:22px;height:22px;border-radius:50%;background:${i<3?'var(--red)':'var(--surface)'};color:${i<3?'#fff':'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">${i+1}</div>
           <div style="font-weight:700;font-size:0.88rem">${l.name}</div>
         </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--red)">-${l.total.toFixed(1)} ${l.unit}</div>
+        <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:0.95rem;color:var(--red)">-${l.total.toFixed(1)} ${l.unit}</div>
       </div>
       <div style="height:6px;background:var(--surface);border-radius:3px;overflow:hidden">
         <div style="height:100%;width:${Math.round(l.total/max*100)}%;background:var(--red);border-radius:3px"></div>
@@ -8335,7 +8339,7 @@ function wpRenderHBar(elId, data, label, prefix, colors){
     return `<div style="margin-bottom:0.7rem">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem">
         <span style="font-weight:700;font-size:0.84rem">${d.label}</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:${col}">${valTxt}${avgTxt}</span>
+        <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:0.9rem;color:${col}">${valTxt}${avgTxt}</span>
       </div>
       <div style="height:18px;background:var(--surface);border-radius:4px;overflow:hidden">
         <div style="height:100%;width:${pct}%;background:${col};border-radius:4px;transition:width 0.4s"></div>
@@ -8432,7 +8436,7 @@ function wpRenderKpi(elId, stats){
       <td style="padding:0.55rem 0.5rem;text-align:center">
         ${kpiPct!==null
           ?`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px">
-              <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:${kpiCol}">${kpiPct}%</span>
+              <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:0.9rem;color:${kpiCol}">${kpiPct}%</span>
               <div style="width:60px;height:5px;background:var(--surface);border-radius:3px;overflow:hidden">
                 <div style="width:${kpiPct}%;height:100%;background:${kpiCol};border-radius:3px"></div>
               </div>
@@ -9078,19 +9082,19 @@ function viewRecipe(id){
   document.getElementById('viewRecipeBody').innerHTML=`
     <div style="display:flex;gap:0.8rem;margin-bottom:1rem;flex-wrap:wrap">
       <div class="card" style="flex:1;padding:0.7rem;text-align:center;min-width:80px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--burg)">R${price}</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.6rem;color:var(--burg)">R${price}</div>
         <div style="font-size:0.68rem;color:var(--muted)">Selling Price</div>
       </div>
       <div class="card" style="flex:1;padding:0.7rem;text-align:center;min-width:80px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--ink)">R${ingCost.toFixed(2)}</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.6rem;color:var(--ink)">R${ingCost.toFixed(2)}</div>
         <div style="font-size:0.68rem;color:var(--muted)">Ingredient Cost</div>
       </div>
       <div class="card" style="flex:1;padding:0.7rem;text-align:center;min-width:80px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:${pctCol}">${costPct.toFixed(1)}%</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.6rem;color:${pctCol}">${costPct.toFixed(1)}%</div>
         <div style="font-size:0.68rem;color:var(--muted)">Food Cost</div>
       </div>
       <div class="card" style="flex:1;padding:0.7rem;text-align:center;min-width:80px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--green)">${gp.toFixed(1)}%</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.6rem;color:var(--green)">${gp.toFixed(1)}%</div>
         <div style="font-size:0.68rem;color:var(--muted)">Gross Profit</div>
       </div>
     </div>
@@ -9102,16 +9106,16 @@ function viewRecipe(id){
           <div style="font-weight:600;font-size:0.88rem">${ing.name}</div>
           <div style="font-size:0.7rem;color:var(--muted)">${ing.qty} ${ing.unit}</div>
         </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--muted)">R${ingCostLine.toFixed(2)}</div>
+        <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:0.9rem;color:var(--muted)">R${ingCostLine.toFixed(2)}</div>
       </div>`;
     }).join('')}
     <div style="display:flex;justify-content:space-between;padding:0.6rem 0;margin-top:0.2rem;border-top:2px solid var(--burg)">
       <div style="font-weight:700">Total ingredient cost</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--burg)">R${ingCost.toFixed(2)}</div>
+      <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:0.95rem;color:var(--burg)">R${ingCost.toFixed(2)}</div>
     </div>
     <div style="display:flex;justify-content:space-between;padding:0.3rem 0">
       <div style="font-weight:700;color:var(--green)">Gross profit per dish</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--green)">R${(price-ingCost).toFixed(2)}</div>
+      <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:0.95rem;color:var(--green)">R${(price-ingCost).toFixed(2)}</div>
     </div>
   `;
   openMo('moViewRecipe');
@@ -9481,15 +9485,15 @@ function renderGPHealth(){
         </div>
         <div style="display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap">
           <div style="text-align:center">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:${gpColor};line-height:1">${gpLabel}</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.6rem;color:${gpColor};line-height:1">${gpLabel}</div>
             <div style="font-size:0.6rem;color:var(--muted)">GP</div>
           </div>
           <div style="text-align:center">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--ink);line-height:1">R${r.cost.toFixed(2)}</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.6rem;color:var(--ink);line-height:1">R${r.cost.toFixed(2)}</div>
             <div style="font-size:0.6rem;color:var(--muted)">cost</div>
           </div>
           <div style="text-align:center">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:${r.gpRand>=0?'var(--green)':'var(--red)'};line-height:1">${r.gpRand!==null?'R'+r.gpRand.toFixed(2):'—'}</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.6rem;color:${r.gpRand>=0?'var(--green)':'var(--red)'};line-height:1">${r.gpRand!==null?'R'+r.gpRand.toFixed(2):'—'}</div>
             <div style="font-size:0.6rem;color:var(--muted)">profit/plate</div>
           </div>
           ${canEdit()?`<button onclick="openEditRecipe(${r.id})" style="background:none;border:1px solid var(--border);border-radius:7px;padding:0.3rem 0.7rem;font-size:0.72rem;cursor:pointer;color:var(--muted)">Edit ›</button>`:''}
@@ -9548,7 +9552,7 @@ function renderIngPrices(){
   items.forEach(i=>{ if(!groups[i.cat]) groups[i.cat]=[]; groups[i.cat].push(i); });
 
   el.innerHTML = Object.entries(groups).map(([cat, ingList])=>`
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--burg);padding:0.5rem 0 0.3rem;border-bottom:1px solid var(--border);margin-bottom:0.3rem">${cat}</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:0.85rem;letter-spacing:0.1em;color:var(--burg);padding:0.5rem 0 0.3rem;border-bottom:1px solid var(--border);margin-bottom:0.3rem">${cat}</div>
     ${ingList.map(ing=>`
       <div style="display:flex;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--surface);gap:0.7rem;cursor:${ce?'pointer':'default'}" ${ce?`onclick="openEditIngredient('${ing.name.replace(/'/g,"\\'")}')"`:''}> 
         <div style="flex:1;min-width:0">
@@ -9556,7 +9560,7 @@ function renderIngPrices(){
           <div style="font-size:0.7rem;color:var(--muted)">${ing.supplier||'—'}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--burg)">R${ing.price.toFixed(2)}</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.15rem;color:var(--burg)">R${ing.price.toFixed(2)}</div>
           <div style="font-size:0.62rem;color:var(--muted)">per ${ing.unit}</div>
         </div>
         ${ce?`<div style="color:var(--muted);font-size:0.9rem">›</div>`:''}
@@ -9780,7 +9784,7 @@ function renderPriceAlertCards(){
           <div style="font-size:0.72rem;color:var(--muted)">${pc.supplier||'Supplier'} · ${new Date(pc.changed_at).toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'})}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:${isUp?'var(--red)':'var(--green)'}">
+          <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;color:${isUp?'var(--red)':'var(--green)'}">
             ${isUp?'▲':'▼'} ${Math.abs(changePct).toFixed(1)}%
           </div>
           <div style="font-size:0.72rem;color:var(--muted)">R${pc.old_price} → <strong>R${pc.new_price}</strong> per ${pc.unit}</div>
@@ -9819,7 +9823,7 @@ function renderGPImpactTable(){
         <td><strong>${r.name}</strong><br><span style="font-size:0.68rem;color:var(--muted)">${r.category||r.cat}</span></td>
         <td class="r">R${r.price}</td>
         <td class="r">R${cost.toFixed(2)}</td>
-        <td class="r"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:${col}">${badge} ${pct.toFixed(1)}%</span></td>
+        <td class="r"><span style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.05rem;color:${col}">${badge} ${pct.toFixed(1)}%</span></td>
         <td class="r" style="color:var(--green)">R${gp.toFixed(2)}</td>
         <td class="r">${needsPriceChange?`<span style="color:var(--red);font-weight:700">R${suggestedPrice}</span><br><span style="font-size:0.65rem;color:var(--muted)">+R${suggestedPrice-r.price}</span>`:'<span style="color:var(--green)">✓ OK</span>'}</td>
       </tr>`;
@@ -10064,7 +10068,7 @@ async function renderLeaderboard(){
             <div style="font-size:0.7rem;color:var(--muted)">${w.shifts} shift${w.shifts!==1?'s':''} · R${Math.round(avgPerShiftW).toLocaleString()}/shift avg</div>
           </div>
           <div style="text-align:right">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--burg)">R${Math.round(w.sales).toLocaleString()}</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;color:var(--burg)">R${Math.round(w.sales).toLocaleString()}</div>
             <div style="font-size:0.68rem;color:var(--muted)">Commission: <strong style="color:var(--green)">R${w.commission.toFixed(2)}</strong></div>
           </div>
         </div>
@@ -10264,7 +10268,7 @@ function renderSchedGrid(){
                 </button>
               </td>`;
             }).join('')).join('')}
-            <td style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:${total>0?activeBg:'var(--muted)'}">
+            <td style="text-align:center;font-family:'DM Mono',monospace;font-weight:500;font-size:0.9rem;color:${total>0?activeBg:'var(--muted)'}">
               ${total||'—'}
             </td>
           </tr>`;
@@ -10288,15 +10292,15 @@ function renderSchedGrid(){
     </div>
     ${legend}
     <div class="card" style="padding:0;overflow:hidden;margin-bottom:1rem">
-      <div style="background:#152438;color:#fff;padding:0.55rem 1rem;font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.05em">BESTUUR — Opening (O: 07:00–14:30) & Closing (C: 14:30–sluit)</div>
+      <div style="background:#152438;color:#fff;padding:0.55rem 1rem;font-family:'DM Mono',monospace;font-weight:500;font-size:0.9rem;letter-spacing:0.05em">BESTUUR — Opening (O: 07:00–14:30) & Closing (C: 14:30–sluit)</div>
       ${buildTable(mgmt,MGR_SHIFTS,'#152438')}
     </div>
     <div class="card" style="padding:0;overflow:hidden;margin-bottom:0.8rem">
-      <div style="background:var(--burg);color:#fff;padding:0.55rem 1rem;font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.05em">WAITERS PER SKOF</div>
+      <div style="background:var(--burg);color:#fff;padding:0.55rem 1rem;font-family:'DM Mono',monospace;font-weight:500;font-size:0.9rem;letter-spacing:0.05em">WAITERS PER SKOF</div>
       ${buildTable(waiters,SHIFTS,'var(--burg)')}
     </div>
     <div class="card" style="padding:0.8rem 1rem">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--burg);margin-bottom:0.5rem;letter-spacing:0.05em">RANGLYS — SKOFTE HIERDIE WEEK</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:0.85rem;color:var(--burg);margin-bottom:0.5rem;letter-spacing:0.05em">RANGLYS — SKOFTE HIERDIE WEEK</div>
       <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
         ${waiterShifts.filter(w=>w.shifts>0).map((w,i)=>`
           <div style="background:${i===0?'var(--burg)':i===1?'var(--gold)':i===2?'var(--orange)':'var(--surface)'};
@@ -10729,18 +10733,18 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       </div>
       <!-- PIN Pad -->
       <div id="wlPinPad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;max-width:240px;margin:0 auto 1rem">
-        <button onclick="wlPinPress(1)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">1</button>
-        <button onclick="wlPinPress(2)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">2</button>
-        <button onclick="wlPinPress(3)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">3</button>
-        <button onclick="wlPinPress(4)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">4</button>
-        <button onclick="wlPinPress(5)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">5</button>
-        <button onclick="wlPinPress(6)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">6</button>
-        <button onclick="wlPinPress(7)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">7</button>
-        <button onclick="wlPinPress(8)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">8</button>
-        <button onclick="wlPinPress(9)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">9</button>
+        <button onclick="wlPinPress(1)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;cursor:pointer;color:var(--ink);transition:all 0.1s">1</button>
+        <button onclick="wlPinPress(2)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;cursor:pointer;color:var(--ink);transition:all 0.1s">2</button>
+        <button onclick="wlPinPress(3)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;cursor:pointer;color:var(--ink);transition:all 0.1s">3</button>
+        <button onclick="wlPinPress(4)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;cursor:pointer;color:var(--ink);transition:all 0.1s">4</button>
+        <button onclick="wlPinPress(5)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;cursor:pointer;color:var(--ink);transition:all 0.1s">5</button>
+        <button onclick="wlPinPress(6)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;cursor:pointer;color:var(--ink);transition:all 0.1s">6</button>
+        <button onclick="wlPinPress(7)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;cursor:pointer;color:var(--ink);transition:all 0.1s">7</button>
+        <button onclick="wlPinPress(8)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;cursor:pointer;color:var(--ink);transition:all 0.1s">8</button>
+        <button onclick="wlPinPress(9)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;cursor:pointer;color:var(--ink);transition:all 0.1s">9</button>
         <div style="background:transparent;border:none;padding:0.9rem"></div>
-        <button onclick="wlPinPress(0)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--ink);transition:all 0.1s">0</button>
-        <button onclick="wlPinPress('⌫')" style="background:var(--red-l);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;color:var(--red);transition:all 0.1s">⌫</button>
+        <button onclick="wlPinPress(0)" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;cursor:pointer;color:var(--ink);transition:all 0.1s">0</button>
+        <button onclick="wlPinPress('⌫')" style="background:var(--red-l);border:1px solid var(--border);border-radius:10px;padding:0.9rem;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.5rem;cursor:pointer;color:var(--red);transition:all 0.1s">⌫</button>
       </div>
       <div style="font-size:0.72rem;color:var(--muted);text-align:center">PIN not set? <span style="color:var(--burg);cursor:pointer;font-weight:700" onclick="wlSkipPin()">Skip & select manually</span></div>
     </div>
@@ -10811,7 +10815,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     <!-- Role selector — separate from checkboxes -->
     <div class="fg">
       <label>Role / Badge</label>
-      <select id="loginRoleLevel" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+      <select id="loginRoleLevel" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
         <option value="owner">🔑 Owner — full system access</option>
         <option value="investor">📊 Investor — view only</option>
         <option value="manager">👔 Manager — day-to-day operations</option>
@@ -10854,7 +10858,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       <input type="file" id="stPhotoGallery" accept="image/*" multiple style="display:none" onchange="addStPhotos(this)">
       <div class="fg">
         <label>Division (helps AI match items)</label>
-        <select id="stPhotoDivision" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+        <select id="stPhotoDivision" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
           <option value="all">All / Mixed</option>
           <option>Meat</option><option>Dairy</option><option>Produce</option>
           <option>Dry Goods</option><option>Bar</option><option>Bakery</option>
@@ -10906,26 +10910,26 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       <div class="fg2" style="margin-bottom:0.6rem">
         <div class="fg">
           <label>Supplier</label>
-          <select id="invSupplierSel" style="width:100%;border:1px solid var(--burg);border-radius:8px;padding:0.55rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
+          <select id="invSupplierSel" style="width:100%;border:1px solid var(--burg);border-radius:8px;padding:0.55rem 0.7rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
             <option value="">— Select Xero contact —</option>
           </select>
         </div>
         <div class="fg">
           <label>Invoice #</label>
           <input type="text" id="invNumber" placeholder="e.g. INV-001"
-            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
+            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
         </div>
       </div>
       <div class="fg2" style="margin-bottom:0.9rem">
         <div class="fg">
           <label>Invoice Date</label>
           <input type="date" id="invDate"
-            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
+            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
         </div>
         <div class="fg">
           <label>Due Date</label>
           <input type="date" id="invDueDate"
-            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'Karla',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
+            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
         </div>
       </div>
 
@@ -10970,7 +10974,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     <div class="fg"><label>Supplier Name</label><input type="text" id="supName" placeholder="e.g. Chubby Chick"></div>
     <div class="fg"><label>Contact (number, email or note)</label><input type="text" id="supContact" placeholder="e.g. 083 414 0677 or orders@supplier.co.za"></div>
     <div class="fg"><label>Order Method</label>
-      <select id="supMethod" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+      <select id="supMethod" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
         <option value="wa">📱 WhatsApp</option>
         <option value="email">📧 Email</option>
         <option value="phone">📞 Phone (copy order)</option>
@@ -11008,7 +11012,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     <div class="fg2">
       <div class="fg"><label>Dish Name</label><input type="text" id="recipeName" placeholder="e.g. Akker Breakfast"></div>
       <div class="fg"><label>Menu Category</label>
-        <select id="recipeCat" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+        <select id="recipeCat" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
           <option>Breakfast</option><option>Omelettes</option><option>Bakery</option>
           <option>Open Sandwiches</option><option>Toasted Sandwiches</option>
           <option>Akker Specialities</option><option>Wraps</option><option>Tramezzinis</option>
@@ -11066,7 +11070,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Enter the new price from a supplier invoice. The system will calculate the GP impact across all affected dishes.</div>
     <div class="fg">
       <label>Ingredient</label>
-      <select id="pcIngredient" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadPrevPrice()">
+      <select id="pcIngredient" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none" onchange="loadPrevPrice()">
         <option value="">— Select ingredient —</option>
       </select>
     </div>
@@ -11082,12 +11086,12 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     </div>
     <div class="fg2">
       <div class="fg"><label>Unit</label>
-        <select id="pcUnit" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+        <select id="pcUnit" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
           <option>kg</option><option>each</option><option>litre</option><option>pack</option><option>box</option>
         </select>
       </div>
       <div class="fg"><label>Supplier</label>
-        <select id="pcSupplier" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"></select>
+        <select id="pcSupplier" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"></select>
       </div>
     </div>
     <div class="fg"><label>Invoice / Reference (optional)</label>
@@ -11116,7 +11120,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
         <input type="number" id="ingPriceVal" placeholder="0.00" min="0" step="0.01">
       </div>
       <div class="fg"><label>Per Unit</label>
-        <select id="ingPriceUnit" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+        <select id="ingPriceUnit" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
           <option value="kg">kg</option>
           <option value="each">each</option>
           <option value="litre">litre</option>
@@ -11127,14 +11131,14 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       </div>
     </div>
     <div class="fg"><label>Category</label>
-      <select id="ingPriceCat" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+      <select id="ingPriceCat" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
         <option>Meat</option><option>Dairy</option><option>Produce</option>
         <option>Dry Goods</option><option>Bakery</option><option>Bar</option>
         <option>Sauces</option><option>Other</option>
       </select>
     </div>
     <div class="fg"><label>Supplier</label>
-      <select id="ingPriceSupplier" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'Karla',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"></select>
+      <select id="ingPriceSupplier" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"></select>
     </div>
     <!-- Recipe impact preview -->
     <div id="ingImpactPreview" style="background:var(--surface);border-radius:8px;padding:0.7rem;margin-bottom:0.8rem;font-size:0.78rem;color:var(--muted);display:none">
