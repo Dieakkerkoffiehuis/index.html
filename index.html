@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Die Akker — Management System</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
@@ -43,37 +43,39 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 
 /* ── LOGIN ── */
 #ls{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(to top left,#a01e35 0%,#7a1528 30%,#3d0810 65%,#5a0e1e 100%);
+  background:linear-gradient(160deg,#3A1020 0%,#6B2737 45%,#4A1A27 80%,#2A0E18 100%);
   z-index:1000;padding:1.5rem;display:none;}
-.lc{width:100%;max-width:360px;background:#0b5c2e;
-  border:none;border-radius:24px;padding:2.8rem 2rem;
-  box-shadow:0 24px 64px rgba(15,60,30,0.45),0 4px 16px rgba(0,0,0,0.20);}
+/* Decorative radial glow behind card */
+#ls::before{content:'';position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);
+  width:320px;height:320px;border-radius:50%;
+  background:radial-gradient(circle,rgba(201,168,76,0.18) 0%,transparent 70%);pointer-events:none;}
+.lc{width:100%;max-width:340px;background:#FDF8F0;
+  border-radius:24px;padding:2.6rem 2rem 2rem;
+  box-shadow:0 32px 80px rgba(58,16,32,0.55),0 4px 20px rgba(0,0,0,0.25);}
 .lc-logo{text-align:center;margin-bottom:2rem;}
-.lc-logo h1{font-family:'Bebas Neue',sans-serif;font-size:3.2rem;letter-spacing:0.12em;color:#fff;line-height:1;}
-.lc-logo p{font-size:0.65rem;letter-spacing:0.28em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-top:0.35rem;}
-.gold-line{width:36px;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold2));margin:0.75rem auto;border-radius:1px;}
-.rg{display:grid;grid-template-columns:repeat(3,1fr);gap:0.45rem;margin-bottom:1.6rem;}
-.rb{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;
-  padding:0.9rem 0.4rem;cursor:pointer;text-align:center;transition:var(--t);
-  color:rgba(255,255,255,0.45);font-family:'Karla',sans-serif;}
-.rb:hover{border-color:rgba(200,146,42,0.45);color:var(--gold2);background:rgba(200,146,42,0.06);}
-.rb.sel{background:var(--burg);border-color:rgba(255,255,255,0.15);color:#fff;box-shadow:0 4px 18px rgba(122,21,40,0.45);}
-.rb .ri{font-size:1.4rem;display:block;margin-bottom:0.3rem;}
-.rb .rl{font-size:0.68rem;font-weight:700;letter-spacing:0.05em;}
-.lf{display:flex;flex-direction:column;gap:0.65rem;}
-.lf input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:11px;
-  padding:0.85rem 1rem;color:#fff;font-family:'Karla',sans-serif;font-size:0.95rem;outline:none;
-  transition:border-color 0.2s,background 0.2s;}
-.lf input::placeholder{color:rgba(255,255,255,0.22);}
-.lf input:focus{border-color:rgba(200,146,42,0.6);background:rgba(255,255,255,0.10);}
-.lerr{color:#fb8080;font-size:0.8rem;text-align:center;display:none;padding:0.3rem 0;}
-.lbtn{background:#1c1015;color:#fff;border:none;border-radius:11px;
-  padding:0.9rem;font-family:'Karla',sans-serif;font-weight:700;font-size:0.88rem;letter-spacing:0.1em;
-  text-transform:uppercase;cursor:pointer;transition:var(--t);width:100%;
-  box-shadow:0 4px 16px rgba(0,0,0,0.35);}
-.lbtn:hover{background:#2e1a20;box-shadow:0 6px 22px rgba(0,0,0,0.4);transform:translateY(-1px);}
-.lbtn:active{transform:translateY(0);}
-.lhint{text-align:center;font-size:0.67rem;color:rgba(255,255,255,0.18);margin-top:1.2rem;line-height:1.9;}
+.lc-logo h1{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:700;
+  letter-spacing:0.04em;color:#6B2737;line-height:1;}
+.lc-logo p{font-size:0.6rem;letter-spacing:0.22em;text-transform:uppercase;
+  color:#B89880;margin-top:0.4rem;}
+.gold-line{width:40px;height:2px;background:linear-gradient(90deg,#C9A84C,#E2C46E,#C9A84C);
+  margin:0.8rem auto;border-radius:1px;}
+.lf{display:flex;flex-direction:column;gap:0.7rem;}
+.lf input{background:#fff;border:1.5px solid #E8DECE;border-radius:11px;
+  padding:0.85rem 1rem;color:#3D2B22;font-family:'DM Sans',sans-serif;font-size:0.95rem;outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;}
+.lf input::placeholder{color:#C4A98A;}
+.lf input:focus{border-color:#6B2737;box-shadow:0 0 0 3px rgba(107,39,55,0.1);}
+.lerr{color:#C0392B;font-size:0.78rem;text-align:center;display:none;padding:0.3rem 0;
+  background:#FEEAEA;border-radius:8px;}
+.lbtn{background:linear-gradient(135deg,#6B2737 0%,#8B3549 100%);color:#F5EDD6;
+  border:none;border-radius:11px;padding:0.9rem;
+  font-family:'DM Sans',sans-serif;font-weight:600;font-size:0.88rem;letter-spacing:0.08em;
+  text-transform:uppercase;cursor:pointer;transition:all 0.2s;width:100%;
+  box-shadow:0 4px 18px rgba(107,39,55,0.38);}
+.lbtn:hover{background:linear-gradient(135deg,#4A1A27 0%,#6B2737 100%);
+  box-shadow:0 6px 24px rgba(107,39,55,0.48);transform:translateY(-1px);}
+.lbtn:active{transform:translateY(0);box-shadow:0 2px 8px rgba(107,39,55,0.3);}
+.lhint{text-align:center;font-size:0.65rem;color:#C4A98A;margin-top:1.2rem;line-height:1.8;}
 
 /* ── APP ── */
 #app{display:none;height:100%;flex-direction:row;}
@@ -83,14 +85,20 @@ body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;fon
 .sb{width:var(--sw);height:100%;background:#111114;display:flex;flex-direction:column;
   flex-shrink:0;transition:transform 0.28s cubic-bezier(.4,0,.2,1);z-index:200;overflow-y:auto;
   border-right:1px solid rgba(255,255,255,0.07);}
-.sb-hd{padding:1.35rem 1.1rem 1.1rem;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;}
-.sb-brand{font-family:'Bebas Neue',sans-serif;font-size:1.65rem;letter-spacing:0.1em;color:#fff;}
-.sb-tag{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-top:0.14rem;}
-.sb-user{display:flex;align-items:center;gap:0.7rem;background:rgba(255,255,255,0.05);border-radius:10px;
-  padding:0.7rem 0.9rem;margin-top:0.9rem;border:1px solid rgba(255,255,255,0.08);}
-.sb-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;flex-shrink:0;}
-.sb-un{font-size:0.88rem;font-weight:700;color:#fff;}
-.sb-ur{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);}
+.sb-hd{padding:0;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;
+  background:linear-gradient(160deg,#3A1020 0%,#6B2737 60%,#8B3549 100%);
+  position:relative;overflow:hidden;}
+.sb-hd::before{content:'';position:absolute;top:-20px;right:-20px;width:110px;height:110px;
+  background:radial-gradient(circle,rgba(201,168,76,0.2) 0%,transparent 70%);pointer-events:none;}
+.sb-hd-inner{padding:3rem 1.2rem 1.3rem;position:relative;}
+.sb-brand{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:700;letter-spacing:0.03em;color:#F5EDD6;}
+.sb-tag{font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(245,237,214,0.5);margin-top:0.14rem;}
+.sb-user{display:flex;align-items:center;gap:0.7rem;
+  background:rgba(255,255,255,0.1);border-radius:10px;
+  padding:0.65rem 0.9rem;margin-top:1rem;border:1px solid rgba(255,255,255,0.1);}
+.sb-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;flex-shrink:0;border:1.5px solid #C9A84C;}
+.sb-un{font-size:0.88rem;font-weight:700;color:#F5EDD6;}
+.sb-ur{font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:#C9A84C;}
 .sb-nav{padding:1rem 0.8rem;flex:1;}
 .nlbl{font-size:0.62rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.25);padding:0.7rem 0.65rem 0.32rem;}
 .sb-grp-label{font-size:0.6rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.28);padding:1.1rem 0.88rem 0.3rem;margin-top:0.1rem;}
@@ -536,16 +544,30 @@ select option{background:#1e1e28;color:var(--ink);}
 .skel-stat{height:80px;border-radius:var(--r2);flex:1;}
 
 /* ── BOTTOM TAB BAR (mobile only, hidden on desktop) ── */
-.btab-bar{display:none;position:fixed;bottom:0;left:0;right:0;height:58px;background:var(--white);
-  border-top:1.5px solid var(--border);z-index:190;
-  box-shadow:0 -2px 12px rgba(0,0,0,0.07);}
+.btab-bar{display:none;position:fixed;bottom:0;left:0;right:0;height:68px;background:var(--white);
+  border-top:1px solid var(--border);z-index:190;
+  box-shadow:0 -2px 16px rgba(0,0,0,0.12);
+  padding-bottom:env(safe-area-inset-bottom,0px);}
 .btab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:2px;cursor:pointer;color:var(--muted);font-size:0.58rem;font-weight:700;
-  letter-spacing:0.06em;text-transform:uppercase;transition:color 0.18s;border:none;background:none;
-  padding:0;position:relative;}
+  gap:4px;cursor:pointer;color:var(--muted);font-size:0.56rem;font-weight:600;
+  letter-spacing:0.05em;text-transform:uppercase;transition:color 0.18s;border:none;background:none;
+  padding:8px 4px 6px;position:relative;}
 .btab.act{color:var(--burg);}
-.btab.act .bt-ic{transform:scale(1.12);}
-.bt-ic{font-size:1.35rem;line-height:1;transition:transform 0.18s;}
+/* Active top bar indicator */
+.btab.act::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:32px;height:3px;background:var(--burg);border-radius:0 0 3px 3px;}
+.btab.act .bt-ic svg{stroke:var(--burg);}
+/* Centre "Modules" button */
+.btab.bt-center .bt-ic{
+  width:42px;height:42px;background:var(--burg);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  margin-top:-10px;box-shadow:0 4px 14px rgba(158,42,66,0.45);}
+.btab.bt-center .bt-ic svg{stroke:#fff;}
+.btab.bt-center.act::before{display:none;}
+.btab.bt-center{padding-top:4px;}
+.bt-ic{width:22px;height:22px;display:flex;align-items:center;justify-content:center;transition:transform 0.18s;}
+.bt-ic svg{width:20px;height:20px;stroke:var(--muted);fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;transition:stroke 0.18s;}
 .btab .bt-bdg{position:absolute;top:6px;right:calc(50% - 18px);background:var(--red);
   color:#fff;font-size:0.52rem;font-weight:800;min-width:14px;height:14px;
   border-radius:7px;padding:0 3px;display:flex;align-items:center;justify-content:center;
@@ -569,7 +591,7 @@ select option{background:#1e1e28;color:var(--ink);}
   /* Bottom tab bar visible */
   .btab-bar{display:flex;}
   /* Layout */
-  .main{width:100%;padding-bottom:58px;}
+  .main{width:100%;padding-bottom:68px;}
   .ct-area{padding:1rem 0.9rem;}
   /* Topbar: clean mobile header */
   .topbar{padding:0 1.1rem;height:58px;}
@@ -627,15 +649,17 @@ select option{background:#1e1e28;color:var(--ink);}
   <div class="ov" id="ov" onclick="closeSb()"></div>
   <nav class="sb" id="sb">
     <div class="sb-hd">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
-        <div class="sb-brand">DIE AKKER</div>
-        <button onclick="closeSb()" class="sb-close" title="Close menu">✕</button>
-      </div>
-      <div class="sb-tag">Koffiehuis — Potchefstroom</div>
-      <div class="sb-user">
-        <div class="sb-av" id="sbAv">Z</div>
-        <div style="flex:1"><div class="sb-un" id="sbNm">Zavier</div><div class="sb-ur" id="sbRl">Owner</div></div>
-        <div class="sync-dot" id="syncDot" title="Live sync"></div>
+      <div class="sb-hd-inner">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem">
+          <div class="sb-brand">Die Akker</div>
+          <button onclick="closeSb()" class="sb-close" title="Close menu">✕</button>
+        </div>
+        <div class="sb-tag">Koffiehuis — Potchefstroom</div>
+        <div class="sb-user">
+          <div class="sb-av" id="sbAv">Z</div>
+          <div style="flex:1"><div class="sb-un" id="sbNm">Zavier</div><div class="sb-ur" id="sbRl">Owner</div></div>
+          <div class="sync-dot" id="syncDot" title="Live sync"></div>
+        </div>
       </div>
     </div>
     <div class="sb-nav">
@@ -1970,19 +1994,19 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
   <!-- BOTTOM TAB BAR (mobile only) -->
   <nav class="btab-bar" id="btabBar">
     <button class="btab act" id="bt-dashboard" onclick="goTab('dashboard')">
-      <span class="bt-ic">📊</span><span>Dashboard</span>
+      <span class="bt-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>Dashboard</span>
     </button>
     <button class="btab" id="bt-stocktake" onclick="goTab('stocktake')">
-      <span class="bt-ic">📦</span><span>Stock</span>
+      <span class="bt-ic"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span>Stock</span>
     </button>
-    <button class="btab" id="bt-cashup" onclick="goTab('cashup')">
-      <span class="bt-ic">💰</span><span>Cash Up</span>
+    <button class="btab bt-center" id="bt-cashup" onclick="goTab('cashup')">
+      <span class="bt-ic"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span><span>Cash Up</span>
     </button>
     <button class="btab" id="bt-roster" onclick="goTab('roster')">
-      <span class="bt-ic">📅</span><span>Roster</span>
+      <span class="bt-ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Roster</span>
     </button>
     <button class="btab" id="bt-more" onclick="toggleSb()">
-      <span class="bt-ic">☰</span><span>More</span>
+      <span class="bt-ic"><svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span><span>Menu</span>
     </button>
   </nav>
 </div>
@@ -2300,11 +2324,11 @@ function doLogout(){
   if(bar){
     bar.style.height = '';
     bar.innerHTML = `
-      <button class="btab act" id="bt-dashboard" onclick="goTab('dashboard')"><span class="bt-ic">📊</span><span>Dashboard</span></button>
-      <button class="btab" id="bt-stocktake" onclick="goTab('stocktake')"><span class="bt-ic">📦</span><span>Stock</span></button>
-      <button class="btab" id="bt-cashup" onclick="goTab('cashup')"><span class="bt-ic">💰</span><span>Cash Up</span></button>
-      <button class="btab" id="bt-roster" onclick="goTab('roster')"><span class="bt-ic">📅</span><span>Roster</span></button>
-      <button class="btab" id="bt-more" onclick="toggleSb()"><span class="bt-ic">☰</span><span>More</span></button>`;
+      <button class="btab act" id="bt-dashboard" onclick="goTab('dashboard')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>Dashboard</span></button>
+      <button class="btab" id="bt-stocktake" onclick="goTab('stocktake')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span>Stock</span></button>
+      <button class="btab bt-center" id="bt-cashup" onclick="goTab('cashup')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span><span>Cash Up</span></button>
+      <button class="btab" id="bt-roster" onclick="goTab('roster')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Roster</span></button>
+      <button class="btab" id="bt-more" onclick="toggleSb()"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span><span>Menu</span></button>`;
     const main = document.getElementById('app')?.querySelector('.main');
     if(main) main.style.paddingBottom = '';
   }
