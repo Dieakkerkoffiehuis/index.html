@@ -771,7 +771,7 @@ select option{background:var(--white);color:var(--ink);}
             <div class="mod-sub">Order management</div>
             <div class="mod-bdg" id="mod-bdg-orders" style="display:none">0</div>
           </div>
-          <div class="mod-card highlight" onclick="go('cashup');closeSb()">
+          <div class="mod-card" onclick="go('cashup');closeSb()">
             <div class="mod-ic">💳</div>
             <div class="mod-title">Daily Cash-Up</div>
             <div class="mod-sub">Waiter sales sync</div>
@@ -785,7 +785,7 @@ select option{background:var(--white);color:var(--ink);}
             <div class="mod-title">Recipe Costing</div>
             <div class="mod-sub">~50 dishes loaded</div>
           </div>
-          <div class="mod-card highlight" onclick="go('pricing');closeSb()">
+          <div class="mod-card" onclick="go('pricing');closeSb()">
             <div class="mod-ic">📊</div>
             <div class="mod-title">GP Tracking</div>
             <div class="mod-sub">Theoretical vs actual</div>
@@ -796,7 +796,7 @@ select option{background:var(--white);color:var(--ink);}
             <div class="mod-title">Analytics</div>
             <div class="mod-sub">Usage &amp; reorder AI</div>
           </div>
-          <div class="mod-card gold" onclick="go('reports');closeSb()">
+          <div class="mod-card" onclick="go('reports');closeSb()">
             <div class="mod-ic">📄</div>
             <div class="mod-title">Income Statement</div>
             <div class="mod-sub">PDF auto-gen</div>
@@ -815,7 +815,7 @@ select option{background:var(--white);color:var(--ink);}
             <div class="mod-title">Shift Roster</div>
             <div class="mod-sub">Public holiday rates</div>
           </div>
-          <div class="mod-card highlight" onclick="go('payroll');closeSb()">
+          <div class="mod-card" onclick="go('payroll');closeSb()">
             <div class="mod-ic">💰</div>
             <div class="mod-title">Payroll</div>
             <div class="mod-sub">Auto-sync from roster</div>
@@ -2123,11 +2123,11 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
     <button class="btab" id="bt-stocktake" onclick="goTab('stocktake')">
       <span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span>Stock</span>
     </button>
-    <button class="btab bt-center" id="bt-cashup" onclick="goTab('cashup')">
-      <span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span><span>Cash Up</span>
-    </button>
-    <button class="btab" id="bt-modules" onclick="goTab('modules')">
+    <button class="btab bt-center" id="bt-modules" onclick="goTab('modules')">
       <span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></svg></span><span>Modules</span>
+    </button>
+    <button class="btab" id="bt-cashup" onclick="goTab('cashup')">
+      <span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span><span>Cash Up</span>
     </button>
     <button class="btab" id="bt-more" onclick="toggleSb()">
       <span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span><span>Menu</span>
@@ -2450,8 +2450,8 @@ function doLogout(){
     bar.innerHTML = `
       <button class="btab act" id="bt-dashboard" onclick="goTab('dashboard')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>Dashboard</span></button>
       <button class="btab" id="bt-stocktake" onclick="goTab('stocktake')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span>Stock</span></button>
-      <button class="btab bt-center" id="bt-cashup" onclick="goTab('cashup')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span><span>Cash Up</span></button>
-      <button class="btab" id="bt-modules" onclick="goTab('modules')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></svg></span><span>Modules</span></button>
+      <button class="btab bt-center" id="bt-modules" onclick="goTab('modules')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></svg></span><span>Modules</span></button>
+      <button class="btab" id="bt-cashup" onclick="goTab('cashup')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span><span>Cash Up</span></button>
       <button class="btab" id="bt-more" onclick="toggleSb()"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span><span>Menu</span></button>`;
     const main = document.getElementById('app')?.querySelector('.main');
     if(main) main.style.paddingBottom = '';
