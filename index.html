@@ -549,30 +549,47 @@ select option{background:var(--white);color:var(--ink);}
 
 /* ── MODULES GRID ── */
 .mod-section-label{font-size:0.62rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;
-  color:var(--muted);padding:0.3rem 0 0.55rem;margin-top:0.6rem;}
+  color:var(--muted);padding:0.3rem 0 0.55rem;margin-top:1rem;}
 .mod-section-label:first-child{margin-top:0;}
+.mod-section-label.lbl-ops{color:#6B2737;}
+.mod-section-label.lbl-fin{color:#9A7020;}
+.mod-section-label.lbl-ppl{color:#1A6A42;}
+.mod-section-label.lbl-sys{color:#2A4E7C;}
 .mod-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.5rem;}
-.mod-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);
-  padding:1.1rem 1rem 1rem;box-shadow:var(--sh);cursor:pointer;transition:all 0.18s;
-  display:flex;flex-direction:column;gap:0.35rem;position:relative;overflow:hidden;min-height:90px;}
-.mod-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--border);border-radius:var(--r2) var(--r2) 0 0;transition:background 0.18s;}
-.mod-card:hover,.mod-card:active{border-color:var(--burg);box-shadow:var(--sh2);transform:translateY(-2px);}
-.mod-card:hover::before,.mod-card:active::before{background:linear-gradient(90deg,var(--burg),var(--burg2));}
-.mod-card:active{transform:translateY(0);}
-.mod-card.highlight{background:linear-gradient(135deg,var(--burg) 0%,var(--burg2) 100%);
-  border-color:transparent;box-shadow:0 4px 16px rgba(107,39,55,0.35);}
-.mod-card.highlight::before{background:rgba(255,255,255,0.25);}
-.mod-card.highlight .mod-title,.mod-card.highlight .mod-sub{color:#F5EDD6;}
-.mod-card.highlight .mod-sub{color:rgba(245,237,214,0.7);}
-.mod-card.gold{background:linear-gradient(135deg,#C9A84C 0%,#E2C46E 100%);
-  border-color:transparent;box-shadow:0 4px 16px rgba(201,168,76,0.35);}
-.mod-card.gold::before{background:rgba(255,255,255,0.25);}
-.mod-card.gold .mod-title,.mod-card.gold .mod-sub{color:#3D2B22;}
+.mod-card{border-radius:var(--r2);padding:1.1rem 1rem 1rem;cursor:pointer;transition:all 0.18s;
+  display:flex;flex-direction:column;gap:0.35rem;position:relative;overflow:hidden;min-height:90px;
+  border:1.5px solid transparent;}
+.mod-card:active{transform:scale(0.97);}
+/* Operations — burgundy */
+.mod-ops{background:linear-gradient(135deg,#6B2737 0%,#8B3549 100%);
+  box-shadow:0 4px 14px rgba(107,39,55,0.28);}
+.mod-ops:hover{box-shadow:0 6px 20px rgba(107,39,55,0.38);transform:translateY(-2px);}
+.mod-ops .mod-title{color:#F5EDD6;}
+.mod-ops .mod-sub{color:rgba(245,237,214,0.65);}
+.mod-ops .mod-ic{filter:brightness(1.3);}
+/* Finance — gold */
+.mod-fin{background:linear-gradient(135deg,#B8922A 0%,#D4A842 100%);
+  box-shadow:0 4px 14px rgba(184,146,42,0.30);}
+.mod-fin:hover{box-shadow:0 6px 20px rgba(184,146,42,0.42);transform:translateY(-2px);}
+.mod-fin .mod-title{color:#3D2B22;}
+.mod-fin .mod-sub{color:rgba(61,43,34,0.65);}
+/* People — forest green */
+.mod-ppl{background:linear-gradient(135deg,#1A6A42 0%,#228C58 100%);
+  box-shadow:0 4px 14px rgba(26,106,66,0.28);}
+.mod-ppl:hover{box-shadow:0 6px 20px rgba(26,106,66,0.38);transform:translateY(-2px);}
+.mod-ppl .mod-title{color:#F0FAF4;}
+.mod-ppl .mod-sub{color:rgba(240,250,244,0.65);}
+.mod-ppl .mod-ic{filter:brightness(1.2);}
+/* System — slate blue */
+.mod-sys{background:linear-gradient(135deg,#2A4E7C 0%,#3A6498 100%);
+  box-shadow:0 4px 14px rgba(42,78,124,0.25);}
+.mod-sys:hover{box-shadow:0 6px 20px rgba(42,78,124,0.36);transform:translateY(-2px);}
+.mod-sys .mod-title{color:#EBF2FC;}
+.mod-sys .mod-sub{color:rgba(235,242,252,0.65);}
 .mod-ic{font-size:1.5rem;line-height:1;margin-bottom:0.1rem;}
-.mod-title{font-family:'DM Sans',sans-serif;font-weight:700;font-size:0.9rem;color:var(--ink);line-height:1.2;}
-.mod-sub{font-size:0.68rem;color:var(--muted);margin-top:0.1rem;line-height:1.3;}
-.mod-bdg{position:absolute;top:0.65rem;right:0.7rem;background:var(--red);color:#fff;
+.mod-title{font-family:'DM Sans',sans-serif;font-weight:700;font-size:0.9rem;line-height:1.2;}
+.mod-sub{font-size:0.68rem;margin-top:0.1rem;line-height:1.3;}
+.mod-bdg{position:absolute;top:0.65rem;right:0.7rem;background:rgba(255,255,255,0.9);color:#6B2737;
   font-size:0.55rem;font-weight:800;min-width:16px;height:16px;border-radius:8px;
   padding:0 3px;display:flex;align-items:center;justify-content:center;}
 
@@ -753,88 +770,88 @@ select option{background:var(--white);color:var(--ink);}
 
       <!-- MODULES HOME -->
       <div class="pnl" id="p-modules">
-        <div class="mod-section-label">Operations</div>
+        <div class="mod-section-label lbl-ops">Operations</div>
         <div class="mod-grid">
-          <div class="mod-card" onclick="go('stocktake');closeSb()">
+          <div class="mod-card mod-ops" onclick="go('stocktake');closeSb()">
             <div class="mod-ic">📦</div>
             <div class="mod-title">Stock Take</div>
             <div class="mod-sub">AI photo scanning</div>
           </div>
-          <div class="mod-card" onclick="go('stockdb');closeSb()">
+          <div class="mod-card mod-ops" onclick="go('stockdb');closeSb()">
             <div class="mod-ic">🗄️</div>
             <div class="mod-title">Stock Database</div>
             <div class="mod-sub">Items &amp; suppliers</div>
           </div>
-          <div class="mod-card" onclick="go('orders');closeSb()">
+          <div class="mod-card mod-ops" onclick="go('orders');closeSb()">
             <div class="mod-ic">🚚</div>
             <div class="mod-title">Supplier Orders</div>
             <div class="mod-sub">Order management</div>
             <div class="mod-bdg" id="mod-bdg-orders" style="display:none">0</div>
           </div>
-          <div class="mod-card" onclick="go('cashup');closeSb()">
+          <div class="mod-card mod-ops" onclick="go('cashup');closeSb()">
             <div class="mod-ic">💳</div>
             <div class="mod-title">Daily Cash-Up</div>
             <div class="mod-sub">Waiter sales sync</div>
           </div>
         </div>
 
-        <div class="mod-section-label">Finance</div>
+        <div class="mod-section-label lbl-fin">Finance</div>
         <div class="mod-grid">
-          <div class="mod-card" onclick="go('recipes');closeSb()">
+          <div class="mod-card mod-fin" onclick="go('recipes');closeSb()">
             <div class="mod-ic">🧾</div>
             <div class="mod-title">Recipe Costing</div>
             <div class="mod-sub">~50 dishes loaded</div>
           </div>
-          <div class="mod-card" onclick="go('pricing');closeSb()">
+          <div class="mod-card mod-fin" onclick="go('pricing');closeSb()">
             <div class="mod-ic">📊</div>
             <div class="mod-title">GP Tracking</div>
             <div class="mod-sub">Theoretical vs actual</div>
             <div class="mod-bdg" id="mod-bdg-pricing" style="display:none">!</div>
           </div>
-          <div class="mod-card" onclick="go('analytics');closeSb()">
+          <div class="mod-card mod-fin" onclick="go('analytics');closeSb()">
             <div class="mod-ic">🔍</div>
             <div class="mod-title">Analytics</div>
             <div class="mod-sub">Usage &amp; reorder AI</div>
           </div>
-          <div class="mod-card" onclick="go('reports');closeSb()">
+          <div class="mod-card mod-fin" onclick="go('reports');closeSb()">
             <div class="mod-ic">📄</div>
             <div class="mod-title">Income Statement</div>
             <div class="mod-sub">PDF auto-gen</div>
           </div>
         </div>
 
-        <div class="mod-section-label">People</div>
+        <div class="mod-section-label lbl-ppl">People</div>
         <div class="mod-grid">
-          <div class="mod-card" onclick="go('staff');closeSb()">
+          <div class="mod-card mod-ppl" onclick="go('staff');closeSb()">
             <div class="mod-ic">👤</div>
             <div class="mod-title">Staff Management</div>
             <div class="mod-sub">Docs, leave, warnings</div>
           </div>
-          <div class="mod-card" onclick="go('roster');closeSb()">
+          <div class="mod-card mod-ppl" onclick="go('roster');closeSb()">
             <div class="mod-ic">📅</div>
             <div class="mod-title">Shift Roster</div>
             <div class="mod-sub">Public holiday rates</div>
           </div>
-          <div class="mod-card" onclick="go('payroll');closeSb()">
+          <div class="mod-card mod-ppl" onclick="go('payroll');closeSb()">
             <div class="mod-ic">💰</div>
             <div class="mod-title">Payroll</div>
             <div class="mod-sub">Auto-sync from roster</div>
           </div>
-          <div class="mod-card" onclick="go('waiterlog');closeSb()">
+          <div class="mod-card mod-ppl" onclick="go('waiterlog');closeSb()">
             <div class="mod-ic">🏆</div>
             <div class="mod-title">Waiter Accountability</div>
             <div class="mod-sub">Leaderboard &amp; KPIs</div>
           </div>
         </div>
 
-        <div class="mod-section-label">System</div>
+        <div class="mod-section-label lbl-sys">System</div>
         <div class="mod-grid">
-          <div class="mod-card" onclick="go('auditlog');closeSb()">
+          <div class="mod-card mod-sys" onclick="go('auditlog');closeSb()">
             <div class="mod-ic">📋</div>
             <div class="mod-title">Audit Log</div>
             <div class="mod-sub">All activity history</div>
           </div>
-          <div class="mod-card" onclick="go('settings');closeSb()">
+          <div class="mod-card mod-sys" onclick="go('settings');closeSb()">
             <div class="mod-ic">⚙️</div>
             <div class="mod-title">Settings</div>
             <div class="mod-sub">System configuration</div>
