@@ -547,6 +547,35 @@ select option{background:var(--white);color:var(--ink);}
 .skel-avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;}
 .skel-stat{height:80px;border-radius:var(--r2);flex:1;}
 
+/* ── MODULES GRID ── */
+.mod-section-label{font-size:0.62rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--muted);padding:0.3rem 0 0.55rem;margin-top:0.6rem;}
+.mod-section-label:first-child{margin-top:0;}
+.mod-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.5rem;}
+.mod-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);
+  padding:1.1rem 1rem 1rem;box-shadow:var(--sh);cursor:pointer;transition:all 0.18s;
+  display:flex;flex-direction:column;gap:0.35rem;position:relative;overflow:hidden;min-height:90px;}
+.mod-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--border);border-radius:var(--r2) var(--r2) 0 0;transition:background 0.18s;}
+.mod-card:hover,.mod-card:active{border-color:var(--burg);box-shadow:var(--sh2);transform:translateY(-2px);}
+.mod-card:hover::before,.mod-card:active::before{background:linear-gradient(90deg,var(--burg),var(--burg2));}
+.mod-card:active{transform:translateY(0);}
+.mod-card.highlight{background:linear-gradient(135deg,var(--burg) 0%,var(--burg2) 100%);
+  border-color:transparent;box-shadow:0 4px 16px rgba(107,39,55,0.35);}
+.mod-card.highlight::before{background:rgba(255,255,255,0.25);}
+.mod-card.highlight .mod-title,.mod-card.highlight .mod-sub{color:#F5EDD6;}
+.mod-card.highlight .mod-sub{color:rgba(245,237,214,0.7);}
+.mod-card.gold{background:linear-gradient(135deg,#C9A84C 0%,#E2C46E 100%);
+  border-color:transparent;box-shadow:0 4px 16px rgba(201,168,76,0.35);}
+.mod-card.gold::before{background:rgba(255,255,255,0.25);}
+.mod-card.gold .mod-title,.mod-card.gold .mod-sub{color:#3D2B22;}
+.mod-ic{font-size:1.5rem;line-height:1;margin-bottom:0.1rem;}
+.mod-title{font-family:'DM Sans',sans-serif;font-weight:700;font-size:0.9rem;color:var(--ink);line-height:1.2;}
+.mod-sub{font-size:0.68rem;color:var(--muted);margin-top:0.1rem;line-height:1.3;}
+.mod-bdg{position:absolute;top:0.65rem;right:0.7rem;background:var(--red);color:#fff;
+  font-size:0.55rem;font-weight:800;min-width:16px;height:16px;border-radius:8px;
+  padding:0 3px;display:flex;align-items:center;justify-content:center;}
+
 /* ── BOTTOM TAB BAR (mobile only, hidden on desktop) ── */
 .btab-bar{display:none;position:fixed;bottom:0;left:0;right:0;height:68px;background:var(--white);
   border-top:1px solid var(--border);z-index:190;
@@ -721,6 +750,97 @@ select option{background:var(--white);color:var(--ink);}
         </div>
       </div>
       <div class="ct-area">
+
+      <!-- MODULES HOME -->
+      <div class="pnl" id="p-modules">
+        <div class="mod-section-label">Operations</div>
+        <div class="mod-grid">
+          <div class="mod-card" onclick="go('stocktake');closeSb()">
+            <div class="mod-ic">📦</div>
+            <div class="mod-title">Stock Take</div>
+            <div class="mod-sub">AI photo scanning</div>
+          </div>
+          <div class="mod-card" onclick="go('stockdb');closeSb()">
+            <div class="mod-ic">🗄️</div>
+            <div class="mod-title">Stock Database</div>
+            <div class="mod-sub">Items &amp; suppliers</div>
+          </div>
+          <div class="mod-card" onclick="go('orders');closeSb()">
+            <div class="mod-ic">🚚</div>
+            <div class="mod-title">Supplier Orders</div>
+            <div class="mod-sub">Order management</div>
+            <div class="mod-bdg" id="mod-bdg-orders" style="display:none">0</div>
+          </div>
+          <div class="mod-card highlight" onclick="go('cashup');closeSb()">
+            <div class="mod-ic">💳</div>
+            <div class="mod-title">Daily Cash-Up</div>
+            <div class="mod-sub">Waiter sales sync</div>
+          </div>
+        </div>
+
+        <div class="mod-section-label">Finance</div>
+        <div class="mod-grid">
+          <div class="mod-card" onclick="go('recipes');closeSb()">
+            <div class="mod-ic">🧾</div>
+            <div class="mod-title">Recipe Costing</div>
+            <div class="mod-sub">~50 dishes loaded</div>
+          </div>
+          <div class="mod-card highlight" onclick="go('pricing');closeSb()">
+            <div class="mod-ic">📊</div>
+            <div class="mod-title">GP Tracking</div>
+            <div class="mod-sub">Theoretical vs actual</div>
+            <div class="mod-bdg" id="mod-bdg-pricing" style="display:none">!</div>
+          </div>
+          <div class="mod-card" onclick="go('analytics');closeSb()">
+            <div class="mod-ic">🔍</div>
+            <div class="mod-title">Analytics</div>
+            <div class="mod-sub">Usage &amp; reorder AI</div>
+          </div>
+          <div class="mod-card gold" onclick="go('reports');closeSb()">
+            <div class="mod-ic">📄</div>
+            <div class="mod-title">Income Statement</div>
+            <div class="mod-sub">PDF auto-gen</div>
+          </div>
+        </div>
+
+        <div class="mod-section-label">People</div>
+        <div class="mod-grid">
+          <div class="mod-card" onclick="go('staff');closeSb()">
+            <div class="mod-ic">👤</div>
+            <div class="mod-title">Staff Management</div>
+            <div class="mod-sub">Docs, leave, warnings</div>
+          </div>
+          <div class="mod-card" onclick="go('roster');closeSb()">
+            <div class="mod-ic">📅</div>
+            <div class="mod-title">Shift Roster</div>
+            <div class="mod-sub">Public holiday rates</div>
+          </div>
+          <div class="mod-card highlight" onclick="go('payroll');closeSb()">
+            <div class="mod-ic">💰</div>
+            <div class="mod-title">Payroll</div>
+            <div class="mod-sub">Auto-sync from roster</div>
+          </div>
+          <div class="mod-card" onclick="go('waiterlog');closeSb()">
+            <div class="mod-ic">🏆</div>
+            <div class="mod-title">Waiter Accountability</div>
+            <div class="mod-sub">Leaderboard &amp; KPIs</div>
+          </div>
+        </div>
+
+        <div class="mod-section-label">System</div>
+        <div class="mod-grid">
+          <div class="mod-card" onclick="go('auditlog');closeSb()">
+            <div class="mod-ic">📋</div>
+            <div class="mod-title">Audit Log</div>
+            <div class="mod-sub">All activity history</div>
+          </div>
+          <div class="mod-card" onclick="go('settings');closeSb()">
+            <div class="mod-ic">⚙️</div>
+            <div class="mod-title">Settings</div>
+            <div class="mod-sub">System configuration</div>
+          </div>
+        </div>
+      </div>
 
       <!-- DASHBOARD -->
       <div class="pnl act" id="p-dashboard">
@@ -1998,19 +2118,19 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
   <!-- BOTTOM TAB BAR (mobile only) -->
   <nav class="btab-bar" id="btabBar">
     <button class="btab act" id="bt-dashboard" onclick="goTab('dashboard')">
-      <span class="bt-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>Dashboard</span>
+      <span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>Dashboard</span>
     </button>
     <button class="btab" id="bt-stocktake" onclick="goTab('stocktake')">
-      <span class="bt-ic"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span>Stock</span>
+      <span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span>Stock</span>
     </button>
     <button class="btab bt-center" id="bt-cashup" onclick="goTab('cashup')">
-      <span class="bt-ic"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span><span>Cash Up</span>
+      <span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span><span>Cash Up</span>
     </button>
-    <button class="btab" id="bt-roster" onclick="goTab('roster')">
-      <span class="bt-ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Roster</span>
+    <button class="btab" id="bt-modules" onclick="goTab('modules')">
+      <span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></svg></span><span>Modules</span>
     </button>
     <button class="btab" id="bt-more" onclick="toggleSb()">
-      <span class="bt-ic"><svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span><span>Menu</span>
+      <span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span><span>Menu</span>
     </button>
   </nav>
 </div>
@@ -2270,18 +2390,18 @@ const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // AUTH
 // ═══════════════════════════════════════════
 // All sections available
-const ALL_SECTIONS = ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','analytics','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
+const ALL_SECTIONS = ['dashboard','modules','stocktake','stockdb','pending','orders','cashup','reports','analytics','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
 const SECTION_LABELS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
 
 // Owner always has full access (hardcoded, cannot be removed)
 const ACCESS = {
   owner:   ALL_SECTIONS,
-  manager: ['dashboard','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','kpi','docs','invoices'],
-  employee:['dashboard','stocktake'],
+  manager: ['dashboard','modules','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','kpi','docs','invoices'],
+  employee:['dashboard','modules','stocktake'],
 };
-const TTLS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
-const TSUBS = {dashboard:'Overview of all operations',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
-const INVESTOR_SECTIONS = ['dashboard','stockdb','reports','analytics','recipes','pricing','cashup','payroll','roster','leave','kpi','docs','auditlog'];
+const TTLS = {dashboard:'Dashboard',modules:'Modules',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
+const TSUBS = {dashboard:'Overview of all operations',modules:'All features in one place',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
+const INVESTOR_SECTIONS = ['dashboard','modules','stockdb','reports','analytics','recipes','pricing','cashup','payroll','roster','leave','kpi','docs','auditlog'];
 const ROLE_COLORS = {owner:'#7a1528', investor:'#c8922a', manager:'#152438', employee:'#1a6e40'};
 
 let CU = null, appLogins = [];
@@ -2310,7 +2430,7 @@ async function doLogin(){
     name:     data.staff_name,
     color:    ROLE_COLORS[data.role_level] || '#152438',
     role:     data.role_level || 'employee',
-    access:   data.role_level === 'owner' ? ALL_SECTIONS : (data.access_sections || (data.role_level==='investor' ? INVESTOR_SECTIONS : ['dashboard','stocktake'])),
+    access:   data.role_level === 'owner' ? ALL_SECTIONS : (data.access_sections || (data.role_level==='investor' ? INVESTOR_SECTIONS : ['dashboard','modules','stocktake'])),
     loginId:  data.id,
   };
   await logAudit('login','Login',`Signed in as ${CU.role}`);
@@ -2331,7 +2451,7 @@ function doLogout(){
       <button class="btab act" id="bt-dashboard" onclick="goTab('dashboard')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>Dashboard</span></button>
       <button class="btab" id="bt-stocktake" onclick="goTab('stocktake')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span>Stock</span></button>
       <button class="btab bt-center" id="bt-cashup" onclick="goTab('cashup')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span><span>Cash Up</span></button>
-      <button class="btab" id="bt-roster" onclick="goTab('roster')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Roster</span></button>
+      <button class="btab" id="bt-modules" onclick="goTab('modules')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></svg></span><span>Modules</span></button>
       <button class="btab" id="bt-more" onclick="toggleSb()"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span><span>Menu</span></button>`;
     const main = document.getElementById('app')?.querySelector('.main');
     if(main) main.style.paddingBottom = '';
@@ -2494,7 +2614,8 @@ const _panelLoaded = {};
 
 function go(id){
   const userAccess = CU?.access || [];
-  if(!userAccess.includes(id)){showToast('No access to this section.','err');return;}
+  // 'modules' is always accessible — it's the navigation hub
+  if(id !== 'modules' && !userAccess.includes(id)){showToast('No access to this section.','err');return;}
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('act'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
   document.getElementById('p-'+id).classList.add('act');
@@ -2595,22 +2716,23 @@ function toggleSb(){ document.getElementById('sb').classList.toggle('open'); doc
 function closeSb(){ document.getElementById('sb').classList.remove('open'); document.getElementById('ov').classList.remove('show'); }
 
 // Bottom tab bar navigation (mobile)
-const BOTTOM_TAB_SECTIONS = ['dashboard','stocktake','cashup','roster'];
+const BOTTOM_TAB_SECTIONS = ['dashboard','stocktake','cashup','modules'];
 function goTab(id){
   go(id);
   document.querySelectorAll('.btab').forEach(b=>b.classList.remove('act'));
   const bt = document.getElementById('bt-'+id);
   if(bt) bt.classList.add('act');
 }
-// Keep bottom tabs in sync when navigating via sidebar
+// Keep bottom tabs in sync when navigating via sidebar or module cards
+const DIRECT_TABS = ['dashboard','stocktake','cashup','modules'];
 function syncBottomTabs(id){
   document.querySelectorAll('.btab').forEach(b=>b.classList.remove('act'));
   const bt = document.getElementById('bt-'+id);
-  if(bt) bt.classList.add('act');
-  // If section not in bottom tabs, highlight More
-  else {
-    const more = document.getElementById('bt-more');
-    if(more) more.classList.add('act');
+  if(bt){ bt.classList.add('act'); return; }
+  // If navigated from a module card, keep Modules tab lit
+  if(!DIRECT_TABS.includes(id)){
+    const mod = document.getElementById('bt-modules');
+    if(mod) mod.classList.add('act');
   }
 }
 
