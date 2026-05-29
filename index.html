@@ -961,11 +961,21 @@ select option{background:var(--white);color:var(--ink);}
 
         <!-- ENTER pane -->
         <div id="cuEnterPane">
+          <!-- Existing record warning banner -->
+          <div id="cuExistingBanner" style="display:none;background:rgba(184,92,16,0.10);border:2px solid #b85c10;border-radius:10px;padding:0.8rem 1rem;margin-bottom:0.75rem">
+            <div style="display:flex;align-items:flex-start;gap:0.6rem">
+              <span style="font-size:1.3rem;line-height:1">⚠️</span>
+              <div>
+                <div style="font-weight:700;font-size:0.88rem;color:#b85c10">Cash-up already submitted for this date &amp; shift</div>
+                <div style="font-size:0.78rem;color:var(--ink);margin-top:0.2rem">The existing data has been loaded below. Any changes you save <strong>will overwrite</strong> the previous submission.</div>
+              </div>
+            </div>
+          </div>
           <div class="card">
             <div class="fg2">
-              <div class="fg"><label>Date</label><input type="date" id="cuDate" onchange="cuLoadScheduledWaiters()"></div>
+              <div class="fg"><label>Date</label><input type="date" id="cuDate" onchange="cuCheckExistingRecord()"></div>
               <div class="fg"><label>Shift</label>
-                <select id="cuShift" onchange="cuLoadScheduledWaiters()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+                <select id="cuShift" onchange="cuCheckExistingRecord()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
                   <option>Morning</option><option>Afternoon</option><option>Evening</option>
                 </select>
               </div>
@@ -3993,11 +4003,47 @@ async function rejectPendingOrder(id){
 // ═══════════════════════════════════════════
 let cuD={waiters:[{name:'Sipho',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Hes-mari',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Ethan',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Ine',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Daniella',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Tazmin',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'Reanne',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0},{name:'',vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0}],denoms:Array(11).fill(0)};
 const DNS=[200,100,50,20,10,5,2,1,0.5,0.2,0.1],DNL=['R 200','R 100','R 50','R 20','R 10','R 5','R 2','R 1','R 0.50','R 0.20','R 0.10'];
-function renderCU(){
+async function renderCU(){
   document.getElementById('cuDate').value=new Date().toISOString().split('T')[0];
   cuD.waiters=[];
-  cuLoadScheduledWaiters();
+  cuD.denoms=Array(11).fill(0);
+  hideCUExistingBanner();
   renderCUCards();renderDenoms();updCUTots();
+  await cuCheckExistingRecord();
+}
+
+function hideCUExistingBanner(){
+  const b=document.getElementById('cuExistingBanner');
+  if(b) b.style.display='none';
+}
+
+async function cuCheckExistingRecord(){
+  const dt=document.getElementById('cuDate').value;
+  const shift=document.getElementById('cuShift').value;
+  if(!dt||!shift) return;
+  // Reset state for the new date/shift
+  cuD.waiters=[];
+  cuD.denoms=Array(11).fill(0);
+  hideCUExistingBanner();
+  renderCUCards();renderDenoms();updCUTots();
+  // Load scheduled waiters (for dropdown)
+  cuLoadScheduledWaiters();
+  // Check if record already exists in Supabase
+  try{
+    const {data}=await SB.from('cash_up').select('*').eq('date',dt).eq('shift',shift).maybeSingle();
+    if(data && data.waiters && data.waiters.length>0){
+      // Load existing saved data into cuD
+      cuD.waiters=data.waiters;
+      if(data.denoms && data.denoms.length) cuD.denoms=data.denoms;
+      renderCUCards();renderDenoms();updCUTots();
+      cuLoadScheduledWaiters(); // refresh dropdown to reflect loaded waiters
+      // Show warning banner
+      const b=document.getElementById('cuExistingBanner');
+      if(b) b.style.display='flex';
+    }
+  }catch(e){
+    // Query failed — fall back silently, scheduled waiters already loaded
+  }
 }
 
 function cuLoadScheduledWaiters(){
