@@ -5312,8 +5312,8 @@ function calcNetForEntry(s, grp){
     const gross = comm + tips;
     return Math.max(0, gross - (s.breakage||0) - (s.borrowed||0) - (s.saccawu||0));
   }
-  // Hourly groups (mgr, kit, bar, waitph)
-  const gross = (s.hrs||0)*(s.hourly_rate||0);
+  // Hourly groups (mgr, kit, bar, waitph) — use same calcGross so summary matches detail
+  const gross = calcGross(s);
   const uif   = parseFloat((gross*0.01).toFixed(2));
   const deductions = uif + (s.taxi||0) + (s.borrowed||0) + (s.saccawu||0) + (s.breakage||0);
   return Math.max(0, gross - deductions);
@@ -5373,7 +5373,7 @@ function renderPayoutSummary(){
         <div style="width:36px;height:36px;border-radius:50%;background:${paid?'rgba(255,255,255,0.15)':sec.color};display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:0.95rem;${paid?'color:var(--muted);text-decoration:line-through;':''}">${s.name}</div>
-          <div style="font-size:0.72rem;color:var(--muted)">${s.role||sec.label}${s.hrs?` · ${s.hrs} hrs`:''}</div>
+          <div style="font-size:0.72rem;color:var(--muted)">${s.role||sec.label}${s.hrs?` · ${s.hrs} reg hrs`:''}${(s.sun_hrs||0)>0?` · ${s.sun_hrs} sun`:''}${(s.hol_hrs||0)>0?` · ${s.hol_hrs} PH`:''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:0.8rem">
           <div style="text-align:right">
