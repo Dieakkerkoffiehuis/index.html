@@ -593,6 +593,29 @@ select option{background:var(--white);color:var(--ink);}
   font-size:0.55rem;font-weight:800;min-width:16px;height:16px;border-radius:8px;
   padding:0 3px;display:flex;align-items:center;justify-content:center;}
 
+/* ── SPOT CHECK ── */
+.sc-item{background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:0.8rem 1rem;display:flex;align-items:center;gap:0.75rem;transition:border-color 0.15s;}
+.sc-item.sc-ok{border-color:var(--green);background:rgba(26,106,66,0.04);}
+.sc-item.sc-warn{border-color:#b85c10;background:rgba(184,92,16,0.04);}
+.sc-item.sc-bad{border-color:var(--red);background:rgba(192,57,58,0.05);}
+.sc-item-num{font-family:'DM Mono',monospace;font-weight:700;font-size:1.05rem;color:var(--muted);min-width:22px;text-align:center;}
+.sc-item-info{flex:1;min-width:0;}
+.sc-item-name{font-weight:700;font-size:0.9rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc-item-meta{font-size:0.72rem;color:var(--muted);margin-top:0.1rem;}
+.sc-item-input{width:88px;border:1.5px solid var(--border);border-radius:8px;padding:0.45rem 0.55rem;font-family:'DM Mono',monospace;font-size:0.95rem;font-weight:600;text-align:right;background:var(--cream);color:var(--ink);outline:none;transition:border-color 0.15s;}
+.sc-item-input:focus{border-color:var(--burg);}
+.sc-variance{font-family:'DM Mono',monospace;font-size:0.72rem;font-weight:700;min-width:52px;text-align:right;}
+.sc-variance.v-ok{color:var(--green);}
+.sc-variance.v-warn{color:#b85c10;}
+.sc-variance.v-bad{color:var(--red);}
+.sc-hist-card{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:0.7rem;overflow:hidden;}
+.sc-hist-hdr{padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:0.5rem;}
+.sc-hist-hdr:active{background:var(--surface);}
+.sc-hist-meta{font-size:0.72rem;color:var(--muted);}
+.sc-hist-body{border-top:1px solid var(--border);padding:0.6rem 0.8rem;}
+.sc-hist-row{display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0.2rem;border-bottom:1px solid var(--border-s);font-size:0.82rem;}
+.sc-hist-row:last-child{border-bottom:none;}
+
 /* ── BOTTOM TAB BAR (mobile only, hidden on desktop) ── */
 .btab-bar{display:none;position:fixed;bottom:0;left:0;right:0;height:68px;background:var(--white);
   border-top:1px solid var(--border);z-index:190;
@@ -772,6 +795,11 @@ select option{background:var(--white);color:var(--ink);}
       <div class="pnl" id="p-modules">
         <div class="mod-section-label lbl-ops">Operations</div>
         <div class="mod-grid">
+          <div class="mod-card mod-ops" onclick="go('spotcheck');closeSb()" style="border:2px solid rgba(255,255,255,0.25)">
+            <div class="mod-ic">🎲</div>
+            <div class="mod-title">Daily Spot Check</div>
+            <div class="mod-sub">15 random items · catches theft</div>
+          </div>
           <div class="mod-card mod-ops" onclick="go('stocktake');closeSb()">
             <div class="mod-ic">📦</div>
             <div class="mod-title">Stock Take</div>
@@ -875,6 +903,51 @@ select option{background:var(--white);color:var(--ink);}
         <div class="card" id="dashAl"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
         <div class="stitle">Recent Activity</div>
         <div class="card" id="dashActivity"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
+      </div>
+
+      <!-- SPOT CHECK -->
+      <div class="pnl" id="p-spotcheck">
+        <!-- Tab bar -->
+        <div class="ctabs" style="margin-bottom:1rem">
+          <button class="ct act" id="scTab-check" onclick="scSwitchTab('check',this)">Today's Check</button>
+          <button class="ct" id="scTab-history" onclick="scSwitchTab('history',this)">History</button>
+        </div>
+
+        <!-- CHECK PANE -->
+        <div id="scCheckPane">
+          <div class="card" style="padding:0.9rem 1rem;margin-bottom:0.8rem;display:flex;align-items:center;justify-content:space-between;gap:0.8rem;flex-wrap:wrap">
+            <div>
+              <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.2rem;color:var(--burg)" id="scDateLabel">Today's Spot Check</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:0.1rem">15 items selected at random · different every day</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem">
+              <div id="scProgressPill" style="font-family:'DM Mono',monospace;font-size:0.78rem;font-weight:600;background:var(--surface);color:var(--muted);border-radius:20px;padding:0.25rem 0.7rem">0 / 15</div>
+              <button class="btn bs bsm" onclick="renderSpotCheck()" title="Re-roll today's items">↺ Refresh</button>
+            </div>
+          </div>
+
+          <!-- Already submitted today banner -->
+          <div id="scDoneBanner" style="display:none;background:rgba(26,106,66,0.10);border:2px solid var(--green);border-radius:10px;padding:0.8rem 1rem;margin-bottom:0.75rem">
+            <div style="display:flex;align-items:flex-start;gap:0.6rem">
+              <span style="font-size:1.3rem;line-height:1">✅</span>
+              <div>
+                <div style="font-weight:700;font-size:0.88rem;color:var(--green)">Spot check already completed today</div>
+                <div style="font-size:0.78rem;color:var(--ink);margin-top:0.15rem" id="scDoneMeta"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="scItemList" style="display:flex;flex-direction:column;gap:0.55rem"></div>
+
+          <button class="btn bp" style="width:100%;margin-top:1rem;font-size:0.95rem;padding:0.85rem" onclick="saveSpotCheck()" id="scSaveBtn">
+            Submit Spot Check
+          </button>
+        </div>
+
+        <!-- HISTORY PANE -->
+        <div id="scHistoryPane" style="display:none">
+          <div id="scHistoryList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading…</div></div>
+        </div>
       </div>
 
       <!-- STOCK TAKE -->
@@ -1736,6 +1809,23 @@ select option{background:var(--white);color:var(--ink);}
           <div class="card-title">Database Status</div>
           <div id="dbStatus" style="font-size:0.82rem;color:var(--muted)">Checking connection...</div>
         </div>
+        <div class="card" id="spotCheckSQL" style="display:none">
+          <div class="card-title">Spot Check Table Setup</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL in your Supabase SQL editor to enable the Daily Spot Check feature:</div>
+          <pre style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">CREATE TABLE IF NOT EXISTS spot_checks (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  date date NOT NULL UNIQUE,
+  submitted_by text,
+  submitted_at timestamptz DEFAULT now(),
+  items jsonb,
+  flagged_count int DEFAULT 0,
+  completed_count int DEFAULT 0,
+  total_items int DEFAULT 15
+);
+ALTER TABLE spot_checks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON spot_checks FOR ALL USING (true) WITH CHECK (true);</pre>
+          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('spotCheckSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
         <div class="card" id="pendingOrdersSQL" style="display:none">
           <div class="card-title">Pending Orders Table Setup</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL in your Supabase SQL editor to enable the order approval workflow:</div>
@@ -2417,18 +2507,18 @@ const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // AUTH
 // ═══════════════════════════════════════════
 // All sections available
-const ALL_SECTIONS = ['dashboard','modules','stocktake','stockdb','pending','orders','cashup','reports','analytics','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
-const SECTION_LABELS = {dashboard:'Dashboard',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
+const ALL_SECTIONS = ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','analytics','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
+const SECTION_LABELS = {dashboard:'Dashboard',spotcheck:'Daily Spot Check',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
 
 // Owner always has full access (hardcoded, cannot be removed)
 const ACCESS = {
   owner:   ALL_SECTIONS,
-  manager: ['dashboard','modules','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','kpi','docs','invoices'],
-  employee:['dashboard','modules','stocktake'],
+  manager: ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','kpi','docs','invoices'],
+  employee:['dashboard','modules','spotcheck','stocktake'],
 };
-const TTLS = {dashboard:'Dashboard',modules:'Modules',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
-const TSUBS = {dashboard:'Overview of all operations',modules:'All features in one place',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
-const INVESTOR_SECTIONS = ['dashboard','modules','stockdb','reports','analytics','recipes','pricing','cashup','payroll','roster','leave','kpi','docs','auditlog'];
+const TTLS = {dashboard:'Dashboard',modules:'Modules',spotcheck:'Daily Spot Check',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
+const TSUBS = {dashboard:'Overview of all operations',modules:'All features in one place',spotcheck:'15 random items · different every day',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
+const INVESTOR_SECTIONS = ['dashboard','modules','spotcheck','stockdb','reports','analytics','recipes','pricing','cashup','payroll','roster','leave','kpi','docs','auditlog'];
 const ROLE_COLORS = {owner:'#7a1528', investor:'#c8922a', manager:'#152438', employee:'#1a6e40'};
 
 let CU = null, appLogins = [];
@@ -2660,6 +2750,7 @@ function go(id){
   const firstVisit = !_panelLoaded[id];
   if(firstVisit) _panelLoaded[id] = true;
 
+  if(id==='spotcheck') renderSpotCheck();
   if(id==='roster') initRosterPanel();
   if(id==='payroll'){ renderPaymentDate(); initPayPeriod(); loadPayrollForPeriod(); }
   if(id==='waiterlog'){ wlToday(); initLeaderboard(); initScheduling(); }
@@ -2674,6 +2765,8 @@ function go(id){
   if(id==='settings' && firstVisit){
     const sqlCard=document.getElementById('pendingOrdersSQL');
     if(sqlCard) sqlCard.style.display=CU?.role==='owner'?'block':'none';
+    const scSqlCard=document.getElementById('spotCheckSQL');
+    if(scSqlCard) scSqlCard.style.display=CU?.role==='owner'?'block':'none';
     checkSectionColStatus();
     xeroLoadSettings();
   }
@@ -2684,6 +2777,7 @@ function go(id){
 // ── Section tab bar ──────────────────────────────────────────────────────────
 const SEC_GROUPS = {
   operations:{tabs:[
+    {id:'spotcheck',label:'Spot Check'},
     {id:'stocktake',label:'Stock Take'},
     {id:'stockdb',label:'Stock Database',r:'manager'},
     {id:'pending',label:'Pending Deliveries',r:'manager'},
@@ -2713,7 +2807,7 @@ const SEC_GROUPS = {
 };
 const SEC_GROUP_MAP = {
   dashboard:'overview',
-  stocktake:'operations',stockdb:'operations',pending:'operations',orders:'operations',
+  spotcheck:'operations',stocktake:'operations',stockdb:'operations',pending:'operations',orders:'operations',
   cashup:'finance',reports:'finance',analytics:'finance',recipes:'finance',pricing:'finance',waiterlog:'finance',invoices:'finance',
   roster:'people',payroll:'people',staff:'people',leave:'people',kpi:'people',docs:'people',
   auditlog:'system',settings:'system',
@@ -3996,6 +4090,258 @@ async function rejectPendingOrder(id){
     showToast('Dismissed.');
     await loadPendingOrders();
   }catch(e){showToast('Error.',true);}
+}
+
+// ═══════════════════════════════════════════
+// DAILY SPOT CHECK
+// ═══════════════════════════════════════════
+
+// Date-seeded LCG — same date always produces same sequence, different day = different items
+function scSeededRandom(seed){
+  let s = seed;
+  return function(){
+    s = (s * 1664525 + 1013904223) & 0xFFFFFFFF;
+    return (s >>> 0) / 0xFFFFFFFF;
+  };
+}
+
+function scGetTodayItems(count=15){
+  if(!DB || DB.length===0) return [];
+  const today = new Date().toISOString().split('T')[0];
+  // Seed = numeric value of date string e.g. "20260529" → 20260529
+  const seed = parseInt(today.replace(/-/g,''), 10);
+  const rand = scSeededRandom(seed);
+  // Shuffle a copy of DB using Fisher-Yates with seeded random
+  const pool = DB.filter(it => it.name && it.name.trim()); // skip blank items
+  const arr = [...pool];
+  for(let i = arr.length-1; i>0; i--){
+    const j = Math.floor(rand() * (i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, Math.min(count, arr.length));
+}
+
+let scItems = []; // [{...dbItem, counted: null}]
+let scSubmittedToday = false;
+
+async function renderSpotCheck(){
+  scItems = scGetTodayItems(15).map(it => ({...it, counted: null}));
+  scSubmittedToday = false;
+
+  // Update date label
+  const today = new Date();
+  const label = today.toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const el = document.getElementById('scDateLabel');
+  if(el) el.textContent = label + ' — Spot Check';
+
+  // Check if already done today
+  try{
+    const todayStr = today.toISOString().split('T')[0];
+    const {data} = await SB.from('spot_checks').select('id,submitted_by,submitted_at,items').eq('date',todayStr).maybeSingle();
+    if(data){
+      scSubmittedToday = true;
+      const when = new Date(data.submitted_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+      const meta = document.getElementById('scDoneMeta');
+      if(meta) meta.textContent = `Submitted at ${when} by ${data.submitted_by||'unknown'} — you can view results below or resubmit.`;
+      const banner = document.getElementById('scDoneBanner');
+      if(banner) banner.style.display='flex';
+      // Load existing counts into scItems so they can see what was submitted
+      const saved = data.items||[];
+      scItems = scItems.map(it => {
+        const found = saved.find(s => s.id===it.id);
+        return found ? {...it, counted: found.counted} : it;
+      });
+    } else {
+      const banner = document.getElementById('scDoneBanner');
+      if(banner) banner.style.display='none';
+    }
+  }catch(e){ /* non-critical */ }
+
+  scRenderItems();
+}
+
+function scRenderItems(){
+  const el = document.getElementById('scItemList');
+  if(!el) return;
+  let completed = scItems.filter(it => it.counted !== null && it.counted !== '').length;
+  const prog = document.getElementById('scProgressPill');
+  if(prog){
+    prog.textContent = `${completed} / ${scItems.length}`;
+    prog.style.background = completed===scItems.length ? 'rgba(26,106,66,0.15)' : 'var(--surface)';
+    prog.style.color = completed===scItems.length ? 'var(--green)' : 'var(--muted)';
+  }
+
+  el.innerHTML = scItems.map((it, i) => {
+    const soh = parseFloat(it.stock)||0;
+    const counted = it.counted;
+    const hasCounted = counted !== null && counted !== '';
+    const val = hasCounted ? parseFloat(counted) : null;
+    let varPct = null, varClass = '', varTxt = '—';
+    if(hasCounted && soh > 0){
+      varPct = ((val - soh) / soh) * 100;
+      varTxt = (varPct >= 0 ? '+' : '') + varPct.toFixed(1) + '%';
+      varClass = Math.abs(varPct) < 5 ? 'v-ok' : Math.abs(varPct) < 15 ? 'v-warn' : 'v-bad';
+    } else if(hasCounted && soh===0 && val > 0){
+      varTxt = '+∞'; varClass='v-warn';
+    } else if(hasCounted){
+      varTxt = val===0&&soh===0 ? '✓' : '—';
+      varClass = 'v-ok';
+    }
+    const rowClass = !hasCounted ? '' : (varClass==='v-ok' ? 'sc-ok' : varClass==='v-warn' ? 'sc-warn' : 'sc-bad');
+    return `<div class="sc-item ${rowClass}" id="sc-row-${i}">
+      <div class="sc-item-num">${i+1}</div>
+      <div class="sc-item-info">
+        <div class="sc-item-name">${it.name}</div>
+        <div class="sc-item-meta">${it.category||''}${it.unit?' · '+it.unit:''} · System: <strong>${soh.toFixed(2)}</strong></div>
+      </div>
+      <input class="sc-item-input" type="number" inputmode="decimal" placeholder="Count"
+        value="${hasCounted ? counted : ''}"
+        oninput="scUpdateItem(${i}, this.value)"
+        ${scSubmittedToday ? 'readonly style="opacity:0.7"' : ''}>
+      <div class="sc-variance ${varClass}" id="sc-var-${i}">${varTxt}</div>
+    </div>`;
+  }).join('');
+
+  const saveBtn = document.getElementById('scSaveBtn');
+  if(saveBtn){
+    if(scSubmittedToday){
+      saveBtn.textContent = 'Resubmit Spot Check';
+      saveBtn.style.background = 'var(--muted)';
+    } else {
+      saveBtn.textContent = 'Submit Spot Check';
+      saveBtn.style.background = '';
+    }
+  }
+}
+
+function scUpdateItem(i, val){
+  scItems[i].counted = val==='' ? null : parseFloat(val);
+  // Live-update just this row's variance label + row colour
+  const it = scItems[i];
+  const soh = parseFloat(it.stock)||0;
+  const counted = it.counted;
+  const hasCounted = counted !== null;
+  let varClass='', varTxt='—';
+  if(hasCounted && soh > 0){
+    const varPct = ((counted - soh) / soh) * 100;
+    varTxt = (varPct >= 0 ? '+' : '') + varPct.toFixed(1) + '%';
+    varClass = Math.abs(varPct) < 5 ? 'v-ok' : Math.abs(varPct) < 15 ? 'v-warn' : 'v-bad';
+  } else if(hasCounted){ varTxt='✓'; varClass='v-ok'; }
+  const varEl = document.getElementById('sc-var-'+i);
+  if(varEl){ varEl.textContent=varTxt; varEl.className='sc-variance '+varClass; }
+  const row = document.getElementById('sc-row-'+i);
+  if(row){
+    row.className = 'sc-item ' + (!hasCounted?'':varClass==='v-ok'?'sc-ok':varClass==='v-warn'?'sc-warn':'sc-bad');
+  }
+  // Update progress pill
+  let completed = scItems.filter(it2 => it2.counted !== null).length;
+  const prog = document.getElementById('scProgressPill');
+  if(prog){
+    prog.textContent = `${completed} / ${scItems.length}`;
+    prog.style.background = completed===scItems.length ? 'rgba(26,106,66,0.15)' : 'var(--surface)';
+    prog.style.color = completed===scItems.length ? 'var(--green)' : 'var(--muted)';
+  }
+}
+
+async function saveSpotCheck(){
+  const todayStr = new Date().toISOString().split('T')[0];
+  const completed = scItems.filter(it => it.counted !== null);
+  if(completed.length === 0){ showToast('Count at least one item before submitting.','err'); return; }
+  const items = scItems.map(it => ({
+    id: it.id,
+    name: it.name,
+    category: it.category||'',
+    unit: it.unit||'',
+    system_soh: parseFloat(it.stock)||0,
+    counted: it.counted !== null ? parseFloat(it.counted) : null,
+    variance: it.counted !== null ? (parseFloat(it.counted) - (parseFloat(it.stock)||0)) : null,
+    variance_pct: (it.counted !== null && (parseFloat(it.stock)||0) > 0)
+      ? ((parseFloat(it.counted) - (parseFloat(it.stock)||0)) / (parseFloat(it.stock)||0) * 100)
+      : null,
+  }));
+  const flagged = items.filter(it => it.variance_pct !== null && Math.abs(it.variance_pct) >= 15);
+  const rec = {
+    date: todayStr,
+    submitted_by: CU?.name || CU?.username || 'Unknown',
+    submitted_at: new Date().toISOString(),
+    items,
+    flagged_count: flagged.length,
+    completed_count: completed.length,
+    total_items: scItems.length,
+  };
+  setSyncStatus('syncing');
+  const {error} = await SB.from('spot_checks').upsert(rec, {onConflict:'date'});
+  setSyncStatus(error?'err':'ok');
+  if(error){ showToast('Error saving spot check.','err'); return; }
+  scSubmittedToday = true;
+  const banner = document.getElementById('scDoneBanner');
+  if(banner){ banner.style.display='flex'; }
+  const meta = document.getElementById('scDoneMeta');
+  const when = new Date().toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+  if(meta) meta.textContent = `Submitted at ${when} by ${rec.submitted_by}.`;
+  const saveBtn = document.getElementById('scSaveBtn');
+  if(saveBtn){ saveBtn.textContent='Resubmit Spot Check'; saveBtn.style.background='var(--muted)'; }
+  const msg = flagged.length > 0
+    ? `Spot check saved ✓ · ⚠️ ${flagged.length} item${flagged.length!==1?'s':''} flagged (>15% variance)`
+    : `Spot check saved ✓ · All ${completed.length} items counted`;
+  showToast(msg, flagged.length>0);
+  await logAudit('spotcheck','Spot Check Submitted',`${completed.length}/${scItems.length} items counted · ${flagged.length} flagged`);
+  scRenderItems(); // refresh to show readonly state
+}
+
+function scSwitchTab(tab, btn){
+  document.querySelectorAll('#p-spotcheck .ct').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  document.getElementById('scCheckPane').style.display = tab==='check' ? '' : 'none';
+  document.getElementById('scHistoryPane').style.display = tab==='history' ? '' : 'none';
+  if(tab==='history') loadSpotCheckHistory();
+}
+
+async function loadSpotCheckHistory(){
+  const el = document.getElementById('scHistoryList');
+  el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">Loading…</div>';
+  try{
+    const {data,error} = await SB.from('spot_checks').select('*').order('date',{ascending:false}).limit(30);
+    if(error||!data?.length){
+      el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No spot checks recorded yet.</div>';
+      return;
+    }
+    el.innerHTML = data.map(r => {
+      const dt = new Date(r.date+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+      const when = r.submitted_at ? new Date(r.submitted_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'}) : '';
+      const flagged = r.flagged_count||0;
+      const pill = flagged>0
+        ? `<span style="background:rgba(192,57,58,0.12);color:var(--red);border-radius:12px;padding:0.15rem 0.55rem;font-size:0.7rem;font-weight:700">⚠️ ${flagged} flagged</span>`
+        : `<span style="background:rgba(26,106,66,0.12);color:var(--green);border-radius:12px;padding:0.15rem 0.55rem;font-size:0.7rem;font-weight:700">✓ Clean</span>`;
+      const items = (r.items||[]).filter(it => it.counted !== null);
+      const rows = items.map(it => {
+        const vp = it.variance_pct;
+        const vpTxt = vp !== null ? (vp>=0?'+':'')+vp.toFixed(1)+'%' : '—';
+        const vpCol = vp===null?'var(--muted)':Math.abs(vp)<5?'var(--green)':Math.abs(vp)<15?'#b85c10':'var(--red)';
+        const flag = Math.abs(vp||0)>=15 ? ' ⚠️' : '';
+        return `<div class="sc-hist-row">
+          <span style="font-weight:${Math.abs(vp||0)>=15?'700':'400'}">${it.name}${flag}</span>
+          <span style="display:flex;gap:1rem;font-family:'DM Mono',monospace;font-size:0.78rem">
+            <span style="color:var(--muted)">Sys: ${(it.system_soh||0).toFixed(2)}</span>
+            <span>→ ${it.counted !== null ? parseFloat(it.counted).toFixed(2) : '—'} ${it.unit||''}</span>
+            <span style="color:${vpCol};font-weight:700">${vpTxt}</span>
+          </span>
+        </div>`;
+      }).join('');
+      return `<div class="sc-hist-card">
+        <div class="sc-hist-hdr" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">
+          <div>
+            <div style="font-weight:700;font-size:0.92rem">${dt}</div>
+            <div class="sc-hist-meta">${r.submitted_by||''}${when?' · '+when:''} · ${r.completed_count||0}/${r.total_items||15} counted</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem">${pill}<span style="color:var(--muted);font-size:0.8rem">▼</span></div>
+        </div>
+        <div class="sc-hist-body" style="display:none">${rows||'<div style="color:var(--muted);font-size:0.82rem;padding:0.3rem 0">No items counted</div>'}</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--red)">Error loading history.</div>';
+  }
 }
 
 // ═══════════════════════════════════════════
