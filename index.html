@@ -2691,6 +2691,12 @@ async function launchApp(){
 
   if(CU.role==='owner'||CU.role==='investor') document.getElementById('ownerSt').style.display='block';
 
+  // Ensure all users always have modules + spotcheck regardless of when their account was created
+  if(!CU.access.includes('modules')) CU.access = [...CU.access, 'modules'];
+  if(CU.role==='manager' || CU.role==='employee'){
+    if(!CU.access.includes('spotcheck')) CU.access = [...CU.access, 'spotcheck'];
+  }
+
   // Stock employee mode: ensure orders access + hide full nav clutter
   if(isStockEmployee()){
     // Give access to stocktake + orders (even if not in DB access_sections)
