@@ -39,10 +39,17 @@ html,body{height:100%;overflow:hidden;}
 body{background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.5;}
 
 /* ── LOADING ── */
-#loadScreen{position:fixed;inset:0;background:linear-gradient(160deg,#3A1020 0%,#6B2737 55%,#4A1A27 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:1.2rem;}
-#loadScreen h1{font-family:'Cormorant Garamond',serif;font-size:3rem;color:#F5EDD6;letter-spacing:0.08em;font-weight:700;}
-#loadScreen p{color:rgba(245,237,214,0.45);font-size:0.75rem;letter-spacing:0.22em;text-transform:uppercase;font-family:'DM Sans',sans-serif;}
-.spinner{width:34px;height:34px;border:2.5px solid rgba(245,237,214,0.15);border-top-color:var(--gold);border-radius:50%;animation:spin 0.75s linear infinite;}
+#loadScreen{position:fixed;inset:0;background:linear-gradient(160deg,#3A1020 0%,#6B2737 55%,#4A1A27 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;transition:opacity 0.45s ease;}
+#ls-inner{display:flex;flex-direction:column;align-items:center;animation:lsFadeUp 0.75s ease both;}
+@keyframes lsFadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+.ls-deco{display:flex;align-items:center;gap:10px;width:240px;}
+.ls-deco-line{flex:1;height:1px;background:rgba(201,168,76,0.35);}
+.ls-deco-gem{color:rgba(201,168,76,0.55);font-size:8px;line-height:1;}
+#loadScreen h1{font-family:'Cormorant Garamond',serif;font-size:3.4rem;color:#F5EDD6;letter-spacing:0.12em;font-weight:700;line-height:1;margin:0.6rem 0 0.15rem;}
+#ls-sub{font-family:'DM Sans',sans-serif;font-size:0.62rem;font-weight:500;letter-spacing:0.42em;color:rgba(201,168,76,0.75);text-transform:uppercase;margin-bottom:0.45rem;}
+#ls-bar-wrap{width:160px;height:2px;background:rgba(245,237,214,0.10);border-radius:2px;margin:1.7rem 0 0.65rem;overflow:hidden;}
+#ls-bar{height:100%;background:linear-gradient(90deg,#C9A84C,#E2C46E);border-radius:2px;width:5%;transition:width 0.5s ease;}
+#loadScreen p{color:rgba(245,237,214,0.35);font-size:0.6rem;letter-spacing:0.22em;text-transform:uppercase;font-family:'DM Sans',sans-serif;margin:0;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── LOGIN ── */
@@ -688,9 +695,14 @@ select option{background:var(--white);color:var(--ink);}
 
 <!-- LOADING -->
 <div id="loadScreen">
-  <h1>DIE AKKER</h1>
-  <div class="spinner"></div>
-  <p>CONNECTING...</p>
+  <div id="ls-inner">
+    <div class="ls-deco"><div class="ls-deco-line"></div><div class="ls-deco-gem">◆</div><div class="ls-deco-line"></div></div>
+    <h1>DIE AKKER</h1>
+    <div id="ls-sub">KOFFIEHUIS</div>
+    <div class="ls-deco"><div class="ls-deco-line"></div><div class="ls-deco-gem">◆</div><div class="ls-deco-line"></div></div>
+    <div id="ls-bar-wrap"><div id="ls-bar"></div></div>
+    <p id="ls-status">CONNECTING</p>
+  </div>
 </div>
 
 <div class="toast" id="toast" onclick="this.classList.remove('on')">
@@ -2499,6 +2511,40 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
 // ═══════════════════════════════════════════
 // SUPABASE INIT
 // ═══════════════════════════════════════════
+// ── LOAD SCREEN ANIMATION ──
+const LS_MSGS = ['CONNECTING','LOADING STOCK DATA','SYNCING STAFF','BUILDING DASHBOARD','ALMOST READY'];
+let _lsTimer = null, _lsPct = 5, _lsMsgIdx = 0;
+function startLoadScreen(){
+  const bar = document.getElementById('ls-bar');
+  const txt = document.getElementById('ls-status');
+  if(bar) bar.style.width = '8%';
+  _lsTimer = setInterval(() => {
+    _lsMsgIdx = (_lsMsgIdx + 1) % LS_MSGS.length;
+    if(txt) txt.textContent = LS_MSGS[_lsMsgIdx];
+    _lsPct = Math.min(_lsPct + Math.random() * 15 + 8, 88);
+    if(bar) bar.style.width = _lsPct + '%';
+  }, 750);
+}
+function finishLoadScreen(){
+  clearInterval(_lsTimer);
+  const scr = document.getElementById('loadScreen');
+  const bar = document.getElementById('ls-bar');
+  const txt = document.getElementById('ls-status');
+  if(bar){ bar.style.transition = 'width 0.3s ease'; bar.style.width = '100%'; }
+  if(txt) txt.textContent = 'READY';
+  setTimeout(() => {
+    if(scr){ scr.style.opacity = '0'; setTimeout(() => { scr.style.display = 'none'; }, 450); }
+  }, 320);
+}
+function failLoadScreen(msg){
+  clearInterval(_lsTimer);
+  const bar = document.getElementById('ls-bar');
+  const txt = document.getElementById('ls-status');
+  if(bar){ bar.style.background = '#f87171'; bar.style.width = '100%'; }
+  if(txt){ txt.textContent = msg || 'CONNECTION FAILED'; txt.style.color = '#f87171'; }
+}
+startLoadScreen();
+
 const SUPABASE_URL  = 'https://yvfvcmmycqiqkctkpepz.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2ZnZjbW15Y3FpcWtjdGtwZXB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDc4NzAsImV4cCI6MjA5MDg4Mzg3MH0.oY71GHNoEgxPWFmS8VGujv2Z9V5EyZP9EO-CiPn19vM';
 const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -11195,15 +11241,14 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   try {
     const {data,error} = await SB.from('stock').select('count',{count:'exact',head:true});
     if(error) throw error;
-    document.getElementById('loadScreen').style.display='none';
-    document.getElementById('ls').style.display='flex';
+    finishLoadScreen();
+    setTimeout(()=>{ document.getElementById('ls').style.display='flex'; }, 400);
   } catch(err) {
-    document.getElementById('loadScreen').querySelector('p').textContent = 'CONNECTION FAILED — CHECK INTERNET';
-    document.getElementById('loadScreen').querySelector('p').style.color = '#f87171';
+    failLoadScreen('CONNECTION FAILED — CHECK INTERNET');
     setTimeout(()=>{
-      document.getElementById('loadScreen').style.display='none';
-      document.getElementById('ls').style.display='flex';
-    }, 3000);
+      finishLoadScreen();
+      setTimeout(()=>{ document.getElementById('ls').style.display='flex'; }, 400);
+    }, 2800);
   }
 });
 </script>
