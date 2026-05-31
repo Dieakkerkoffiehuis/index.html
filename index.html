@@ -543,16 +543,31 @@ select option{background:var(--white);color:var(--ink);}
 
 /* ── SKELETON LOADING ── */
 @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
-.skel{border-radius:6px;background:linear-gradient(90deg,var(--surface) 25%,rgba(255,255,255,0.06) 50%,var(--surface) 75%);
+.skel{border-radius:6px;background:linear-gradient(90deg,var(--surface) 25%,var(--border-s) 50%,var(--surface) 75%);
   background-size:800px 100%;animation:shimmer 1.4s infinite;}
-.skel-line{height:14px;margin-bottom:10px;border-radius:4px;}
-.skel-line.w60{width:60%;}
+.skel-line{height:13px;margin-bottom:10px;border-radius:4px;}
+.skel-line.sm{height:10px;}
+.skel-line.lg{height:20px;}
+.skel-line.w100{width:100%;}
 .skel-line.w80{width:80%;}
+.skel-line.w60{width:60%;}
+.skel-line.w50{width:50%;}
 .skel-line.w40{width:40%;}
+.skel-line.w30{width:30%;}
+.skel-line.w35{width:35%;}
+.skel-line.w45{width:45%;}
+.skel-line.w55{width:55%;}
+.skel-line.w65{width:65%;}
+.skel-line.w70{width:70%;}
+.skel-line.w75{width:75%;}
+.skel-line.w90{width:90%;}
 .skel-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r2);padding:1rem;margin-bottom:0.6rem;}
 .skel-row{display:flex;align-items:center;gap:0.8rem;padding:0.8rem 0;border-bottom:1px solid var(--border-s);}
-.skel-avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;}
-.skel-stat{height:80px;border-radius:var(--r2);flex:1;}
+.skel-row:last-child{border-bottom:none;}
+.skel-avatar{width:38px;height:38px;border-radius:50%;flex-shrink:0;}
+.skel-stat{height:82px;border-radius:var(--r2);flex:1;}
+.skel-title{height:18px;margin-bottom:14px;border-radius:4px;width:45%;}
+.skel-badge{height:24px;border-radius:20px;width:70px;display:inline-block;}
 
 /* ── MODULES GRID ── */
 .mod-section-label{font-size:0.62rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;
@@ -910,11 +925,20 @@ select option{background:var(--white);color:var(--ink);}
           </div>
         </div>
         <div class="stitle">GP Alerts</div>
-        <div id="dashGPAlerts"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
+        <div id="dashGPAlerts"><div class="skel-card"><div class="skel skel-line w60"></div><div style="display:flex;gap:0.6rem"><div class="skel skel-stat" style="height:52px"></div><div class="skel skel-stat" style="height:52px"></div><div class="skel skel-stat" style="height:52px"></div></div></div></div>
         <div class="stitle">Low Stock Alerts</div>
-        <div class="card" id="dashAl"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
+        <div class="card" id="dashAl">
+          <div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w80"></div><div class="skel skel-line w50 sm"></div></div><div class="skel skel-badge"></div></div>
+          <div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w60"></div><div class="skel skel-line w40 sm"></div></div><div class="skel skel-badge"></div></div>
+          <div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w70"></div><div class="skel skel-line w30 sm"></div></div><div class="skel skel-badge"></div></div>
+        </div>
         <div class="stitle">Recent Activity</div>
-        <div class="card" id="dashActivity"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
+        <div class="card" id="dashActivity">
+          <div class="skel-row"><div class="skel skel-avatar" style="border-radius:6px"></div><div style="flex:1"><div class="skel skel-line w80"></div><div class="skel skel-line w40 sm"></div></div></div>
+          <div class="skel-row"><div class="skel skel-avatar" style="border-radius:6px"></div><div style="flex:1"><div class="skel skel-line w60"></div><div class="skel skel-line w30 sm"></div></div></div>
+          <div class="skel-row"><div class="skel skel-avatar" style="border-radius:6px"></div><div style="flex:1"><div class="skel skel-line w70"></div><div class="skel skel-line w50 sm"></div></div></div>
+          <div class="skel-row"><div class="skel skel-avatar" style="border-radius:6px"></div><div style="flex:1"><div class="skel skel-line w50"></div><div class="skel skel-line w40 sm"></div></div></div>
+        </div>
       </div>
 
       <!-- SPOT CHECK -->
@@ -1001,13 +1025,22 @@ select option{background:var(--white);color:var(--ink);}
         </div>
         <div class="sb2"><span>🔍</span><input type="text" id="dbSrch" placeholder="Search..." oninput="renderDB()"></div>
         <div class="ctabs" id="dbTabs"></div>
-        <div class="card" style="padding:0.5rem 1rem" id="dbList"><div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div></div>
+        <div class="card" style="padding:0.5rem 1rem" id="dbList">
+          <div class="skel-row"><div style="flex:1"><div class="skel skel-line w70"></div><div class="skel skel-line w40 sm"></div></div><div class="skel skel-badge"></div></div>
+          <div class="skel-row"><div style="flex:1"><div class="skel skel-line w80"></div><div class="skel skel-line w50 sm"></div></div><div class="skel skel-badge"></div></div>
+          <div class="skel-row"><div style="flex:1"><div class="skel skel-line w60"></div><div class="skel skel-line w30 sm"></div></div><div class="skel skel-badge"></div></div>
+          <div class="skel-row"><div style="flex:1"><div class="skel skel-line w75"></div><div class="skel skel-line w45 sm"></div></div><div class="skel skel-badge"></div></div>
+          <div class="skel-row"><div style="flex:1"><div class="skel skel-line w65"></div><div class="skel skel-line w35 sm"></div></div><div class="skel skel-badge"></div></div>
+        </div>
       </div>
 
       <!-- PENDING -->
       <div class="pnl" id="p-pending">
         <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Stocktakes submitted by staff awaiting your approval.</div>
-        <div id="pendList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading...</div></div>
+        <div id="pendList">
+          <div class="skel-card"><div class="skel skel-title"></div><div class="skel skel-line w100"></div><div class="skel skel-line w60 sm"></div><div style="display:flex;gap:0.5rem;margin-top:0.5rem"><div class="skel skel-badge"></div><div class="skel skel-badge"></div></div></div>
+          <div class="skel-card"><div class="skel skel-title"></div><div class="skel skel-line w80"></div><div class="skel skel-line w50 sm"></div><div style="display:flex;gap:0.5rem;margin-top:0.5rem"><div class="skel skel-badge"></div><div class="skel skel-badge"></div></div></div>
+        </div>
       </div>
 
       <!-- ORDERS -->
@@ -1020,14 +1053,14 @@ select option{background:var(--white);color:var(--ink);}
             <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.1rem;color:var(--burg)">⏳ PENDING APPROVALS <span id="pendingOrdersBadge" style="font-size:0.7rem;background:var(--red);color:#fff;border-radius:50%;padding:0.1rem 0.4rem;vertical-align:middle"></span></div>
             <button class="btn bs bsm" onclick="loadPendingOrders()" style="font-size:0.7rem">↻ Refresh</button>
           </div>
-          <div id="pendingOrdersList"><div style="text-align:center;padding:1rem;color:var(--muted);font-size:0.82rem">Loading...</div></div>
+          <div id="pendingOrdersList"><div class="skel-card"><div class="skel skel-line w60"></div><div class="skel skel-line w80 sm"></div></div></div>
         </div>
         <!-- Awaiting Delivery (owner only) -->
         <div id="awaitingDeliverySection" style="display:none;margin-bottom:1.2rem">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem">
             <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.1rem;color:var(--burg)">📦 AWAITING DELIVERY <span id="awaitingDeliveryBadge" style="font-size:0.7rem;background:var(--burg);color:#fff;border-radius:50%;padding:0.1rem 0.4rem;vertical-align:middle"></span></div>
           </div>
-          <div id="awaitingDeliveryList"><div style="text-align:center;padding:1rem;color:var(--muted);font-size:0.82rem">Loading...</div></div>
+          <div id="awaitingDeliveryList"><div class="skel-card"><div class="skel skel-line w50"></div><div class="skel skel-line w70 sm"></div></div></div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
           <div style="font-size:0.82rem;color:var(--muted)">Select a supplier to build and send an order.</div>
@@ -1150,7 +1183,9 @@ select option{background:var(--white);color:var(--ink);}
             <button class="ct" onclick="fVar('loss',this)">🔴 Losses</button>
             <button class="ct" onclick="fVar('over',this)">🟢 Overstock</button>
           </div>
-          <div id="varList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading...</div></div>
+          <div id="varList">
+            <div class="skel-card"><div class="skel skel-title" style="width:55%"></div><div class="skel-row" style="padding:0.5rem 0"><div style="flex:1"><div class="skel skel-line w80"></div></div><div class="skel skel-badge"></div></div><div class="skel-row" style="padding:0.5rem 0"><div style="flex:1"><div class="skel skel-line w60"></div></div><div class="skel skel-badge"></div></div><div class="skel-row" style="padding:0.5rem 0;border:none"><div style="flex:1"><div class="skel skel-line w70"></div></div><div class="skel skel-badge"></div></div></div>
+          </div>
           <div class="stitle">Top Loss Items</div>
           <div class="card" id="topLoss"></div>
         </div>
@@ -1362,7 +1397,9 @@ select option{background:var(--white);color:var(--ink);}
           </div>
           <div class="sb2"><span>🔍</span><input type="text" id="ingPriceSearch" placeholder="Search ingredients..." oninput="renderIngPrices()"></div>
           <div class="ctabs" id="ingCatTabs"></div>
-          <div id="ingPriceList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading...</div></div>
+          <div id="ingPriceList">
+            <div class="skel-card"><div class="skel-row"><div class="skel skel-avatar" style="border-radius:6px"></div><div style="flex:1"><div class="skel skel-line w70"></div><div class="skel skel-line w40 sm"></div></div><div class="skel skel-badge" style="width:80px"></div></div><div class="skel-row"><div class="skel skel-avatar" style="border-radius:6px"></div><div style="flex:1"><div class="skel skel-line w60"></div><div class="skel skel-line w30 sm"></div></div><div class="skel skel-badge" style="width:80px"></div></div></div>
+          </div>
         </div>
       </div>
 
@@ -1657,7 +1694,13 @@ select option{background:var(--white);color:var(--ink);}
             <div style="font-size:0.82rem;color:var(--muted)">Create and manage individual login accounts for each staff member.</div>
             <button class="btn bp bsm" onclick="openAddLogin()">+ Create Login</button>
           </div>
-          <div id="loginsList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading...</div></div>
+          <div id="loginsList">
+            <div class="skel-card">
+              <div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w60"></div><div class="skel skel-line w40 sm"></div></div><div class="skel skel-badge"></div></div>
+              <div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w70"></div><div class="skel skel-line w30 sm"></div></div><div class="skel skel-badge"></div></div>
+              <div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w50"></div><div class="skel skel-line w45 sm"></div></div><div class="skel skel-badge"></div></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1769,7 +1812,14 @@ select option{background:var(--white);color:var(--ink);}
             <button class="ct" onclick="auFilter('staff',this)">👤 Staff</button>
           </div>
         </div>
-        <div id="auditList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading...</div></div>
+        <div id="auditList">
+          <div class="skel-card">
+            <div class="skel-row"><div class="skel skel-avatar" style="border-radius:6px;width:42px"></div><div style="flex:1"><div class="skel skel-line w70"></div><div class="skel skel-line w50 sm"></div></div><div class="skel skel-line w30 sm" style="margin:0"></div></div>
+            <div class="skel-row"><div class="skel skel-avatar" style="border-radius:6px;width:42px"></div><div style="flex:1"><div class="skel skel-line w60"></div><div class="skel skel-line w40 sm"></div></div><div class="skel skel-line w30 sm" style="margin:0"></div></div>
+            <div class="skel-row"><div class="skel skel-avatar" style="border-radius:6px;width:42px"></div><div style="flex:1"><div class="skel skel-line w80"></div><div class="skel skel-line w35 sm"></div></div><div class="skel skel-line w30 sm" style="margin:0"></div></div>
+            <div class="skel-row"><div class="skel skel-avatar" style="border-radius:6px;width:42px"></div><div style="flex:1"><div class="skel skel-line w55"></div><div class="skel skel-line w45 sm"></div></div><div class="skel skel-line w30 sm" style="margin:0"></div></div>
+          </div>
+        </div>
       </div>
 
       <!-- TAX INVOICES -->
@@ -10586,7 +10636,7 @@ async function renderLeaderboard(){
   const lastDay=new Date(parseInt(yr),parseInt(mo),0).getDate();
   const to=`${yr}-${mo}-${String(lastDay).padStart(2,'0')}`;
 
-  document.getElementById('lbRankings').innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">Loading...</div>';
+  document.getElementById('lbRankings').innerHTML='<div class="skel-card"><div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w60"></div><div class="skel skel-line w40 sm"></div></div><div class="skel skel-badge"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w70"></div><div class="skel skel-line w30 sm"></div></div><div class="skel skel-badge"></div></div><div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line w50"></div><div class="skel skel-line w40 sm"></div></div><div class="skel skel-badge"></div></div></div>';
 
   try {
     // Try waiter_sales table first (auto-populated from cash up)
