@@ -1108,7 +1108,7 @@ select option{background:var(--white);color:var(--ink);}
             <div class="fg2">
               <div class="fg"><label>Date</label><input type="date" id="cuDate" onchange="cuCheckExistingRecord()"></div>
               <div class="fg"><label>Shift</label>
-                <select id="cuShift" onchange="cuCheckExistingRecord()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+                <select id="cuShift" onchange="cuLoadScheduledWaiters()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
                   <option>Morning</option><option>Afternoon</option><option>Evening</option>
                 </select>
               </div>
@@ -4642,30 +4642,34 @@ function hideCUExistingBanner(){
 
 async function cuCheckExistingRecord(){
   const dt=document.getElementById('cuDate').value;
-  const shift=document.getElementById('cuShift').value;
-  if(!dt||!shift) return;
-  // Reset state for the new date/shift
+  if(!dt) return;
+  // Reset for new date
   cuD.waiters=[];
   cuD.denoms=Array(11).fill(0);
   hideCUExistingBanner();
   renderCUCards();renderDenoms();updCUTots();
-  // Load scheduled waiters (for dropdown)
   cuLoadScheduledWaiters();
-  // Check if record already exists in Supabase
+  // Check if ANY shifts already saved for this date — load them all back in
   try{
-    const {data}=await SB.from('cash_up').select('*').eq('date',dt).eq('shift',shift).maybeSingle();
-    if(data && data.waiters && data.waiters.length>0){
-      // Load existing saved data into cuD
-      cuD.waiters=data.waiters;
-      if(data.denoms && data.denoms.length) cuD.denoms=data.denoms;
+    const {data}=await SB.from('cash_up').select('*').eq('date',dt);
+    const records=(data||[]).filter(r=>r.waiters&&r.waiters.length>0);
+    if(records.length>0){
+      // Merge all saved waiters from all shifts into cuD
+      cuD.waiters=records.flatMap(r=>r.waiters||[]);
+      // Use denoms from whichever record has them
+      const withDenoms=records.find(r=>r.denoms&&r.denoms.length);
+      if(withDenoms) cuD.denoms=withDenoms.denoms;
       renderCUCards();renderDenoms();updCUTots();
-      cuLoadScheduledWaiters(); // refresh dropdown to reflect loaded waiters
+      cuLoadScheduledWaiters();
       // Show warning banner
+      const shiftNames=[...new Set(records.map(r=>r.shift))].join(', ');
       const b=document.getElementById('cuExistingBanner');
+      const msg=document.querySelector('#cuExistingBanner div div:last-child');
+      if(msg) msg.textContent=`Loaded saved data for ${shiftNames} shift${records.length>1?'s':''} on this date. Any changes you save will overwrite the previous submission.`;
       if(b) b.style.display='flex';
     }
   }catch(e){
-    // Query failed — fall back silently, scheduled waiters already loaded
+    // fall back silently
   }
 }
 
