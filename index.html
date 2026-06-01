@@ -1045,6 +1045,14 @@ select option{background:var(--white);color:var(--ink);}
 
       <!-- ORDERS -->
       <div class="pnl" id="p-orders">
+        <!-- Tab bar -->
+        <div class="ctabs" style="margin-bottom:1rem">
+          <button class="ct act" id="ordTab-orders" onclick="ordSwitchTab('orders',this)">📋 Orders</button>
+          <button class="ct" id="ordTab-received" onclick="ordSwitchTab('received',this)">📦 Received <span id="ordReceivedBadge" style="display:none;background:var(--burg);color:#fff;border-radius:50%;font-size:0.6rem;padding:0.1rem 0.35rem;vertical-align:middle;margin-left:3px"></span></button>
+        </div>
+
+        <!-- ORDERS PANE -->
+        <div id="ordOrdersPane">
         <!-- Today's schedule banner -->
         <div id="todayOrdersBanner" style="margin-bottom:1rem"></div>
         <!-- Pending approvals (owner only) -->
@@ -1067,6 +1075,13 @@ select option{background:var(--white);color:var(--ink);}
           <button class="btn bs bsm" onclick="openSupplierManager()" id="editSuppliersBtn">⚙️ Edit Suppliers</button>
         </div>
         <div id="supList"></div>
+        </div><!-- end ordOrdersPane -->
+
+        <!-- RECEIVED PANE -->
+        <div id="ordReceivedPane" style="display:none">
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.9rem">Tick off each item as it comes off the delivery vehicle. Saves a record of what was received.</div>
+          <div id="ordReceivedList"><div class="skel-card"><div class="skel skel-title"></div><div class="skel skel-line w80"></div><div class="skel skel-line w60 sm"></div></div></div>
+        </div>
       </div>
 
       <!-- CASH UP -->
@@ -2863,7 +2878,7 @@ function go(id){
   if(id==='analytics'){ initAnalytics(); loadAnalytics(); }
   if(id==='recipes' && firstVisit) renderRecipes();
   if(id==='pricing' && firstVisit){ renderPricingPanel(); }
-  if(id==='orders'){ renderSups(); }
+  if(id==='orders'){ renderSups(); ordUpdateReceivedBadge(); }
   if(id==='settings' && firstVisit){
     const sqlCard=document.getElementById('pendingOrdersSQL');
     if(sqlCard) sqlCard.style.display=CU?.role==='owner'?'block':'none';
@@ -3620,15 +3635,175 @@ async function renderSups(){
     const hasTpl=!!(ORDER_TEMPLATES[s]);
     const isToday=todayNames.includes(s);
     const submitted=todaySubmittedSuppliers.has(s);
-    return `<div class="sc" onclick="openOrd('${s.replace(/'/g,"\\'")}')">
-      <div style="font-size:1.5rem;flex-shrink:0">${mi[inf.m]||'📱'}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:0.92rem">${s}${inf.urg?'<span class="bdg bgr" style="margin-left:0.4rem;font-size:0.58rem">⚠ Urgent</span>':''}${isOwner&&isToday?'<span class="bdg bgg" style="margin-left:0.4rem;font-size:0.58rem">Today</span>':''}${submitted?'<span class="bdg bgg" style="margin-left:0.4rem;font-size:0.58rem">✓ Submitted</span>':''}</div>
-        <div style="font-size:0.72rem;color:var(--muted)">${inf.c||''}${low>0?` · <strong style="color:var(--red)">⚠ ${low} item${low!==1?'s':''} low</strong>`:hasTpl?' · 📋 order list ready':''}</div>
+    const ss=s.replace(/'/g,"\\'");
+    const quickBtns = isOwner && !submitted ? `
+      <div style="display:flex;gap:0.4rem;margin-top:0.55rem;flex-wrap:wrap" onclick="event.stopPropagation()">
+        <button onclick="ordQuickOrdered('${ss}')" class="btn bsm" style="font-size:0.7rem;background:rgba(26,106,66,0.08);border-color:var(--green);color:var(--green);font-weight:700">✓ Already Ordered</button>
+        <button onclick="ordQuickDNO('${ss}')" class="btn bsm" style="font-size:0.7rem;background:rgba(192,57,58,0.07);border-color:var(--red);color:var(--red);font-weight:700">✗ Do Not Order</button>
+      </div>` : '';
+    return `<div class="sc" style="flex-direction:column;align-items:stretch;gap:0" onclick="openOrd('${ss}')">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div style="font-size:1.5rem;flex-shrink:0">${mi[inf.m]||'📱'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:0.92rem">${s}${inf.urg?'<span class="bdg bgr" style="margin-left:0.4rem;font-size:0.58rem">⚠ Urgent</span>':''}${isOwner&&isToday?'<span class="bdg bgg" style="margin-left:0.4rem;font-size:0.58rem">Today</span>':''}${submitted?'<span class="bdg bgg" style="margin-left:0.4rem;font-size:0.58rem">✓ Done</span>':''}</div>
+          <div style="font-size:0.72rem;color:var(--muted)">${inf.c||''}${low>0?` · <strong style="color:var(--red)">⚠ ${low} item${low!==1?'s':''} low</strong>`:hasTpl?' · 📋 order list ready':''}</div>
+        </div>
+        <div style="color:var(--muted);font-size:1.1rem">›</div>
       </div>
-      <div style="color:var(--muted);font-size:1.1rem">›</div>
+      ${quickBtns}
     </div>`;
   }).join('');
+}
+
+// ── ORDERS TAB SWITCHER & BADGE ─────────────────────────────────────────
+async function ordUpdateReceivedBadge(){
+  try{
+    const from = new Date(); from.setDate(from.getDate()-7);
+    const {data} = await SB.from('pending_orders').select('id,status,items')
+      .eq('status','approved').gte('order_date', from.toISOString().slice(0,10));
+    const count = (data||[]).filter(o=>(o.items||[]).some(it=>it.qty>0)).length;
+    const badge = document.getElementById('ordReceivedBadge');
+    if(badge){ badge.textContent=count||''; badge.style.display=count?'inline':'none'; }
+  }catch(e){}
+}
+
+function ordSwitchTab(tab, btn){
+  document.querySelectorAll('#p-orders .ct').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  document.getElementById('ordOrdersPane').style.display = tab==='orders' ? '' : 'none';
+  document.getElementById('ordReceivedPane').style.display = tab==='received' ? '' : 'none';
+  if(tab==='received') loadOrdersReceived();
+}
+
+// ── QUICK ACTION BUTTONS ON SUPPLIER LIST ──────────────────────────────
+async function ordQuickOrdered(s){
+  if(!confirm(`Mark ${s} as already ordered today?`)) return;
+  try{
+    await SB.from('pending_orders').insert({
+      supplier:s, message:'(Already ordered — logged by owner)',
+      items:[], submitted_by:CU?.name||CU?.username||'owner',
+      order_date:new Date().toISOString().slice(0,10),
+      status:'approved'
+    });
+    todaySubmittedSuppliers.add(s);
+    showToast(`${s} marked as ordered ✓`);
+    await logAudit('orders','Already Ordered',`${s} — manually marked as already ordered`);
+    renderSups();
+  }catch(e){ showToast('Error saving.','err'); }
+}
+
+async function ordQuickDNO(s){
+  if(!confirm(`Mark ${s} as Do Not Order today?`)) return;
+  try{
+    await SB.from('pending_orders').insert({
+      supplier:s, message:'(Do Not Order)',
+      items:[], submitted_by:CU?.name||CU?.username||'owner',
+      order_date:new Date().toISOString().slice(0,10),
+      status:'do_not_order'
+    });
+    todaySubmittedSuppliers.add(s);
+    showToast(`${s} — Do Not Order saved`);
+    await logAudit('orders','Do Not Order',`${s} — marked as DNO`);
+    renderSups();
+  }catch(e){ showToast('Error saving.','err'); }
+}
+
+// ── ORDERS RECEIVED ──────────────────────────────────────────────────────
+let ordReceivedCache = {}; // { orderId: { item_index: bool } }
+
+async function loadOrdersReceived(){
+  const el = document.getElementById('ordReceivedList');
+  const badge = document.getElementById('ordReceivedBadge');
+  el.innerHTML = '<div class="skel-card"><div class="skel skel-title"></div><div class="skel skel-line w80"></div><div class="skel skel-line w60 sm"></div></div>';
+  try{
+    // Load approved orders (sent, awaiting delivery) from last 7 days
+    const from = new Date(); from.setDate(from.getDate()-7);
+    const {data} = await SB.from('pending_orders').select('*')
+      .in('status',['approved','delivered'])
+      .gte('order_date', from.toISOString().slice(0,10))
+      .order('order_date',{ascending:false});
+    const orders = (data||[]).filter(o=>(o.items||[]).some(it=>it.qty>0));
+    if(badge){ badge.textContent = orders.filter(o=>o.status==='approved').length || ''; badge.style.display = orders.length ? 'inline' : 'none'; }
+    if(!orders.length){
+      el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No approved orders awaiting delivery in the last 7 days.</div>';
+      return;
+    }
+    el.innerHTML = orders.map(o => {
+      const dt = new Date(o.order_date+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
+      const ordItems = (o.items||[]).filter(it=>it.qty>0);
+      const isDelivered = o.status==='delivered';
+      const received = ordReceivedCache[o.id] || {};
+      const checkedCount = ordItems.filter((_,i)=>received[i]).length;
+      const allChecked = ordItems.length > 0 && checkedCount === ordItems.length;
+      const statusPill = isDelivered
+        ? `<span style="background:rgba(26,106,66,0.12);color:var(--green);border-radius:10px;padding:0.15rem 0.6rem;font-size:0.65rem;font-weight:700">✓ Delivered</span>`
+        : allChecked
+          ? `<span style="background:rgba(26,106,66,0.12);color:var(--green);border-radius:10px;padding:0.15rem 0.6rem;font-size:0.65rem;font-weight:700">✓ All Checked</span>`
+          : `<span style="background:rgba(201,168,76,0.15);color:#9A7020;border-radius:10px;padding:0.15rem 0.6rem;font-size:0.65rem;font-weight:700">${checkedCount}/${ordItems.length} received</span>`;
+      const rows = ordItems.map((it,i) => {
+        const chk = received[i] || false;
+        return `<div style="display:flex;align-items:center;gap:0.75rem;padding:0.55rem 0;border-bottom:1px solid var(--border-s);${chk?'opacity:0.55':''}">
+          <div onclick="ordToggleItem('${o.id}',${i})" style="width:26px;height:26px;border-radius:6px;border:2px solid ${chk?'var(--green)':'var(--border)'};background:${chk?'var(--green)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.15s">
+            ${chk?'<span style="color:#fff;font-size:0.85rem;font-weight:900">✓</span>':''}
+          </div>
+          <div style="flex:1">
+            <div style="font-weight:${chk?'400':'600'};font-size:0.88rem;${chk?'text-decoration:line-through;color:var(--muted)':''}">${it.n}</div>
+            <div style="font-size:0.7rem;color:var(--muted)">Ordered: <strong>${it.qty}</strong> ${it.unit||''}</div>
+          </div>
+        </div>`;
+      }).join('');
+      return `<div class="card" style="padding:0.85rem 1rem;margin-bottom:0.8rem;${isDelivered?'opacity:0.7':''}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;margin-bottom:0.6rem;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:700;font-size:0.95rem">${o.supplier}</div>
+            <div style="font-size:0.72rem;color:var(--muted)">${dt} · ordered by ${o.submitted_by}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+            ${statusPill}
+            ${!isDelivered?`<button onclick="ordConfirmDelivery('${o.id}')" class="btn bsm" style="font-size:0.7rem;background:var(--burg);color:#fff;border-color:var(--burg)">✅ Confirm Delivery</button>`:''}
+          </div>
+        </div>
+        <div id="orec-items-${o.id}">${rows}</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--red)">Error loading orders.</div>';
+  }
+}
+
+function ordToggleItem(orderId, itemIdx){
+  if(!ordReceivedCache[orderId]) ordReceivedCache[orderId]={};
+  ordReceivedCache[orderId][itemIdx] = !ordReceivedCache[orderId][itemIdx];
+  // Re-render just this order's item list without full reload
+  loadOrdersReceived();
+}
+
+async function ordConfirmDelivery(id){
+  if(!confirm('Mark this delivery as fully received and update stock levels?')) return;
+  try{
+    // Get order data
+    const {data:o} = await SB.from('pending_orders').select('*').eq('id',id).single();
+    if(!o) return;
+    // Update stock levels for each received item
+    const received = ordReceivedCache[id]||{};
+    const ordItems = (o.items||[]).filter(it=>it.qty>0);
+    const updates = [];
+    for(let i=0;i<ordItems.length;i++){
+      const it = ordItems[i];
+      if(received[i]===false) continue; // explicitly unchecked = not received
+      const dbItem = DB.find(d=>d.name.toLowerCase()===it.n.toLowerCase() && d.supplier===o.supplier);
+      if(dbItem){
+        const newStock = (parseFloat(dbItem.stock)||0) + (parseFloat(it.qty)||0);
+        updates.push(SB.from('stock').update({stock:newStock,updated_at:new Date().toISOString()}).eq('id',dbItem.id));
+        dbItem.stock = newStock; // update local cache
+      }
+    }
+    if(updates.length) await Promise.all(updates);
+    await SB.from('pending_orders').update({status:'delivered'}).eq('id',id);
+    showToast(`${o.supplier} delivery confirmed · ${updates.length} stock level${updates.length!==1?'s':''} updated ✓`);
+    await logAudit('orders','Delivery Confirmed',`${o.supplier} — ${updates.length} items received & stock updated`);
+    loadOrdersReceived();
+  }catch(e){ showToast('Error confirming delivery.','err'); }
 }
 
 // ── TWO-STEP ORDER MODAL ─────────────────────────────────────────────────
