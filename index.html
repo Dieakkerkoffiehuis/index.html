@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Karla:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   /* Brand */
@@ -869,6 +870,11 @@ select option{background:var(--white);color:var(--ink);}
             <div class="mod-sub">Theoretical vs actual</div>
             <div class="mod-bdg" id="mod-bdg-pricing" style="display:none">!</div>
           </div>
+          <div class="mod-card mod-fin" onclick="go('micros');closeSb()">
+            <div class="mod-ic">🖥️</div>
+            <div class="mod-title">Micros Reports</div>
+            <div class="mod-sub">Upload & analyse POS data</div>
+          </div>
           <div class="mod-card mod-fin" onclick="go('analytics');closeSb()">
             <div class="mod-ic">🔍</div>
             <div class="mod-title">Analytics</div>
@@ -1196,6 +1202,63 @@ select option{background:var(--white);color:var(--ink);}
             </div>
           </div>
           <div id="cuHistoryList"><div class="card" style="text-align:center;padding:2rem;color:var(--muted)">Select a period and click Load</div></div>
+        </div>
+      </div>
+
+      <!-- MICROS REPORTS -->
+      <div class="pnl" id="p-micros">
+        <!-- Tab bar -->
+        <div class="ctabs" style="margin-bottom:1rem">
+          <button class="ct act" id="mxTab-upload" onclick="mxSwitchTab('upload',this)">📤 Upload Report</button>
+          <button class="ct" id="mxTab-history" onclick="mxSwitchTab('history',this)">📋 History</button>
+        </div>
+
+        <!-- UPLOAD PANE -->
+        <div id="mxUploadPane">
+          <!-- How-to guide -->
+          <div class="card" style="padding:0.9rem 1rem;margin-bottom:0.9rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.3)">
+            <div style="font-weight:700;font-size:0.85rem;color:#9A7020;margin-bottom:0.5rem">📋 How to export from Micros 3700</div>
+            <ol style="margin:0;padding-left:1.2rem;font-size:0.8rem;color:var(--ink);line-height:1.8">
+              <li>Open <strong>Manager Procedures</strong> on the Micros terminal</li>
+              <li>Go to <strong>Reports → Menu Item → Sales by Menu Item</strong></li>
+              <li>Set your date range and Revenue Center to <strong>All</strong></li>
+              <li>Click <strong>Print → Save to File</strong> or export to <strong>Excel (.xlsx)</strong></li>
+              <li>Upload that file here</li>
+            </ol>
+          </div>
+
+          <!-- Upload zone -->
+          <div id="mxDropZone" class="card" style="padding:2rem 1rem;text-align:center;border:2px dashed var(--border);cursor:pointer;transition:all 0.2s"
+            onclick="document.getElementById('mxFileInput').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--burg)';this.style.background='var(--burg-l)'"
+            ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+            ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';mxHandleFile(event.dataTransfer.files[0])">
+            <div style="font-size:2rem;margin-bottom:0.5rem">🖥️</div>
+            <div style="font-weight:700;font-size:0.95rem;color:var(--burg);margin-bottom:0.25rem">Drop your Micros Excel file here</div>
+            <div style="font-size:0.78rem;color:var(--muted)">or tap to browse · .xlsx or .xls accepted</div>
+            <input type="file" id="mxFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="mxHandleFile(this.files[0])">
+          </div>
+
+          <!-- Date & label inputs -->
+          <div class="card" style="padding:0.85rem 1rem;margin-top:0.8rem">
+            <div class="fg2">
+              <div class="fg" style="margin:0"><label>Report Date</label><input type="date" id="mxDate" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"></div>
+              <div class="fg" style="margin:0"><label>Shift / Label</label>
+                <select id="mxShift" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
+                  <option>Full Day</option><option>Morning</option><option>Afternoon</option><option>Evening</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Parse preview -->
+          <div id="mxPreview" style="display:none;margin-top:0.8rem"></div>
+          <button id="mxSaveBtn" style="display:none;width:100%;margin-top:0.8rem" class="btn bp" onclick="mxSaveReport()">💾 Save to Die Akker OS</button>
+        </div>
+
+        <!-- HISTORY PANE -->
+        <div id="mxHistoryPane" style="display:none">
+          <div id="mxHistoryList"><div class="skel-card"><div class="skel skel-title"></div><div class="skel skel-line w80"></div><div class="skel skel-line w60 sm"></div></div></div>
         </div>
       </div>
 
@@ -1931,6 +1994,25 @@ select option{background:var(--white);color:var(--ink);}
           <div class="card-title">Database Status</div>
           <div id="dbStatus" style="font-size:0.82rem;color:var(--muted)">Checking connection...</div>
         </div>
+        <div class="card" id="microsSQL" style="display:none">
+          <div class="card-title">Micros Imports Table Setup</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL once in your Supabase SQL editor to enable Micros report uploads:</div>
+          <pre style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">CREATE TABLE IF NOT EXISTS micros_imports (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  date date NOT NULL,
+  shift text NOT NULL DEFAULT 'Full Day',
+  items jsonb,
+  total_sales numeric DEFAULT 0,
+  total_qty int DEFAULT 0,
+  total_voids int DEFAULT 0,
+  uploaded_by text,
+  uploaded_at timestamptz DEFAULT now(),
+  UNIQUE(date, shift)
+);
+ALTER TABLE micros_imports ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON micros_imports FOR ALL USING (true) WITH CHECK (true);</pre>
+          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('microsSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
         <div class="card" id="spotCheckSQL" style="display:none">
           <div class="card-title">Spot Check Table Setup</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL in your Supabase SQL editor to enable the Daily Spot Check feature:</div>
@@ -2663,17 +2745,17 @@ const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // AUTH
 // ═══════════════════════════════════════════
 // All sections available
-const ALL_SECTIONS = ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','analytics','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
+const ALL_SECTIONS = ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','analytics','micros','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
 const SECTION_LABELS = {dashboard:'Dashboard',spotcheck:'Daily Spot Check',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
 
 // Owner always has full access (hardcoded, cannot be removed)
 const ACCESS = {
   owner:   ALL_SECTIONS,
-  manager: ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','kpi','docs','invoices'],
+  manager: ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','micros','waiterlog','roster','payroll','leave','kpi','docs','invoices'],
   employee:['dashboard','modules','spotcheck','stocktake'],
 };
-const TTLS = {dashboard:'Dashboard',modules:'Modules',spotcheck:'Daily Spot Check',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
-const TSUBS = {dashboard:'Overview of all operations',modules:'All features in one place',spotcheck:'15 random items · different every day',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
+const TTLS = {dashboard:'Dashboard',modules:'Modules',spotcheck:'Daily Spot Check',stocktake:'Stock Take',micros:'Micros Reports',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
+const TSUBS = {dashboard:'Overview of all operations',modules:'All features in one place',spotcheck:'15 random items · different every day',micros:'Upload & analyse Micros 3700 sales reports',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
 const INVESTOR_SECTIONS = ['dashboard','modules','spotcheck','stockdb','reports','analytics','recipes','pricing','cashup','payroll','roster','leave','kpi','docs','auditlog'];
 const ROLE_COLORS = {owner:'#7a1528', investor:'#c8922a', manager:'#152438', employee:'#1a6e40'};
 
@@ -2930,6 +3012,8 @@ function go(id){
     if(sqlCard) sqlCard.style.display=CU?.role==='owner'?'block':'none';
     const scSqlCard=document.getElementById('spotCheckSQL');
     if(scSqlCard) scSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    const mxSqlCard=document.getElementById('microsSQL');
+    if(mxSqlCard) mxSqlCard.style.display=CU?.role==='owner'?'block':'none';
     checkSectionColStatus();
     xeroLoadSettings();
   }
@@ -2950,6 +3034,7 @@ const SEC_GROUPS = {
     {id:'cashup',label:'Cash Up',r:'manager'},
     {id:'reports',label:'Reports',r:'manager'},
     {id:'analytics',label:'Analytics',r:'manager'},
+    {id:'micros',label:'Micros',r:'manager'},
     {id:'recipes',label:'Recipe Costing',r:'manager'},
     {id:'pricing',label:'Price Alerts',r:'manager'},
     {id:'waiterlog',label:'Waiter Log',r:'manager'},
@@ -2971,7 +3056,7 @@ const SEC_GROUPS = {
 const SEC_GROUP_MAP = {
   dashboard:'overview',
   spotcheck:'operations',stocktake:'operations',stockdb:'operations',pending:'operations',orders:'operations',
-  cashup:'finance',reports:'finance',analytics:'finance',recipes:'finance',pricing:'finance',waiterlog:'finance',invoices:'finance',
+  cashup:'finance',reports:'finance',analytics:'finance',micros:'finance',recipes:'finance',pricing:'finance',waiterlog:'finance',invoices:'finance',
   roster:'people',payroll:'people',staff:'people',leave:'people',kpi:'people',docs:'people',
   auditlog:'system',settings:'system',
 };
@@ -3118,6 +3203,214 @@ function renderDash(){
       });
       act.innerHTML='<div class="tw"><table class="tbl"><thead><tr><th>Time</th><th>Action</th><th>By</th><th>Status</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
     }).catch(()=>{}); // Silently fail if table doesn't exist yet
+}
+
+// ═══════════════════════════════════════════
+// MICROS 3700 REPORT IMPORT
+// ═══════════════════════════════════════════
+let mxParsedData = null; // holds parsed items before save
+
+function mxSwitchTab(tab, btn){
+  document.querySelectorAll('#p-micros .ct').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  document.getElementById('mxUploadPane').style.display  = tab==='upload'  ? '' : 'none';
+  document.getElementById('mxHistoryPane').style.display = tab==='history' ? '' : 'none';
+  if(tab==='history') mxLoadHistory();
+}
+
+function mxHandleFile(file){
+  if(!file) return;
+  if(!window.XLSX){ showToast('Excel parser not loaded — refresh and try again.','err'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      mxParseRows(rows, file.name);
+    }catch(err){
+      showToast('Could not read file — make sure it is an Excel file.','err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  // Set today's date if blank
+  if(!document.getElementById('mxDate').value)
+    document.getElementById('mxDate').value = new Date().toISOString().slice(0,10);
+}
+
+function mxParseRows(rows, filename){
+  // Flexible Micros 3700 parser
+  // Strategy: find header row containing "item" and "qty"/"count"/"sold" columns
+  let headerIdx = -1;
+  let colItem=-1, colQty=-1, colSales=-1, colVoids=-1, colCategory=-1;
+
+  const norm = s => String(s||'').toLowerCase().replace(/[^a-z0-9]/g,' ').trim();
+
+  for(let i=0;i<Math.min(rows.length,25);i++){
+    const row = rows[i].map(norm);
+    // Look for column headers
+    const iItem     = row.findIndex(c=>c.includes('item')||c.includes('description')||c.includes('menu'));
+    const iQty      = row.findIndex(c=>c==='qty'||c==='count'||c==='sold'||c.includes('quantity'));
+    const iSales    = row.findIndex(c=>c.includes('sales')||c.includes('amount')||c.includes('revenue')||c.includes('net'));
+    const iVoids    = row.findIndex(c=>c.includes('void')||c.includes('comp')||c.includes('discount'));
+    const iCategory = row.findIndex(c=>c.includes('major')||c.includes('group')||c.includes('category')||c.includes('family'));
+    if(iItem>=0 && (iQty>=0||iSales>=0)){
+      headerIdx=i; colItem=iItem; colQty=iQty; colSales=iSales; colVoids=iVoids; colCategory=iCategory;
+      break;
+    }
+  }
+
+  // Fallback: if still not found, try positional guess (col 0=name, col 1=qty, col 2=sales)
+  if(headerIdx===-1){
+    for(let i=0;i<Math.min(rows.length,30);i++){
+      const row=rows[i];
+      if(row.length>=2 && row[0] && !norm(row[0]).includes('report') && !norm(row[0]).includes('date') && !norm(row[0]).includes('page')){
+        const v1=parseFloat(String(row[1]||'').replace(/[R,\s]/g,''));
+        if(!isNaN(v1)&&v1>0){ headerIdx=i-1; colItem=0; colQty=1; colSales=2>=row.length?-1:2; break; }
+      }
+    }
+  }
+
+  if(headerIdx===-1){
+    showToast('Could not detect columns — see format guide above.','err');
+    return;
+  }
+
+  const items = [];
+  for(let i=headerIdx+1; i<rows.length; i++){
+    const row = rows[i];
+    const name = String(row[colItem]||'').trim();
+    if(!name || name.toLowerCase().includes('total') || name.toLowerCase().includes('grand')) continue;
+    // Skip rows that look like section headers (no numbers)
+    const qty   = colQty>=0   ? parseFloat(String(row[colQty]  ||'').replace(/[R,\s]/g,''))||0 : 0;
+    const sales = colSales>=0 ? parseFloat(String(row[colSales]||'').replace(/[R,\s]/g,''))||0 : 0;
+    const voids = colVoids>=0 ? parseFloat(String(row[colVoids]||'').replace(/[R,\s]/g,''))||0 : 0;
+    const cat   = colCategory>=0 ? String(row[colCategory]||'').trim() : '';
+    if(qty===0 && sales===0) continue;
+    items.push({name, qty, sales, voids, category:cat});
+  }
+
+  if(!items.length){
+    showToast('No item rows found — check the file format.','err');
+    return;
+  }
+
+  mxParsedData = items;
+  mxRenderPreview(items, filename);
+}
+
+function mxRenderPreview(items, filename){
+  const totalSales  = items.reduce((s,i)=>s+i.sales,0);
+  const totalQty    = items.reduce((s,i)=>s+i.qty,0);
+  const totalVoids  = items.reduce((s,i)=>s+i.voids,0);
+
+  // Group by category
+  const cats = {};
+  items.forEach(it=>{
+    const c = it.category||'Uncategorised';
+    if(!cats[c]) cats[c]={qty:0,sales:0};
+    cats[c].qty += it.qty; cats[c].sales += it.sales;
+  });
+  const catRows = Object.entries(cats).sort((a,b)=>b[1].sales-a[1].sales).map(([c,v])=>
+    `<tr><td>${c||'—'}</td><td class="r">${v.qty}</td><td class="r"><strong>R ${v.sales.toFixed(2)}</strong></td><td class="r">${totalSales>0?(v.sales/totalSales*100).toFixed(1)+'%':'—'}</td></tr>`
+  ).join('');
+
+  // Top 10 items
+  const topItems = [...items].sort((a,b)=>b.sales-a.sales).slice(0,10).map(it=>
+    `<tr><td>${it.name}</td><td class="r">${it.qty}</td><td class="r">R ${it.sales.toFixed(2)}</td>${it.voids>0?`<td class="r" style="color:var(--red);font-weight:700">⚠ ${it.voids}</td>`:'<td class="r" style="color:var(--muted)">—</td>'}</tr>`
+  ).join('');
+
+  // Void flags
+  const voidItems = items.filter(i=>i.voids>0).sort((a,b)=>b.voids-a.voids);
+  const voidHtml = voidItems.length ? `
+    <div class="stitle" style="color:var(--red)">⚠️ Voids & Comps (${voidItems.length} items)</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="tw"><table class="tbl"><thead><tr><th>Item</th><th>Qty Sold</th><th>Sales</th><th style="color:var(--red)">Voids</th></tr></thead><tbody>
+        ${voidItems.map(it=>`<tr><td>${it.name}</td><td class="r">${it.qty}</td><td class="r">R ${it.sales.toFixed(2)}</td><td class="r" style="color:var(--red);font-weight:700">${it.voids}</td></tr>`).join('')}
+      </tbody></table></div>
+    </div>` : '';
+
+  const prev = document.getElementById('mxPreview');
+  prev.style.display = '';
+  prev.innerHTML = `
+    <div style="display:flex;gap:0.5rem;margin-bottom:0.8rem;flex-wrap:wrap">
+      <div class="stat cb" style="flex:1;min-width:90px"><div class="snum nb" style="font-size:1.4rem">R ${totalSales>=1000?(totalSales/1000).toFixed(1)+'k':totalSales.toFixed(0)}</div><div class="slbl">Total Sales</div></div>
+      <div class="stat cg" style="flex:1;min-width:90px"><div class="snum ng" style="font-size:1.4rem">${totalQty}</div><div class="slbl">Items Sold</div></div>
+      <div class="stat co" style="flex:1;min-width:90px"><div class="snum no" style="font-size:1.4rem">${items.length}</div><div class="slbl">Menu Lines</div></div>
+      ${totalVoids>0?`<div class="stat cr" style="flex:1;min-width:90px"><div class="snum nr" style="font-size:1.4rem">${totalVoids}</div><div class="slbl">Total Voids</div></div>`:''}
+    </div>
+    <div class="stitle">Sales by Category</div>
+    <div class="card" style="padding:0;overflow:hidden"><div class="tw"><table class="tbl">
+      <thead><tr><th>Category</th><th>Qty</th><th>Sales</th><th>% Mix</th></tr></thead>
+      <tbody>${catRows}</tbody>
+    </table></div></div>
+    <div class="stitle">Top 10 Menu Items</div>
+    <div class="card" style="padding:0;overflow:hidden"><div class="tw"><table class="tbl">
+      <thead><tr><th>Item</th><th>Qty</th><th>Sales</th><th>Voids</th></tr></thead>
+      <tbody>${topItems}</tbody>
+    </table></div></div>
+    ${voidHtml}
+    <div style="font-size:0.72rem;color:var(--muted);margin-top:0.5rem">📄 ${filename} · ${items.length} items parsed · review above then save</div>`;
+
+  document.getElementById('mxSaveBtn').style.display = '';
+}
+
+async function mxSaveReport(){
+  if(!mxParsedData) return;
+  const date  = document.getElementById('mxDate').value || new Date().toISOString().slice(0,10);
+  const shift = document.getElementById('mxShift').value || 'Full Day';
+  const total = mxParsedData.reduce((s,i)=>s+i.sales,0);
+  const rec = {
+    date, shift,
+    items: mxParsedData,
+    total_sales: total,
+    total_qty: mxParsedData.reduce((s,i)=>s+i.qty,0),
+    total_voids: mxParsedData.reduce((s,i)=>s+i.voids,0),
+    uploaded_by: CU?.name||CU?.username||'owner',
+    uploaded_at: new Date().toISOString(),
+  };
+  setSyncStatus('syncing');
+  const {error} = await SB.from('micros_imports').upsert(rec, {onConflict:'date,shift'});
+  setSyncStatus(error?'err':'ok');
+  if(error){ showToast('Error saving report. Run the SQL setup in Settings.','err'); return; }
+  showToast(`Micros report saved ✓ · R ${total.toFixed(2)} for ${date} (${shift})`);
+  await logAudit('micros','Report Uploaded',`${date} ${shift} · R${total.toFixed(2)} · ${mxParsedData.length} items`);
+  mxParsedData = null;
+  document.getElementById('mxPreview').style.display = 'none';
+  document.getElementById('mxSaveBtn').style.display = 'none';
+  document.getElementById('mxFileInput').value = '';
+}
+
+async function mxLoadHistory(){
+  const el = document.getElementById('mxHistoryList');
+  el.innerHTML = '<div class="skel-card"><div class="skel skel-title"></div><div class="skel skel-line w80"></div></div>';
+  try{
+    const {data} = await SB.from('micros_imports').select('*').order('date',{ascending:false}).limit(30);
+    if(!data?.length){
+      el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No Micros reports uploaded yet.</div>';
+      return;
+    }
+    el.innerHTML = data.map(r=>{
+      const dt = new Date(r.date+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+      const topItems = (r.items||[]).sort((a,b)=>b.sales-a.sales).slice(0,3).map(i=>i.name).join(' · ');
+      const hasVoids = (r.total_voids||0)>0;
+      return `<div class="card" style="padding:0.85rem 1rem;margin-bottom:0.65rem">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:700;font-size:0.92rem">${dt} <span style="font-size:0.72rem;color:var(--muted);font-weight:400">· ${r.shift}</span></div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:0.1rem">By ${r.uploaded_by} · ${r.items?.length||0} items</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:1.1rem;color:var(--burg)">R ${(r.total_sales||0).toFixed(2)}</div>
+            ${hasVoids?`<div style="font-size:0.7rem;color:var(--red);font-weight:700">⚠ ${r.total_voids} voids</div>`:''}
+          </div>
+        </div>
+        ${topItems?`<div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem;border-top:1px solid var(--border-s);padding-top:0.4rem">Top: ${topItems}</div>`:''}
+      </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--red)">Error loading history — run SQL setup in Settings.</div>';
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -6970,42 +7263,93 @@ function renderLeaveBalances(){
   const staff=allActiveStaff();
   const yr=new Date().getFullYear();
   if(!staff.length){el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No staff found.</div>';return;}
-  el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
-    <div style="padding:0.7rem 1rem;background:var(--surface);border-bottom:1px solid var(--border);font-size:0.72rem;color:var(--muted);display:flex;gap:1rem;flex-wrap:wrap">
-      <span>🏖️ Annual: 21 days/yr (1.75 days/month) · unused carries over until 30 June</span>
-      <span>👨‍👩‍👧 Family responsibility: 3 days/yr</span>
-    </div>
-    <div style="overflow-x:auto">
-    <table class="lv-tbl">
-      <thead><tr>
-        <th>Staff Member</th>
-        <th>Annual (days)</th><th>Used</th><th>Remaining</th>
-        <th>Family</th><th>Family Used</th>
-      </tr></thead>
-      <tbody>${staff.map(s=>{
-        const b=getLeaveBalance(s.name,yr);
-        const annCol=b.annRem<=3?'var(--red)':b.annRem<=7?'var(--orange)':'var(--ink)';
-        const carryStr=b.carryOver>0?` <span style="font-size:0.65rem;background:var(--blue-l);color:var(--blue);border:1px solid #b8cfe8;padding:0.05rem 0.4rem;border-radius:10px">+${b.carryOver}</span>`:'';
-        return `<tr>
-          <td>
-            <div style="display:flex;align-items:center;gap:0.5rem">
-              <div style="width:28px;height:28px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
-              <div>
-                <div style="font-weight:700">${s.name}</div>
-                <div style="font-size:0.68rem;color:var(--muted)">${s.role||''}</div>
-              </div>
+
+  // Group by division
+  const divisions=[...new Set(staff.map(s=>s.division||'Other'))];
+
+  // Summary counts
+  const allBalances=staff.map(s=>({...s,...getLeaveBalance(s.name,yr)}));
+  const critical=allBalances.filter(s=>s.annRem<=3).length;
+  const low=allBalances.filter(s=>s.annRem>3&&s.annRem<=7).length;
+  const famExhausted=allBalances.filter(s=>s.famRem<=0).length;
+
+  const summaryHtml=`
+    <div style="display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap">
+      <div style="flex:1;min-width:100px;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem">
+        <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Total Staff</div>
+        <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:1.4rem;color:var(--ink)">${staff.length}</div>
+      </div>
+      <div style="flex:1;min-width:100px;background:rgba(192,57,58,0.07);border:1px solid rgba(192,57,58,0.2);border-radius:10px;padding:0.7rem 0.9rem">
+        <div style="font-size:0.6rem;color:var(--red);text-transform:uppercase;letter-spacing:0.08em">Critical (≤3 days)</div>
+        <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:1.4rem;color:var(--red)">${critical}</div>
+      </div>
+      <div style="flex:1;min-width:100px;background:rgba(232,184,75,0.10);border:1px solid rgba(232,184,75,0.3);border-radius:10px;padding:0.7rem 0.9rem">
+        <div style="font-size:0.6rem;color:#9A7020;text-transform:uppercase;letter-spacing:0.08em">Running Low (≤7)</div>
+        <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:1.4rem;color:#9A7020">${low}</div>
+      </div>
+      <div style="flex:1;min-width:100px;background:rgba(107,39,55,0.07);border:1px solid rgba(107,39,55,0.18);border-radius:10px;padding:0.7rem 0.9rem">
+        <div style="font-size:0.6rem;color:var(--burg);text-transform:uppercase;letter-spacing:0.08em">Family Used Up</div>
+        <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:1.4rem;color:var(--burg)">${famExhausted}</div>
+      </div>
+    </div>`;
+
+  const cardsHtml=divisions.map(div=>{
+    const divStaff=allBalances.filter(s=>(s.division||'Other')===div);
+    if(!divStaff.length) return '';
+    const staffCards=divStaff.map(s=>{
+      const total=ANNUAL_LEAVE_ALLOWANCE+(s.carryOver||0);
+      const pct=Math.min(100,Math.round(s.annTaken/total*100));
+      const rem=s.annRem;
+      const barCol=rem<=3?'#c0392b':rem<=7?'#b85c10':'#1a6a42';
+      const bgCol=rem<=3?'rgba(192,57,58,0.08)':rem<=7?'rgba(184,92,16,0.06)':'rgba(26,106,66,0.05)';
+      const borderCol=rem<=3?'rgba(192,57,58,0.25)':rem<=7?'rgba(184,92,16,0.2)':'rgba(26,106,66,0.15)';
+      const badge=rem<=3?`<span style="background:rgba(192,57,58,0.12);color:#c0392b;font-size:0.6rem;font-weight:800;padding:0.12rem 0.45rem;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em">⚠ Critical</span>`:
+                  rem<=7?`<span style="background:rgba(184,92,16,0.10);color:#b85c10;font-size:0.6rem;font-weight:800;padding:0.12rem 0.45rem;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em">Low</span>`:'';
+      // Family dots
+      const famDots=[0,1,2].map(i=>{
+        const used=i<s.famTaken;
+        return `<div style="width:10px;height:10px;border-radius:50%;background:${used?'var(--burg)':'var(--border)'};border:1.5px solid ${used?'var(--burg)':'var(--border)'}"></div>`;
+      }).join('');
+      return `<div style="background:${bgCol};border:1.5px solid ${borderCol};border-radius:12px;padding:0.9rem 1rem;display:flex;flex-direction:column;gap:0.5rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+          <div style="display:flex;align-items:center;gap:0.55rem">
+            <div style="width:30px;height:30px;border-radius:50%;background:${DC[s.division]||'var(--burg)'};display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
+            <div>
+              <div style="font-weight:700;font-size:0.88rem;line-height:1.2">${s.name}</div>
+              <div style="font-size:0.65rem;color:var(--muted)">${s.role||div}</div>
             </div>
-          </td>
-          <td style="color:var(--muted)">${ANNUAL_LEAVE_ALLOWANCE + (b.carryOver||0)}${carryStr}</td>
-          <td>${b.annTaken}</td>
-          <td><strong style="color:${annCol}">${b.annRem}</strong></td>
-          <td style="color:var(--muted)">${FAMILY_LEAVE_ALLOWANCE}</td>
-          <td>${b.famTaken}</td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table>
-    </div>
-  </div>`;
+          </div>
+          ${badge}
+        </div>
+        <!-- Annual leave bar -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.28rem">
+            <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Annual Leave</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.75rem;font-weight:700;color:${barCol}">${rem} <span style="font-weight:400;color:var(--muted)">/ ${total} days left</span></span>
+          </div>
+          <div style="height:7px;background:var(--border);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${barCol};border-radius:4px;transition:width 0.4s"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);margin-top:0.2rem">
+            <span>${s.annTaken} taken</span><span>${total} total${s.carryOver>0?` (incl. +${s.carryOver} carry-over)`:''}</span>
+          </div>
+        </div>
+        <!-- Family responsibility dots -->
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Family Responsibility</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            ${famDots}
+            <span style="font-size:0.65rem;color:var(--muted);margin-left:4px">${s.famRem} left</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    return `
+      <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem">${div}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.65rem">${staffCards}</div>`;
+  }).join('');
+
+  el.innerHTML=summaryHtml+cardsHtml;
 }
 
 function filterLeave(n,b){leaveFilter=n;renderLeave();}
@@ -7958,7 +8302,7 @@ const ACCESS_OPTIONS = [
 const PRESETS = {
   owner:    ALL_SECTIONS,
   investor: INVESTOR_SECTIONS,
-  manager:  ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','waiterlog','roster','payroll','leave','kpi','docs','invoices'],
+  manager:  ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','micros','waiterlog','roster','payroll','leave','kpi','docs','invoices'],
   staff:    ['dashboard','modules','spotcheck','stocktake'],
 };
 
