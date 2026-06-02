@@ -12699,32 +12699,45 @@ async function renderQRCodes(){
   }
 }
 
-function ciPrintQR(token, name, role){
-  const canvas = document.getElementById('qr-'+token);
-  if(!canvas) return;
-  const img = canvas.toDataURL('image/png');
+async function ciPrintQR(token, name, role){
+  if(!window.QRCode){ showToast('QR library not loaded — refresh and try again.','err'); return; }
+  const baseUrl = window.location.origin + window.location.pathname;
+  const url = `${baseUrl}?checkin=${token}`;
+  let imgSrc = '';
+  try{
+    imgSrc = await QRCode.toDataURL(url, {
+      width: 220, margin: 2,
+      color: {dark:'#3D2B22', light:'#FFFFFF'}
+    });
+  }catch(e){ showToast('Could not generate QR code.','err'); return; }
+
   const w = window.open('','_blank');
+  if(!w){ showToast('Pop-up blocked — allow pop-ups for this site.','err'); return; }
   w.document.write(`<!DOCTYPE html><html><head><title>QR — ${name}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@400;600&display=swap');
-    body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff;font-family:'DM Sans',sans-serif}
-    .card{border:2px solid #6B2737;border-radius:16px;padding:1.5rem 2rem;text-align:center;max-width:220px}
-    .logo{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:700;color:#6B2737;letter-spacing:0.1em;margin-bottom:0.2rem}
-    .sub{font-size:0.55rem;letter-spacing:0.25em;color:#C9A84C;text-transform:uppercase;margin-bottom:1rem}
-    img{width:160px;height:160px;margin:0 auto 0.8rem;display:block}
-    .name{font-weight:700;font-size:1rem;color:#3D2B22;margin-bottom:0.15rem}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff;font-family:'DM Sans',sans-serif}
+    .card{border:2px solid #6B2737;border-radius:18px;padding:1.6rem 2rem 1.4rem;text-align:center;width:240px}
+    .logo{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:#6B2737;letter-spacing:0.12em;margin-bottom:0.15rem}
+    .sub{font-size:0.52rem;letter-spacing:0.28em;color:#C9A84C;text-transform:uppercase;margin-bottom:1.1rem}
+    .qr{width:180px;height:180px;margin:0 auto 1rem;display:block;border-radius:8px}
+    .name{font-weight:700;font-size:1.05rem;color:#3D2B22;margin-bottom:0.15rem}
     .role{font-size:0.72rem;color:#8B7060;margin-bottom:1rem}
-    .inst{font-size:0.65rem;color:#8B7060;border-top:1px solid #E8DECE;padding-top:0.7rem;line-height:1.5}
+    .divider{border:none;border-top:1px solid #E8DECE;margin:0 0 0.7rem}
+    .inst{font-size:0.65rem;color:#8B7060;line-height:1.5}
+    @media print{body{margin:0}@page{margin:10mm}}
   </style></head><body>
   <div class="card">
     <div class="logo">DIE AKKER</div>
     <div class="sub">Koffiehuis</div>
-    <img src="${img}">
+    <img class="qr" src="${imgSrc}" alt="QR Code for ${name}">
     <div class="name">${name}</div>
     <div class="role">${role}</div>
+    <hr class="divider">
     <div class="inst">Scan to clock in &amp; out</div>
   </div>
-  <script>window.onload=()=>window.print()<\/script>
+  <script>window.onload=function(){window.print();}<\/script>
   </body></html>`);
   w.document.close();
 }
