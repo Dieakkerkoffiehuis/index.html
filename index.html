@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <style>
 :root{
   /* Brand */
@@ -716,6 +717,45 @@ select option{background:var(--white);color:var(--ink);}
 <body>
 
 <!-- LOADING -->
+<!-- ── PUBLIC CHECK-IN SCREEN (no login required) ── -->
+<div id="checkInScreen" style="display:none;position:fixed;inset:0;z-index:3000;background:linear-gradient(160deg,#3A1020 0%,#6B2737 55%,#4A1A27 100%);display:none;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="text-align:center;margin-bottom:2rem">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;color:#F5EDD6;letter-spacing:0.08em">DIE AKKER</div>
+    <div style="font-size:0.6rem;letter-spacing:0.3em;color:rgba(201,168,76,0.7);text-transform:uppercase;margin-top:0.2rem">KOFFIEHUIS</div>
+  </div>
+  <div id="ciCard" style="background:rgba(253,248,240,0.97);border-radius:20px;padding:2rem 1.8rem;width:100%;max-width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <!-- Loading state -->
+    <div id="ciLoading">
+      <div style="font-size:2rem;margin-bottom:0.5rem">⏳</div>
+      <div style="font-size:0.9rem;color:#8B7060">Checking in…</div>
+    </div>
+    <!-- Check-in/out confirm state -->
+    <div id="ciConfirm" style="display:none">
+      <div id="ciAvatar" style="width:72px;height:72px;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700;color:#fff;background:#6B2737"></div>
+      <div id="ciName" style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.8rem;color:#3D2B22;line-height:1.1;margin-bottom:0.3rem"></div>
+      <div id="ciRole" style="font-size:0.75rem;color:#8B7060;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:1.2rem"></div>
+      <div id="ciTypeLabel" style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.4rem"></div>
+      <div id="ciTime" style="font-family:'DM Mono',monospace;font-size:3rem;font-weight:500;color:#6B2737;line-height:1;margin-bottom:0.25rem"></div>
+      <div id="ciDate" style="font-size:0.8rem;color:#8B7060;margin-bottom:1.5rem"></div>
+      <button id="ciBtn" onclick="ciConfirm()" style="width:100%;padding:0.95rem;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:0.04em;transition:all 0.2s"></button>
+      <div style="margin-top:0.8rem;font-size:0.7rem;color:#8B7060" id="ciLastRecord"></div>
+    </div>
+    <!-- Success state -->
+    <div id="ciSuccess" style="display:none">
+      <div id="ciSuccessIcon" style="font-size:3.5rem;margin-bottom:0.5rem"></div>
+      <div id="ciSuccessMsg" style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:#3D2B22;margin-bottom:0.3rem"></div>
+      <div id="ciSuccessTime" style="font-family:'DM Mono',monospace;font-size:1.2rem;color:#6B2737"></div>
+      <div style="margin-top:1.2rem;font-size:0.75rem;color:#8B7060">This tab will close shortly…</div>
+    </div>
+    <!-- Error state -->
+    <div id="ciError" style="display:none">
+      <div style="font-size:2.5rem;margin-bottom:0.5rem">❌</div>
+      <div style="font-size:0.95rem;font-weight:700;color:#c0392b;margin-bottom:0.3rem">Unrecognised QR Code</div>
+      <div style="font-size:0.78rem;color:#8B7060">Please ask your manager for a new QR code.</div>
+    </div>
+  </div>
+</div>
+
 <div id="loadScreen">
   <div id="ls-inner">
     <div class="ls-deco"><div class="ls-deco-line"></div><div class="ls-deco-gem">◆</div><div class="ls-deco-line"></div></div>
@@ -1797,6 +1837,8 @@ select option{background:var(--white);color:var(--ink);}
         <div class="ctabs" id="staffTabs" style="margin-bottom:0.8rem">
           <button class="ct act" onclick="switchStaffTab('list',this)">👥 Staff List</button>
           <button class="ct" onclick="switchStaffTab('logins',this)">🔐 User Logins</button>
+          <button class="ct" onclick="switchStaffTab('qrcodes',this)">📲 QR Codes</button>
+          <button class="ct" onclick="switchStaffTab('attendance',this)">🕐 Attendance</button>
         </div>
 
         <!-- STAFF LIST TAB -->
@@ -1825,6 +1867,23 @@ select option{background:var(--white);color:var(--ink);}
             </div>
           </div>
         </div>
+
+        <!-- QR CODES TAB -->
+        <div id="staffTabQrcodes" style="display:none">
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Each staff member has a unique QR code. Print it and stick it at the entrance — they scan it to clock in and out.</div>
+          <div id="qrCodeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.9rem"></div>
+        </div>
+
+        <!-- ATTENDANCE TAB -->
+        <div id="staffTabAttendance" style="display:none">
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.8rem;flex-wrap:wrap">
+            <input type="date" id="attDate" style="border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
+            <button class="btn bp bsm" onclick="loadAttendance()">View</button>
+            <button class="btn bs bsm" onclick="attSetToday()">Today</button>
+          </div>
+          <div id="attList"><div class="skel-card"><div class="skel skel-line w60"></div><div class="skel skel-line w80 sm"></div></div></div>
+        </div>
+
       </div>
 
       <!-- LEAVE -->
@@ -1993,6 +2052,24 @@ select option{background:var(--white);color:var(--ink);}
         <div class="card">
           <div class="card-title">Database Status</div>
           <div id="dbStatus" style="font-size:0.82rem;color:var(--muted)">Checking connection...</div>
+        </div>
+        <div class="card" id="attendanceSQL" style="display:none">
+          <div class="card-title">Attendance Log Table Setup</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL once in Supabase to enable QR code clock-in/out:</div>
+          <pre style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">CREATE TABLE IF NOT EXISTS attendance_log (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  staff_name text NOT NULL,
+  token text,
+  type text NOT NULL CHECK (type IN ('check-in','check-out')),
+  date date NOT NULL,
+  time_str text,
+  logged_at timestamptz DEFAULT now()
+);
+ALTER TABLE attendance_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON attendance_log FOR ALL USING (true) WITH CHECK (true);
+CREATE INDEX IF NOT EXISTS att_date_idx ON attendance_log(date);
+CREATE INDEX IF NOT EXISTS att_staff_idx ON attendance_log(staff_name);</pre>
+          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('attendanceSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
         <div class="card" id="microsSQL" style="display:none">
           <div class="card-title">Micros Imports Table Setup</div>
@@ -3014,6 +3091,8 @@ function go(id){
     if(scSqlCard) scSqlCard.style.display=CU?.role==='owner'?'block':'none';
     const mxSqlCard=document.getElementById('microsSQL');
     if(mxSqlCard) mxSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    const attSqlCard=document.getElementById('attendanceSQL');
+    if(attSqlCard) attSqlCard.style.display=CU?.role==='owner'?'block':'none';
     checkSectionColStatus();
     xeroLoadSettings();
   }
@@ -8346,11 +8425,15 @@ function renderLoginsList(){
 }
 
 function switchStaffTab(tab, btn){
-  document.getElementById('staffTabList').style.display   = tab==='list'?'block':'none';
-  document.getElementById('staffTabLogins').style.display = tab==='logins'?'block':'none';
+  ['list','logins','qrcodes','attendance'].forEach(t=>{
+    const el=document.getElementById('staffTab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(el) el.style.display=t===tab?'block':'none';
+  });
   document.querySelectorAll('#staffTabs .ct').forEach(b=>b.classList.remove('act'));
   btn.classList.add('act');
   if(tab==='logins') loadStaffLogins();
+  if(tab==='qrcodes') renderQRCodes();
+  if(tab==='attendance'){ attSetToday(); loadAttendance(); }
 }
 
 function openAddLogin(){
@@ -12133,7 +12216,265 @@ function showError(context, err){
 // ═══════════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// QR CODE CHECK-IN / CHECK-OUT SYSTEM
+// ═══════════════════════════════════════════
+
+// ── Generate a simple unique token for a staff member ──
+function ciGenToken(name){
+  // Deterministic token: base64 of name+salt, URL-safe
+  const raw = btoa(unescape(encodeURIComponent('DA2026:'+name))).replace(/[+/=]/g,'').slice(0,16);
+  return raw;
+}
+
+// ── Render QR codes grid in Staff → QR Codes tab ──
+async function renderQRCodes(){
+  const el = document.getElementById('qrCodeGrid');
+  if(!el) return;
+  const staff = allActiveStaff();
+  if(!staff.length){ el.innerHTML='<div style="color:var(--muted);font-size:0.85rem">No staff found.</div>'; return; }
+
+  const baseUrl = window.location.origin + window.location.pathname;
+  el.innerHTML = staff.map(s=>{
+    const token = ciGenToken(s.name);
+    const url = `${baseUrl}?checkin=${token}`;
+    return `<div class="card" style="padding:1rem;text-align:center;cursor:pointer" id="qrc-${token}">
+      <canvas id="qr-${token}" style="width:100%;max-width:130px;height:auto"></canvas>
+      <div style="font-weight:700;font-size:0.82rem;margin-top:0.5rem;color:var(--ink)">${s.name}</div>
+      <div style="font-size:0.65rem;color:var(--muted)">${s.role||s.division||''}</div>
+      <button onclick="ciPrintQR('${token}','${s.name.replace(/'/g,"\\'")}','${s.role||s.division||''}')" class="btn bs bsm" style="margin-top:0.6rem;font-size:0.68rem;width:100%">🖨 Print</button>
+    </div>`;
+  }).join('');
+
+  // Generate QR codes after DOM is set
+  await new Promise(r=>setTimeout(r,100));
+  for(const s of staff){
+    const token = ciGenToken(s.name);
+    const url = `${baseUrl}?checkin=${token}`;
+    const canvas = document.getElementById('qr-'+token);
+    if(canvas && window.QRCode){
+      try{ await QRCode.toCanvas(canvas, url, {width:130,margin:1,color:{dark:'#3D2B22',light:'#FFFFFF'}}); }catch(e){}
+    }
+  }
+}
+
+function ciPrintQR(token, name, role){
+  const canvas = document.getElementById('qr-'+token);
+  if(!canvas) return;
+  const img = canvas.toDataURL('image/png');
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>QR — ${name}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@400;600&display=swap');
+    body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff;font-family:'DM Sans',sans-serif}
+    .card{border:2px solid #6B2737;border-radius:16px;padding:1.5rem 2rem;text-align:center;max-width:220px}
+    .logo{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:700;color:#6B2737;letter-spacing:0.1em;margin-bottom:0.2rem}
+    .sub{font-size:0.55rem;letter-spacing:0.25em;color:#C9A84C;text-transform:uppercase;margin-bottom:1rem}
+    img{width:160px;height:160px;margin:0 auto 0.8rem;display:block}
+    .name{font-weight:700;font-size:1rem;color:#3D2B22;margin-bottom:0.15rem}
+    .role{font-size:0.72rem;color:#8B7060;margin-bottom:1rem}
+    .inst{font-size:0.65rem;color:#8B7060;border-top:1px solid #E8DECE;padding-top:0.7rem;line-height:1.5}
+  </style></head><body>
+  <div class="card">
+    <div class="logo">DIE AKKER</div>
+    <div class="sub">Koffiehuis</div>
+    <img src="${img}">
+    <div class="name">${name}</div>
+    <div class="role">${role}</div>
+    <div class="inst">Scan to clock in &amp; out</div>
+  </div>
+  <script>window.onload=()=>window.print()<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+// ── Check-in landing: runs when URL has ?checkin=TOKEN ──
+let ciStaffName = null, ciIsCheckIn = true, ciLastId = null;
+
+async function initCheckInScreen(){
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('checkin');
+  if(!token) return false;
+
+  // Show the screen
+  const scr = document.getElementById('checkInScreen');
+  scr.style.display = 'flex';
+  document.getElementById('loadScreen').style.display = 'none';
+  document.getElementById('ls').style.display = 'none';
+
+  // Find which staff member this token belongs to
+  const staff = allActiveStaff();
+  // Try matching against generated tokens (deterministic)
+  const matched = staff.find(s => ciGenToken(s.name) === token);
+
+  if(!matched){
+    // Try Supabase lookup in case token was stored there
+    try{
+      const {data} = await SB.from('attendance_log').select('staff_name').eq('token',token).limit(1);
+      if(data?.[0]?.staff_name){
+        ciStaffName = data[0].staff_name;
+      }
+    }catch(e){}
+  } else {
+    ciStaffName = matched.name;
+  }
+
+  if(!ciStaffName){
+    document.getElementById('ciLoading').style.display='none';
+    document.getElementById('ciError').style.display='block';
+    return true;
+  }
+
+  // Check last attendance record for today
+  const todayStr = new Date().toISOString().slice(0,10);
+  try{
+    const {data} = await SB.from('attendance_log')
+      .select('*').eq('staff_name',ciStaffName).eq('date',todayStr)
+      .order('logged_at',{ascending:false}).limit(1);
+    const last = data?.[0];
+    ciIsCheckIn = !last || last.type === 'check-out';
+    ciLastId = last?.id || null;
+
+    const lastMsg = last
+      ? `Last: ${last.type} at ${new Date(last.logged_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'})}`
+      : 'No records today yet';
+    document.getElementById('ciLastRecord').textContent = lastMsg;
+  }catch(e){ ciIsCheckIn = true; }
+
+  // Populate confirm view
+  const s = matched || {name:ciStaffName, division:'Staff'};
+  const initials = ciStaffName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const divColors = {'Kitchen':'#6B2737','Bar':'#1a4a7a','Front of House':'#1a6a42','Waiters':'#b85c10'};
+  const avatarBg = divColors[s.division] || '#6B2737';
+
+  document.getElementById('ciAvatar').textContent = initials;
+  document.getElementById('ciAvatar').style.background = avatarBg;
+  document.getElementById('ciName').textContent = ciStaffName;
+  document.getElementById('ciRole').textContent = (s.role||s.division||'Staff').toUpperCase();
+
+  const btn = document.getElementById('ciBtn');
+  if(ciIsCheckIn){
+    document.getElementById('ciTypeLabel').textContent = 'CLOCKING IN';
+    document.getElementById('ciTypeLabel').style.color = '#1a6a42';
+    btn.style.background = '#1a6a42';
+    btn.style.color = '#fff';
+    btn.textContent = '✓ Clock In';
+  } else {
+    document.getElementById('ciTypeLabel').textContent = 'CLOCKING OUT';
+    document.getElementById('ciTypeLabel').style.color = '#6B2737';
+    btn.style.background = '#6B2737';
+    btn.style.color = '#fff';
+    btn.textContent = '✓ Clock Out';
+  }
+
+  // Live clock
+  function updateClock(){
+    const now = new Date();
+    document.getElementById('ciTime').textContent = now.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    document.getElementById('ciDate').textContent = now.toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  document.getElementById('ciLoading').style.display = 'none';
+  document.getElementById('ciConfirm').style.display = 'block';
+  return true;
+}
+
+async function ciConfirm(){
+  const btn = document.getElementById('ciBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0,10);
+  const type = ciIsCheckIn ? 'check-in' : 'check-out';
+  try{
+    await SB.from('attendance_log').insert({
+      staff_name: ciStaffName,
+      token: new URLSearchParams(window.location.search).get('checkin'),
+      type, date: todayStr,
+      logged_at: now.toISOString(),
+      time_str: now.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'}),
+    });
+    // Show success
+    document.getElementById('ciConfirm').style.display = 'none';
+    document.getElementById('ciSuccess').style.display = 'block';
+    document.getElementById('ciSuccessIcon').textContent = ciIsCheckIn ? '✅' : '👋';
+    document.getElementById('ciSuccessMsg').textContent = ciIsCheckIn ? `Good morning, ${ciStaffName.split(' ')[0]}!` : `See you later, ${ciStaffName.split(' ')[0]}!`;
+    document.getElementById('ciSuccessTime').textContent = now.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+    setTimeout(()=>{ window.close(); }, 3000);
+  }catch(e){
+    btn.disabled=false; btn.textContent = ciIsCheckIn?'✓ Clock In':'✓ Clock Out';
+    alert('Could not save — check connection. Run SQL setup in Settings first.');
+  }
+}
+
+// ── Attendance log viewer ──
+function attSetToday(){
+  const el = document.getElementById('attDate');
+  if(el) el.value = new Date().toISOString().slice(0,10);
+}
+
+async function loadAttendance(){
+  const date = document.getElementById('attDate')?.value;
+  if(!date) return;
+  const el = document.getElementById('attList');
+  el.innerHTML = '<div class="skel-card"><div class="skel skel-line w60"></div><div class="skel skel-line w80 sm"></div></div>';
+  try{
+    const {data} = await SB.from('attendance_log').select('*').eq('date',date).order('logged_at');
+    if(!data?.length){
+      el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No attendance records for this date.</div>';
+      return;
+    }
+    // Group by staff member
+    const byStaff = {};
+    data.forEach(r=>{ if(!byStaff[r.staff_name]) byStaff[r.staff_name]=[]; byStaff[r.staff_name].push(r); });
+
+    const dt = new Date(date+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    const staffCards = Object.entries(byStaff).map(([name,records])=>{
+      const checkIn  = records.find(r=>r.type==='check-in');
+      const checkOut = records.find(r=>r.type==='check-out');
+      let hoursHtml='';
+      if(checkIn&&checkOut){
+        const diff=(new Date(checkOut.logged_at)-new Date(checkIn.logged_at))/3600000;
+        hoursHtml=`<div style="font-family:'DM Mono',monospace;font-weight:600;font-size:0.82rem;color:var(--green)">${diff.toFixed(1)} hrs</div>`;
+      }
+      const initials=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const rows=records.map(r=>{
+        const t=new Date(r.logged_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+        const isIn=r.type==='check-in';
+        return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;border-bottom:1px solid var(--border-s)">
+          <span style="font-size:0.7rem;font-weight:700;padding:0.1rem 0.5rem;border-radius:10px;background:${isIn?'rgba(26,106,66,0.1)':'rgba(107,39,55,0.1)'};color:${isIn?'var(--green)':'var(--burg)'}">${isIn?'IN':'OUT'}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:0.88rem;font-weight:600">${t}</span>
+        </div>`;
+      }).join('');
+      return `<div class="card" style="padding:0.85rem 1rem;display:flex;align-items:flex-start;gap:0.8rem">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--burg);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">
+            <div style="font-weight:700;font-size:0.9rem">${name}</div>
+            ${hoursHtml}
+          </div>
+          ${rows}
+        </div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML=`<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.7rem">${dt} · ${Object.keys(byStaff).length} staff clocked</div>${staffCards}`;
+  }catch(e){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--red)">Error loading attendance — run SQL setup in Settings.</div>';
+  }
+}
+
 window.addEventListener('DOMContentLoaded', async ()=>{
+  // Check-in screen runs first — intercepts if ?checkin=TOKEN in URL
+  // Needs staff list, so load it silently first
+  try{
+    const staffCheck = await SB.from('staff').select('name,role,division');
+    if(staffCheck.data) stfD = staffCheck.data;
+  }catch(e){}
+  const isCheckIn = await initCheckInScreen();
+  if(isCheckIn) return; // Stop here — don't load the full app
+
   try {
     const {data,error} = await SB.from('stock').select('count',{count:'exact',head:true});
     if(error) throw error;
