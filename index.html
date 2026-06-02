@@ -7690,47 +7690,6 @@ function renderLeaveBalances(){
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:0.65rem">${staffCards}</div>`;
   }).join('');
 
-  // end of renderLeaveBalances — dummy var to close the old map
-  const _dummy=`<div style="display:flex;flex-direction:column;gap:0.5rem">
-      return `<div style="background:${bgCol};border:1.5px solid ${borderCol};border-radius:12px;padding:0.9rem 1rem;display:flex;flex-direction:column;gap:0.5rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
-          <div style="display:flex;align-items:center;gap:0.55rem">
-            <div style="width:30px;height:30px;border-radius:50%;background:${DC[s.division]||'var(--burg)'};display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
-            <div>
-              <div style="font-weight:700;font-size:0.88rem;line-height:1.2">${s.name}</div>
-              <div style="font-size:0.65rem;color:var(--muted)">${s.role||div}</div>
-            </div>
-          </div>
-          ${badge}
-        </div>
-        <!-- Annual leave bar -->
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.28rem">
-            <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Annual Leave</span>
-            <span style="font-family:'DM Mono',monospace;font-size:0.75rem;font-weight:700;color:${barCol}">${rem} <span style="font-weight:400;color:var(--muted)">/ ${total} days left</span></span>
-          </div>
-          <div style="height:7px;background:var(--border);border-radius:4px;overflow:hidden">
-            <div style="height:100%;width:${pct}%;background:${barCol};border-radius:4px;transition:width 0.4s"></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);margin-top:0.2rem">
-            <span>${s.annTaken} taken</span><span>${total} total${s.carryOver>0?` (incl. +${s.carryOver} carry-over)`:''}</span>
-          </div>
-        </div>
-        <!-- Family responsibility dots -->
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Family Responsibility</span>
-          <div style="display:flex;align-items:center;gap:4px">
-            ${famDots}
-            <span style="font-size:0.65rem;color:var(--muted);margin-left:4px">${s.famRem} left</span>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-    return `
-      <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem">${div}</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.65rem">${staffCards}</div>`;
-  }).join('');
-
   el.innerHTML=summary+cards;
 }
 
