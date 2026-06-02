@@ -124,8 +124,27 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;f
 .sec-tab{padding:0.42rem 1rem;border-radius:7px;font-size:0.78rem;font-weight:500;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all 0.15s;border:none;background:none;font-family:inherit;}
 .sec-tab:hover{background:rgba(0,0,0,0.05);color:var(--text);}
 .sec-tab.act{background:var(--burg);color:#fff;font-weight:600;}
-.lvtab{padding:0.38rem 0.95rem;border-radius:8px;font-size:0.78rem;font-weight:500;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all 0.15s;border:none;background:none;font-family:inherit;}
+.lvtab{padding:0.38rem 0.85rem;border-radius:8px;font-size:0.75rem;font-weight:500;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all 0.15s;border:none;background:none;font-family:inherit;}
 .lvtab.act{background:var(--burg);color:#fff;font-weight:600;}
+/* Leave request cards */
+.lv-req-card{background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:0.85rem 1rem;margin-bottom:0.6rem;transition:border-color 0.15s;}
+.lv-req-card.status-Approved{border-left:4px solid #1a6a42;}
+.lv-req-card.status-Pending{border-left:4px solid #b85c10;}
+.lv-req-card.status-Rejected{border-left:4px solid #c0392b;}
+.lv-filter{padding:0.3rem 0.8rem;border-radius:20px;border:1.5px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all 0.15s;}
+.lv-filter.act{background:var(--burg);border-color:var(--burg);color:#fff;}
+/* Leave balance bar */
+.lv-bal-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:0.3rem 0 0.2rem;}
+.lv-bal-fill{height:100%;border-radius:4px;transition:width 0.4s;}
+/* Leave type badges */
+.lp-annual{background:rgba(26,106,66,0.10);color:#1a6a42;padding:0.12rem 0.5rem;border-radius:20px;font-size:0.68rem;font-weight:700;}
+.lp-sick{background:rgba(192,57,58,0.10);color:#c0392b;padding:0.12rem 0.5rem;border-radius:20px;font-size:0.68rem;font-weight:700;}
+.lp-family{background:rgba(107,39,55,0.10);color:#6B2737;padding:0.12rem 0.5rem;border-radius:20px;font-size:0.68rem;font-weight:700;}
+.lp-unpaid{background:rgba(139,112,96,0.12);color:var(--muted);padding:0.12rem 0.5rem;border-radius:20px;font-size:0.68rem;font-weight:700;}
+/* Calendar */
+.lv-cal-day.lv-approved{background:rgba(26,106,66,0.15);color:#1a6a42;}
+.lv-cal-day.lv-pending{background:rgba(184,92,16,0.12);color:#b85c10;}
+.lv-cal-day.lv-mixed{background:rgba(201,168,76,0.2);color:#9A7020;}
 .lv-tbl{width:100%;border-collapse:collapse;font-size:0.82rem;}
 .lv-tbl th{font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:0.75rem 1rem;text-align:left;border-bottom:2px solid var(--border);background:var(--surface);}
 .lv-tbl td{padding:0.75rem 1rem;border-bottom:1px solid var(--surface);vertical-align:middle;}
@@ -1888,17 +1907,92 @@ select option{background:var(--white);color:var(--ink);}
 
       <!-- LEAVE -->
       <div class="pnl" id="p-leave">
+        <!-- Leave tab bar -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.6rem">
-          <div style="display:flex;gap:0.2rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.22rem">
-            <button class="lvtab act" id="lvtab-requests" onclick="switchLeaveTab('requests')">Leave Requests</button>
-            <button class="lvtab" id="lvtab-calendar" onclick="switchLeaveTab('calendar')">Calendar</button>
-            <button class="lvtab" id="lvtab-balances" onclick="switchLeaveTab('balances')">Balances</button>
+          <div style="display:flex;gap:0.2rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.22rem;flex-wrap:wrap">
+            <button class="lvtab act" id="lvtab-dashboard" onclick="switchLeaveTab('dashboard')">📊 Dashboard</button>
+            <button class="lvtab" id="lvtab-requests" onclick="switchLeaveTab('requests')">📋 Requests <span id="lvPendingBadge" style="display:none;background:var(--burg);color:#fff;border-radius:50%;font-size:0.58rem;padding:0.05rem 0.32rem;vertical-align:middle;margin-left:2px"></span></button>
+            <button class="lvtab" id="lvtab-calendar" onclick="switchLeaveTab('calendar')">📅 Calendar</button>
+            <button class="lvtab" id="lvtab-balances" onclick="switchLeaveTab('balances')">💳 Balances</button>
+            <button class="lvtab" id="lvtab-reports" onclick="switchLeaveTab('reports')">📈 Reports</button>
           </div>
-          <button class="btn bp bsm" id="recordLeaveBtn" onclick="openLeaveModal(null)">+ Record Leave</button>
+          <button class="btn bp bsm" id="recordLeaveBtn" onclick="openLeaveModal(null)">+ Request Leave</button>
         </div>
-        <div id="leaveTabRequests"></div>
-        <div id="leaveTabCalendar" style="display:none"></div>
-        <div id="leaveTabBalances" style="display:none"></div>
+
+        <!-- DASHBOARD TAB -->
+        <div id="leaveTabDashboard">
+          <!-- KPI summary cards -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.6rem;margin-bottom:1rem" id="lvDashCards">
+            <div class="stat cg"><div class="snum ng" id="lvd-onleave">—</div><div class="slbl">On Leave Today</div></div>
+            <div class="stat co"><div class="snum no" id="lvd-pending">—</div><div class="slbl">Pending Approval</div></div>
+            <div class="stat cr"><div class="snum nr" id="lvd-low">—</div><div class="slbl">Low Balance (≤3)</div></div>
+            <div class="stat cb"><div class="snum nb" id="lvd-upcoming">—</div><div class="slbl">Upcoming (7 days)</div></div>
+          </div>
+          <!-- On leave today -->
+          <div class="stitle">On Leave Today</div>
+          <div id="lvd-todayList" class="card" style="padding:0.6rem 1rem;min-height:48px"></div>
+          <!-- Pending requests -->
+          <div class="stitle" style="margin-top:0.9rem">Pending Approval</div>
+          <div id="lvd-pendingList"></div>
+          <!-- Upcoming this week -->
+          <div class="stitle" style="margin-top:0.9rem">Next 7 Days</div>
+          <div id="lvd-upcomingList" class="card" style="padding:0.6rem 1rem;min-height:48px"></div>
+          <!-- Balance alerts -->
+          <div class="stitle" style="margin-top:0.9rem">⚠️ Low Leave Balances</div>
+          <div id="lvd-alertList" class="card" style="padding:0.6rem 1rem;min-height:48px"></div>
+        </div>
+
+        <!-- REQUESTS TAB -->
+        <div id="leaveTabRequests" style="display:none">
+          <!-- Filter pills -->
+          <div style="display:flex;gap:0.4rem;margin-bottom:0.8rem;flex-wrap:wrap">
+            <button class="lv-filter act" id="lvf-all"      onclick="lvFilterReq('all',this)">All</button>
+            <button class="lv-filter" id="lvf-pending"   onclick="lvFilterReq('Pending',this)">🟡 Pending</button>
+            <button class="lv-filter" id="lvf-approved"  onclick="lvFilterReq('Approved',this)">🟢 Approved</button>
+            <button class="lv-filter" id="lvf-rejected"  onclick="lvFilterReq('Rejected',this)">🔴 Rejected</button>
+          </div>
+          <div id="lvRequestList"></div>
+        </div>
+
+        <!-- CALENDAR TAB -->
+        <div id="leaveTabCalendar" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem">
+            <button class="btn bs bsm" onclick="lvCalNav(-1)">◀</button>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.1rem;color:var(--burg)" id="lvCalTitle"></div>
+            <button class="btn bs bsm" onclick="lvCalNav(1)">▶</button>
+          </div>
+          <!-- Legend -->
+          <div style="display:flex;gap:0.8rem;margin-bottom:0.7rem;font-size:0.72rem;flex-wrap:wrap">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1a6a42;margin-right:4px"></span>Approved</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#b85c10;margin-right:4px"></span>Pending</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#c0392b;margin-right:4px"></span>Rejected</span>
+          </div>
+          <div id="lvCalGrid"></div>
+          <div id="lvCalDetail" style="margin-top:0.8rem"></div>
+        </div>
+
+        <!-- BALANCES TAB -->
+        <div id="leaveTabBalances" style="display:none">
+          <div style="font-size:0.75rem;color:var(--muted);background:var(--surface);border-radius:8px;padding:0.6rem 0.9rem;margin-bottom:0.9rem">
+            🏖️ Accrual: <strong>1.5 days/month</strong> · added on 1st of each month &nbsp;·&nbsp; 1 day = 7.5 hours &nbsp;·&nbsp; Family Responsibility: 3 days/year (fixed)
+          </div>
+          <div id="lvBalanceList"></div>
+        </div>
+
+        <!-- REPORTS TAB -->
+        <div id="leaveTabReports" style="display:none">
+          <div class="card" style="padding:0.85rem 1rem;margin-bottom:0.9rem">
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:flex-end">
+              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>From</label><input type="date" id="lvRpFrom" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none"></div>
+              <div class="fg" style="margin:0;flex:1;min-width:110px"><label>To</label><input type="date" id="lvRpTo" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none"></div>
+              <button class="btn bp bsm" onclick="lvRenderReports()">Apply</button>
+              <button class="btn bs bsm" onclick="lvRpSetPeriod('year')">This Year</button>
+              <button class="btn bs bsm" onclick="lvRpSetPeriod('month')">This Month</button>
+            </div>
+          </div>
+          <div id="lvReportContent"></div>
+          <button class="btn bs bsm" id="lvExportBtn" style="display:none;margin-top:0.8rem;width:100%" onclick="lvExportReport()">📥 Export to Excel</button>
+        </div>
       </div>
 
       <!-- KPI REVIEWS -->
@@ -2052,6 +2146,44 @@ select option{background:var(--white);color:var(--ink);}
         <div class="card">
           <div class="card-title">Database Status</div>
           <div id="dbStatus" style="font-size:0.82rem;color:var(--muted)">Checking connection...</div>
+        </div>
+        <div class="card" id="leaveManagementSQL" style="display:none">
+          <div class="card-title">Leave Management Schema Setup</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL once in Supabase to enable the comprehensive leave management module (accruals, balances, audit log):</div>
+          <pre style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.7rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">CREATE TABLE IF NOT EXISTS leave_balances (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  staff_name text NOT NULL UNIQUE,
+  department text,
+  employment_start_date date,
+  accrued_days numeric DEFAULT 0,
+  manual_adjustment numeric DEFAULT 0,
+  used_annual numeric DEFAULT 0,
+  used_family numeric DEFAULT 0,
+  used_sick numeric DEFAULT 0,
+  used_unpaid numeric DEFAULT 0,
+  last_accrual_month text,
+  updated_at timestamptz DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS leave_accrual_log (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  staff_name text NOT NULL,
+  accrual_month text NOT NULL,
+  days_added numeric NOT NULL DEFAULT 1.5,
+  balance_before numeric,
+  balance_after numeric,
+  note text,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE leave_records ADD COLUMN IF NOT EXISTS days_requested numeric;
+ALTER TABLE leave_records ADD COLUMN IF NOT EXISTS reason text;
+ALTER TABLE leave_records ADD COLUMN IF NOT EXISTS manager_notes text;
+ALTER TABLE leave_records ADD COLUMN IF NOT EXISTS approved_by text;
+ALTER TABLE leave_records ADD COLUMN IF NOT EXISTS approved_at timestamptz;
+ALTER TABLE leave_balances ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "allow_all" ON leave_balances FOR ALL USING (true) WITH CHECK (true);
+ALTER TABLE leave_accrual_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "allow_all" ON leave_accrual_log FOR ALL USING (true) WITH CHECK (true);</pre>
+          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('leaveManagementSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
         <div class="card" id="attendanceSQL" style="display:none">
           <div class="card-title">Attendance Log Table Setup</div>
@@ -2659,7 +2791,9 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
     <div class="fg"><label>Leave Type</label>
       <select id="leaveType">
         <option value="Annual">🏖️ Annual Leave</option>
-        <option value="Family">👨‍👩‍👧 Family Responsibility</option>
+        <option value="Family Responsibility">👨‍👩‍👧 Family Responsibility</option>
+        <option value="Sick">🤒 Sick Leave</option>
+        <option value="Sick — Unplanned">🤒 Sick — Unplanned</option>
         <option value="Unpaid">💸 Unpaid Leave</option>
         <option value="Other">📋 Other</option>
       </select>
@@ -2952,7 +3086,7 @@ function setSyncStatus(state){
 // ═══════════════════════════════════════════
 // DATA STORE
 // ═══════════════════════════════════════════
-let DB=[], stfD=[], pendingS=[], varianceD=[], payD={mgr:[],kit:[]}, leaveData=[], docsData={}, rosterData={}, rosterFlags={}, kpiData=[];
+let DB=[], stfD=[], pendingS=[], varianceD=[], payD={mgr:[],kit:[]}, leaveData=[], lvBalances={}, docsData={}, rosterData={}, rosterFlags={}, kpiData=[];
 let payPaid={}; // {staffName: true} — who's been marked as paid for the current period
 function _payPaidKey(){const pp=getPayPeriod();return`payPaid_${pp.from||'cur'}_${pp.to||'cur'}`;}
 function loadPayPaid(){try{payPaid=JSON.parse(localStorage.getItem(_payPaidKey())||'{}')}catch(e){payPaid={};}}
@@ -2979,9 +3113,16 @@ async function loadAllData(){
     wlPins = {};
     stfD.forEach(s => { if(s.waiter_pin) wlPins[s.name] = s.waiter_pin; });
 
-    // Load leave
+    // Load leave records + balances
     const leaveR = await SB.from('leave_records').select('*').order('start_date',{ascending:false});
     leaveData = leaveR.data || [];
+    try{
+      const lbR = await SB.from('leave_balances').select('*');
+      lvBalances = {};
+      (lbR.data||[]).forEach(b=>{ lvBalances[b.staff_name]=b; });
+      // Run monthly accrual check silently (owner/manager only)
+      if(CU?.role==='owner'||CU?.role==='manager') await lvRunAccrual();
+    }catch(e){ lvBalances={}; }
 
     // Load docs
     const docsR = await SB.from('staff_documents').select('*').order('added_at',{ascending:false});
@@ -3093,6 +3234,8 @@ function go(id){
     if(mxSqlCard) mxSqlCard.style.display=CU?.role==='owner'?'block':'none';
     const attSqlCard=document.getElementById('attendanceSQL');
     if(attSqlCard) attSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    const lvSqlCard=document.getElementById('leaveManagementSQL');
+    if(lvSqlCard) lvSqlCard.style.display=CU?.role==='owner'?'block':'none';
     checkSectionColStatus();
     xeroLoadSettings();
   }
@@ -7109,134 +7252,274 @@ async function deleteStf(id,name){
 }
 
 // ═══════════════════════════════════════════
-// LEAVE
+// LEAVE MANAGEMENT — COMPREHENSIVE MODULE
 // ═══════════════════════════════════════════
-const LEAVE_CFG={'Annual':{cls:'lp-annual',icon:'🏖️'},'Sick':{cls:'lp-sick',icon:'🤒'},'Family':{cls:'lp-family',icon:'👨‍👩‍👧'},'Unpaid':{cls:'lp-unpaid',icon:'💸'},'Sick — Unplanned':{cls:'lp-sick',icon:'🤒'},'Other':{cls:'lp-unpaid',icon:'📋'}};
-const STATUS_CFG={'Approved':'bgg','Pending':'bgo','Sick — Unplanned':'bgr','Rejected':'bgr'};
-// ── LEAVE ALLOWANCES (annual, year = Jan–Dec) ───────────────────────────────
-const ANNUAL_LEAVE_ALLOWANCE = 21; // 1.75 days/month × 12
-const SICK_LEAVE_ALLOWANCE   =  0; // not tracked at Die Akker
-const FAMILY_LEAVE_ALLOWANCE =  3; // days per leave year
+const LEAVE_CFG={
+  'Annual':               {cls:'lp-annual', icon:'🏖️', deducts:true},
+  'Sick':                 {cls:'lp-sick',   icon:'🤒', deducts:false},
+  'Family Responsibility':{cls:'lp-family', icon:'👨‍👩‍👧', deducts:false},
+  'Unpaid':               {cls:'lp-unpaid', icon:'💸', deducts:false},
+  'Sick — Unplanned':     {cls:'lp-sick',   icon:'🤒', deducts:false},
+  'Other':                {cls:'lp-unpaid', icon:'📋', deducts:false}
+};
+const STATUS_CFG={'Approved':'bgg','Pending':'bgo','Rejected':'bgr','Sick — Unplanned':'bgr'};
+const LEAVE_ACCRUAL_RATE  = 1.5;  // days per month
+const LEAVE_DAY_HOURS     = 7.5;  // hours per day
+const FAMILY_LEAVE_ALLOWANCE = 3; // fixed days per year
+const ANNUAL_LEAVE_ALLOWANCE = 21; // kept for compatibility
+const SICK_LEAVE_ALLOWANCE = 0;
 let leaveFilter='all';
+let lvReqFilter='all';
 let leaveCalYear=new Date().getFullYear(), leaveCalMonth=new Date().getMonth();
-let leaveActiveTab='requests';
-function kitchenStaff(){return stfD.filter(s=>s.active!==false && (s.division==='Kitchen'||s.role.startsWith('Kitchen')));}
+let leaveActiveTab='dashboard';
+let lvReportData=[];
+let lvCalSelectedDay=null;
+function kitchenStaff(){return stfD.filter(s=>s.active!==false && (s.division==='Kitchen'||(s.role||'').startsWith('Kitchen')));}
 function allActiveStaff(){return stfD.filter(s=>s.active!==false);}
-function leaveDays(l){if(!l.start_date||!l.end_date)return 0;const s=new Date(l.start_date),e=new Date(l.end_date);return Math.max(1,Math.round((e-s)/(1000*60*60*24))+1);}
 
-function getActiveLeaveYear(){ return new Date().getFullYear(); }
+// ── Working days count (includes Sat for restaurant, excludes Sun) ──────────
+function leaveDays(l){
+  if(!l.start_date||!l.end_date) return 0;
+  const s=new Date(l.start_date+'T12:00:00'), e=new Date(l.end_date+'T12:00:00');
+  let days=0;
+  for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){
+    if(d.getDay()!==0) days++; // exclude Sundays
+  }
+  return Math.max(1,days);
+}
 
-function getLeaveTaken(staffName, year, types){
-  const y=String(year);
-  return leaveData.filter(l=>
-    l.staff_name===staffName &&
-    types.includes(l.leave_type) &&
-    l.status==='Approved' &&
-    (l.start_date||'').startsWith(y)
+// ── Leave balance from persistent leave_balances table ──────────────────────
+function lvGetBalance(staffName){
+  const b=lvBalances[staffName];
+  if(!b) return {available:0,accrued:0,usedAnnual:0,usedFamily:0,usedSick:0,usedUnpaid:0,adjustment:0,totalAlloc:0};
+  const accrued=parseFloat(b.accrued_days||0);
+  const adj=parseFloat(b.manual_adjustment||0);
+  const usedAnnual=parseFloat(b.used_annual||0);
+  const usedFamily=parseFloat(b.used_family||0);
+  const usedSick=parseFloat(b.used_sick||0);
+  const usedUnpaid=parseFloat(b.used_unpaid||0);
+  const totalAlloc=accrued+adj;
+  const available=Math.max(0,totalAlloc-usedAnnual);
+  return {available,accrued,usedAnnual,usedFamily,usedSick,usedUnpaid,adjustment:adj,totalAlloc};
+}
+
+// ── Family responsibility used this year (from leave_records) ───────────────
+function lvFamUsedThisYear(staffName){
+  const yr=String(new Date().getFullYear());
+  return leaveData.filter(l=>l.staff_name===staffName&&l.status==='Approved'&&
+    ['Family Responsibility','Family'].includes(l.leave_type)&&(l.start_date||'').startsWith(yr)
   ).reduce((s,l)=>s+leaveDays(l),0);
 }
 
-// Unused annual leave from previous year, valid until Jun 30 of current year
-function getCarryOver(staffName, year){
-  const today=new Date().toISOString().split('T')[0];
-  const expiry=`${year}-06-30`;
-  if(today>expiry) return 0;
-  // Only carry over if there are actual leave records from the previous year
-  // (prevents showing phantom carry-over when no prior-year data exists)
-  const prevYearRecords=leaveData.filter(l=>l.staff_name===staffName&&(l.start_date||'').startsWith(String(year-1)));
-  if(!prevYearRecords.length) return 0;
-  const prevTaken=getLeaveTaken(staffName, year-1, ['Annual']);
-  return Math.max(0, ANNUAL_LEAVE_ALLOWANCE - prevTaken);
-}
-
+// ── Backward-compatible getLeaveBalance for roster/payroll use ───────────────
 function getLeaveBalance(staffName, year){
-  const annTaken   = getLeaveTaken(staffName, year, ['Annual']);
-  const sickTaken  = getLeaveTaken(staffName, year, ['Sick','Sick — Unplanned']);
-  const famTaken   = getLeaveTaken(staffName, year, ['Family']);
-  const carryOver  = getCarryOver(staffName, year);
+  const b=lvGetBalance(staffName);
+  const famTaken=lvFamUsedThisYear(staffName);
   return {
-    annTaken, sickTaken, famTaken, carryOver,
-    annRem  : Math.max(0, ANNUAL_LEAVE_ALLOWANCE + carryOver - annTaken),
-    sickRem : Math.max(0, SICK_LEAVE_ALLOWANCE   - sickTaken),
-    famRem  : Math.max(0, FAMILY_LEAVE_ALLOWANCE - famTaken),
+    annTaken:b.usedAnnual, sickTaken:b.usedSick, famTaken,
+    carryOver:0,
+    annRem:b.available,
+    sickRem:0,
+    famRem:Math.max(0,FAMILY_LEAVE_ALLOWANCE-famTaken),
   };
 }
-
-// Legacy helpers kept for compatibility
+function getLeaveTaken(staffName,year,types){
+  const yr=String(year);
+  return leaveData.filter(l=>l.staff_name===staffName&&types.includes(l.leave_type)&&
+    l.status==='Approved'&&(l.start_date||'').startsWith(yr)).reduce((s,l)=>s+leaveDays(l),0);
+}
+function getActiveLeaveYear(){ return new Date().getFullYear(); }
+function getCarryOver(){ return 0; }
 function getCurrentSickCycle(){ return {label:String(new Date().getFullYear()),start:`${new Date().getFullYear()}-01-01`,end:`${new Date().getFullYear()}-12-31`}; }
 function getSickUsedInCycle(staffName,cycle){ return getLeaveTaken(staffName, parseInt(cycle.label)||new Date().getFullYear(), ['Sick','Sick — Unplanned']); }
 const SICK_ALLOWANCE = SICK_LEAVE_ALLOWANCE;
 
-function renderSickCycleGrid(){
-  const el=document.getElementById('sickCycleGrid');
-  if(!el)return; // legacy grid removed — now in Balances tab
-  const kit=kitchenStaff();
-  const year=getActiveLeaveYear();
-  if(!kit.length){el.innerHTML='<div style="font-size:0.78rem;color:var(--muted)">No staff found.</div>';return;}
-  el.innerHTML=kit.map(s=>{
-    const b=getLeaveBalance(s.name, year);
-    const sickPct=Math.min(100,Math.round(b.sickTaken/SICK_LEAVE_ALLOWANCE*100));
-    const annPct =Math.min(100,Math.round(b.annTaken/(ANNUAL_LEAVE_ALLOWANCE+(b.carryOver||0))*100));
-    const sickCol=sickPct>=80?'var(--red)':sickPct>=50?'var(--orange)':'var(--green)';
-    const annCol =b.annRem<=2?'var(--red)':b.annRem<=5?'var(--orange)':'var(--blue)';
-    const carryStr=b.carryOver>0?`<span style="font-size:0.62rem;background:var(--blue-l);color:var(--blue);border:1px solid rgba(77,143,212,0.25);padding:0.1rem 0.4rem;border-radius:20px;font-weight:700">+${b.carryOver} carry</span>`:'';
-    return `<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.75rem 0.9rem">
-      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
-        <div style="width:26px;height:26px;border-radius:50%;background:${DC[s.division]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
-        <div style="font-weight:700;font-size:0.82rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
-      </div>
-      <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
-        <div style="flex:1;min-width:70px;background:var(--surface);border-radius:7px;padding:0.35rem 0.5rem;text-align:center">
-          <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:${annCol};line-height:1">${b.annRem}</div>
-          <div style="font-size:0.6rem;color:var(--muted);font-weight:700;text-transform:uppercase">Annual</div>
-          ${carryStr}
-        </div>
-        <div style="flex:1;min-width:70px;background:var(--surface);border-radius:7px;padding:0.35rem 0.5rem;text-align:center">
-          <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:${sickCol};line-height:1">${b.sickRem}</div>
-          <div style="font-size:0.6rem;color:var(--muted);font-weight:700;text-transform:uppercase">Sick</div>
-        </div>
-        <div style="flex:1;min-width:70px;background:var(--surface);border-radius:7px;padding:0.35rem 0.5rem;text-align:center">
-          <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:var(--green);line-height:1">${b.famRem}</div>
-          <div style="font-size:0.6rem;color:var(--muted);font-weight:700;text-transform:uppercase">Family</div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+// ── Monthly accrual: add 1.5 days on 1st of each month ──────────────────────
+async function lvRunAccrual(){
+  const now=new Date();
+  const currentMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const staff=allActiveStaff();
+  for(const s of staff){
+    const b=lvBalances[s.name];
+    // Init balance record if missing
+    if(!b){
+      const newRec={staff_name:s.name,department:s.division||'',accrued_days:LEAVE_ACCRUAL_RATE,
+        manual_adjustment:0,used_annual:0,used_family:0,used_sick:0,used_unpaid:0,
+        last_accrual_month:currentMonth,employment_start_date:null};
+      const{data}=await SB.from('leave_balances').insert(newRec).select().single().catch(()=>({data:null}));
+      if(data) lvBalances[s.name]=data;
+      await SB.from('leave_accrual_log').insert({staff_name:s.name,accrual_month:currentMonth,
+        days_added:LEAVE_ACCRUAL_RATE,balance_before:0,balance_after:LEAVE_ACCRUAL_RATE,
+        note:'Initial balance created'}).catch(()=>{});
+      continue;
+    }
+    // Check if accrual is due for current month
+    if(b.last_accrual_month===currentMonth) continue;
+    // Calculate months missed
+    const lastMonth=b.last_accrual_month||`${now.getFullYear()-1}-12`;
+    const [ly,lm]=lastMonth.split('-').map(Number);
+    const monthsOwed=(now.getFullYear()-ly)*12+(now.getMonth()+1-lm);
+    if(monthsOwed<=0) continue;
+    const daysToAdd=LEAVE_ACCRUAL_RATE*monthsOwed;
+    const before=parseFloat(b.accrued_days||0);
+    const after=before+daysToAdd;
+    await SB.from('leave_balances').update({accrued_days:after,last_accrual_month:currentMonth,updated_at:new Date().toISOString()}).eq('staff_name',s.name).catch(()=>{});
+    await SB.from('leave_accrual_log').insert({staff_name:s.name,accrual_month:currentMonth,
+      days_added:daysToAdd,balance_before:before,balance_after:after,
+      note:`${monthsOwed} month${monthsOwed!==1?'s':''} × 1.5 days`}).catch(()=>{});
+    lvBalances[s.name]={...b,accrued_days:after,last_accrual_month:currentMonth};
+  }
 }
 
-function setLeaveYearFilter(yr){
-  const sel=document.getElementById('leaveYearFilter');
-  if(sel) sel.value=yr;
-  renderLeave();
-}
+function renderSickCycleGrid(){ /* legacy — balances now in Balances tab */ }
+function setLeaveYearFilter(){ renderLeave(); }
 
+// ── Tab switching ────────────────────────────────────────────────────────────
 function switchLeaveTab(tab){
   leaveActiveTab=tab;
-  ['requests','calendar','balances'].forEach(t=>{
+  ['dashboard','requests','calendar','balances','reports'].forEach(t=>{
     document.getElementById('lvtab-'+t)?.classList.toggle('act',t===tab);
     const el=document.getElementById('leaveTab'+t.charAt(0).toUpperCase()+t.slice(1));
     if(el) el.style.display=t===tab?'block':'none';
   });
-  if(tab==='requests') renderLeaveRequests();
+  if(tab==='dashboard') renderLeaveDashboard();
+  else if(tab==='requests') renderLeaveRequests();
   else if(tab==='calendar') renderLeaveCalendar();
   else if(tab==='balances') renderLeaveBalances();
+  else if(tab==='reports'){ lvRpSetPeriod('year'); lvRenderReports(); }
 }
 
 function renderLeave(){
   const recBtn=document.getElementById('recordLeaveBtn');
   if(recBtn) recBtn.style.display=isReadOnly()?'none':'inline-flex';
+  // Update pending badge
+  const pending=leaveData.filter(l=>l.status==='Pending').length;
+  const badge=document.getElementById('lvPendingBadge');
+  if(badge){ badge.textContent=pending||''; badge.style.display=pending?'inline':'none'; }
   switchLeaveTab(leaveActiveTab);
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────────────────────
+function renderLeaveDashboard(){
+  const today=new Date().toISOString().slice(0,10);
+  const in7=new Date(); in7.setDate(in7.getDate()+7);
+  const in7Str=in7.toISOString().slice(0,10);
+
+  const onLeaveToday=leaveData.filter(l=>l.status==='Approved'&&l.start_date<=today&&l.end_date>=today);
+  const pendingReqs=leaveData.filter(l=>l.status==='Pending');
+  const upcoming=leaveData.filter(l=>l.status==='Approved'&&l.start_date>today&&l.start_date<=in7Str);
+  const staff=allActiveStaff();
+  const lowBal=staff.filter(s=>{ const b=lvGetBalance(s.name); return b.available<=3&&b.totalAlloc>0; });
+
+  // Update KPI cards
+  document.getElementById('lvd-onleave').textContent=onLeaveToday.length;
+  document.getElementById('lvd-pending').textContent=pendingReqs.length;
+  document.getElementById('lvd-low').textContent=lowBal.length;
+  document.getElementById('lvd-upcoming').textContent=upcoming.length;
+
+  // Today list
+  const todayEl=document.getElementById('lvd-todayList');
+  if(!onLeaveToday.length) todayEl.innerHTML='<div style="color:var(--muted);font-size:0.85rem;padding:0.4rem 0">No staff on leave today ✓</div>';
+  else todayEl.innerHTML=onLeaveToday.map(l=>{
+    const cfg=LEAVE_CFG[l.leave_type]||LEAVE_CFG['Other'];
+    return `<div style="display:flex;align-items:center;gap:0.7rem;padding:0.45rem 0;border-bottom:1px solid var(--border-s)">
+      <span class="${cfg.cls}">${cfg.icon} ${l.leave_type}</span>
+      <span style="font-weight:700;font-size:0.88rem">${l.staff_name}</span>
+      <span style="font-size:0.75rem;color:var(--muted);margin-left:auto">until ${l.end_date}</span>
+    </div>`;
+  }).join('');
+
+  // Pending requests (quick approve/reject)
+  const pendEl=document.getElementById('lvd-pendingList');
+  const canAct=CU?.role==='owner'||CU?.role==='manager';
+  if(!pendingReqs.length) pendEl.innerHTML='<div class="card" style="text-align:center;padding:1.2rem;color:var(--muted);font-size:0.85rem">No pending requests ✓</div>';
+  else pendEl.innerHTML=pendingReqs.map(l=>lvReqCard(l,canAct)).join('');
+
+  // Upcoming
+  const upEl=document.getElementById('lvd-upcomingList');
+  if(!upcoming.length) upEl.innerHTML='<div style="color:var(--muted);font-size:0.85rem;padding:0.4rem 0">No approved leave in the next 7 days</div>';
+  else upEl.innerHTML=upcoming.map(l=>{
+    const days=leaveDays(l);
+    const dt=new Date(l.start_date+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
+    return `<div style="display:flex;align-items:center;gap:0.7rem;padding:0.45rem 0;border-bottom:1px solid var(--border-s)">
+      <span style="font-weight:700;font-size:0.88rem">${l.staff_name}</span>
+      <span style="font-size:0.75rem;color:var(--muted)">${l.leave_type} · ${days} day${days!==1?'s':''}</span>
+      <span style="font-size:0.75rem;color:var(--burg);font-weight:700;margin-left:auto">${dt}</span>
+    </div>`;
+  }).join('');
+
+  // Low balance alerts
+  const alertEl=document.getElementById('lvd-alertList');
+  if(!lowBal.length) alertEl.innerHTML='<div style="color:var(--green);font-size:0.85rem;padding:0.4rem 0">✓ All staff have adequate leave balances</div>';
+  else alertEl.innerHTML=lowBal.map(s=>{
+    const b=lvGetBalance(s.name);
+    return `<div style="display:flex;align-items:center;gap:0.7rem;padding:0.45rem 0;border-bottom:1px solid var(--border-s)">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
+      <span style="font-weight:700;font-size:0.88rem">${s.name}</span>
+      <span style="font-size:0.75rem;color:var(--muted)">${s.division||''}</span>
+      <span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--red);margin-left:auto">${b.available.toFixed(1)} days left</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Reusable leave request card ──────────────────────────────────────────────
+function lvReqCard(l, canAct){
+  const cfg=LEAVE_CFG[l.leave_type]||LEAVE_CFG['Other'];
+  const days=leaveDays(l);
+  const statusCol={'Approved':'#1a6a42','Pending':'#b85c10','Rejected':'#c0392b'}[l.status]||'var(--muted)';
+  const statusBg={'Approved':'rgba(26,106,66,0.08)','Pending':'rgba(184,92,16,0.08)','Rejected':'rgba(192,57,58,0.07)'}[l.status]||'';
+  const hoursStr=(days*LEAVE_DAY_HOURS).toFixed(1)+'h';
+  return `<div class="lv-req-card status-${l.status}">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem">
+      <div>
+        <div style="font-weight:700;font-size:0.92rem">${l.staff_name}</div>
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.2rem;flex-wrap:wrap">
+          <span class="${cfg.cls}">${cfg.icon} ${l.leave_type}</span>
+          <span style="font-size:0.72rem;color:var(--muted)">${l.start_date} → ${l.end_date}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:0.72rem;font-weight:700;color:var(--burg)">${days} day${days!==1?'s':''} (${hoursStr})</span>
+        </div>
+        ${l.notes?`<div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;font-style:italic">"${l.notes}"</div>`:''}
+        ${l.manager_notes?`<div style="font-size:0.75rem;color:#b85c10;margin-top:0.2rem">Manager: ${l.manager_notes}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.4rem">
+        <span style="background:${statusBg};color:${statusCol};border-radius:20px;padding:0.15rem 0.65rem;font-size:0.7rem;font-weight:700">${l.status}</span>
+        <div style="display:flex;gap:0.3rem;flex-wrap:wrap">
+          ${canAct&&l.status==='Pending'?`<button onclick="approveLeave('${l.id}')" style="background:#1a6a42;border:none;color:#fff;cursor:pointer;font-size:0.7rem;font-weight:700;padding:0.25rem 0.7rem;border-radius:6px;font-family:inherit">✓ Approve</button><button onclick="lvRejectWithNote('${l.id}')" style="background:rgba(192,57,58,0.1);border:1px solid #c0392b;color:#c0392b;cursor:pointer;font-size:0.7rem;font-weight:700;padding:0.25rem 0.5rem;border-radius:6px;font-family:inherit">✗ Reject</button>`:''}
+          ${!isReadOnly()?`<button onclick="printLeaveForm('${l.id}')" style="background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:0.7rem;padding:0.25rem 0.5rem;border-radius:6px;color:var(--muted);font-family:inherit" title="Print">🖨️</button><button onclick="deleteLeave('${l.id}')" style="background:none;border:none;cursor:pointer;font-size:0.85rem;color:var(--muted)">🗑</button>`:''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function lvFilterReq(filter, btn){
+  lvReqFilter=filter;
+  document.querySelectorAll('#p-leave .lv-filter').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  renderLeaveRequests();
 }
 
 function renderLeaveRequests(){
   const canAct=!isReadOnly()&&(CU?.role==='owner'||CU?.role==='manager');
-  const sorted=[...leaveData].sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||''));
-  const el=document.getElementById('leaveTabRequests');
+  let sorted=[...leaveData].sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||''));
+  if(lvReqFilter!=='all') sorted=sorted.filter(l=>l.status===lvReqFilter);
+  const el=document.getElementById('lvRequestList');
   if(!sorted.length){
-    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No leave records yet. Use "+ Record Leave" to add one.</div>';
+    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No leave records'+(lvReqFilter!=='all'?' with this status':'')+'. Use "+ Request Leave" to add one.</div>';
     return;
   }
-  el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
+  el.innerHTML=sorted.map(l=>lvReqCard(l,canAct)).join('');
+}
+
+function renderLeaveRequests_OLD(){
+  const canAct=!isReadOnly()&&(CU?.role==='owner'||CU?.role==='manager');
+  const sorted=[...leaveData].sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||''));
+  const el=document.getElementById('leaveTabRequests'); // legacy fallback
+  if(!sorted.length){
+    if(el) el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No leave records yet.</div>';
+    return;
+  }
+  if(el) el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
     <table class="lv-tbl">
       <thead><tr>
         <th>Staff Member</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th><th>Action</th>
@@ -7269,126 +7552,146 @@ function renderLeaveRequests(){
       }).join('')}</tbody>
     </table>
   </div>`;
+  // end legacy table
 }
 
+// ── Calendar ─────────────────────────────────────────────────────────────────
 function renderLeaveCalendar(){
-  const el=document.getElementById('leaveTabCalendar');
   const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const DAYS_SH=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const today=new Date();
-  const todayStr=today.toISOString().split('T')[0];
+  const today=new Date().toISOString().slice(0,10);
   const yr=leaveCalYear, mo=leaveCalMonth;
-  const firstDay=new Date(yr,mo,1);
-  // Week starts Monday; getDay() is 0=Sun…6=Sat → convert to 0=Mon…6=Sun
-  const startDow=((firstDay.getDay()+6)%7);
+  const startDow=((new Date(yr,mo,1).getDay()+6)%7);
   const daysInMonth=new Date(yr,mo+1,0).getDate();
+  document.getElementById('lvCalTitle').textContent=`${MONTHS[mo]} ${yr}`;
 
-  // Build a set of dates that have leave (approved or pending)
+  // Build date→leave map
   const leaveDates={};
   leaveData.forEach(l=>{
-    if(!l.start_date||!l.end_date) return;
-    if(l.status==='Rejected') return;
-    const s=new Date(l.start_date),e=new Date(l.end_date);
-    for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){
-      const ds=d.toISOString().split('T')[0];
+    if(!l.start_date||!l.end_date||l.status==='Rejected') return;
+    for(let d=new Date(l.start_date+'T12:00:00');d.toISOString().slice(0,10)<=l.end_date;d.setDate(d.getDate()+1)){
+      const ds=d.toISOString().slice(0,10);
       if(!leaveDates[ds]) leaveDates[ds]=[];
-      leaveDates[ds].push(l.staff_name);
+      leaveDates[ds].push({name:l.staff_name,status:l.status,type:l.leave_type});
     }
   });
 
-  // Calendar cells
   let cells='';
   for(let i=0;i<startDow;i++) cells+=`<div class="lv-cal-day empty"></div>`;
   for(let d=1;d<=daysInMonth;d++){
     const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday=ds===todayStr;
-    const names=leaveDates[ds]||[];
-    const hasLeave=names.length>0;
+    const isToday=ds===today;
+    const entries=leaveDates[ds]||[];
+    const approved=entries.filter(e=>e.status==='Approved');
+    const pending=entries.filter(e=>e.status==='Pending');
     let cls='lv-cal-day normal';
-    if(isToday&&hasLeave) cls='lv-cal-day today has-leave';
-    else if(isToday) cls='lv-cal-day today';
-    else if(hasLeave) cls='lv-cal-day has-leave';
-    const dots=hasLeave?names.slice(0,3).map(()=>`<div class="lv-dot"></div>`).join(''):'';
-    const title=hasLeave?` title="${names.join(', ')}"` : '';
-    cells+=`<div class="${cls}"${title}><span>${d}</span>${dots?`<div style="display:flex;gap:2px;justify-content:center">${dots}</div>`:''}</div>`;
+    if(isToday) cls='lv-cal-day today';
+    else if(approved.length&&pending.length) cls='lv-cal-day lv-mixed';
+    else if(approved.length) cls='lv-cal-day lv-approved';
+    else if(pending.length) cls='lv-cal-day lv-pending';
+    const names=entries.slice(0,3).map(()=>`<div class="lv-dot"></div>`).join('');
+    cells+=`<div class="${cls}" onclick="lvCalShowDay('${ds}')" style="cursor:${entries.length?'pointer':'default'}">
+      <span>${d}</span>
+      ${entries.length?`<div style="display:flex;gap:2px;justify-content:center">${names}</div>`:''}
+    </div>`;
   }
 
-  el.innerHTML=`<div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-      <button onclick="lvCalNav(-1)" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.9rem">‹</button>
-      <div style="font-weight:700;font-size:1rem;color:var(--burg)">${MONTHS[mo]} ${yr} — Leave Calendar</div>
-      <button onclick="lvCalNav(1)" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.9rem">›</button>
-    </div>
-    <div class="lv-cal">
-      ${DAYS_SH.map(d=>`<div class="lv-cal-hdr">${d}</div>`).join('')}
-      ${cells}
-    </div>
-    <div style="display:flex;gap:1rem;margin-top:1rem;font-size:0.75rem;align-items:center;flex-wrap:wrap">
-      <span style="display:flex;align-items:center;gap:0.4rem"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:rgba(224,58,58,0.25);border:1px solid rgba(224,58,58,0.4)"></span> Leave / Absent</span>
-      <span style="display:flex;align-items:center;gap:0.4rem"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:var(--burg)"></span> Today</span>
-      <span style="color:var(--muted)">Hover a date to see who's on leave</span>
-    </div>
+  document.getElementById('lvCalGrid').innerHTML=`<div class="card" style="padding:0.8rem">
+    <div class="lv-cal">${DAYS_SH.map(d=>`<div class="lv-cal-hdr">${d}</div>`).join('')}${cells}</div>
   </div>`;
+
+  // Refresh day detail if a day is selected
+  if(lvCalSelectedDay) lvCalShowDay(lvCalSelectedDay);
 }
+
 function lvCalNav(dir){
   leaveCalMonth+=dir;
   if(leaveCalMonth<0){leaveCalMonth=11;leaveCalYear--;}
   if(leaveCalMonth>11){leaveCalMonth=0;leaveCalYear++;}
+  lvCalSelectedDay=null;
+  document.getElementById('lvCalDetail').innerHTML='';
   renderLeaveCalendar();
 }
 
+function lvCalShowDay(ds){
+  lvCalSelectedDay=ds;
+  const dt=new Date(ds+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const entries=leaveData.filter(l=>l.start_date<=ds&&l.end_date>=ds&&l.status!=='Rejected');
+  const el=document.getElementById('lvCalDetail');
+  if(!entries.length){el.innerHTML=`<div class="card" style="padding:1rem;color:var(--muted);text-align:center">${dt} — no leave recorded</div>`;return;}
+  const canAct=CU?.role==='owner'||CU?.role==='manager';
+  el.innerHTML=`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.5rem;font-weight:700">${dt}</div>`+entries.map(l=>lvReqCard(l,canAct)).join('');
+}
+
+// ── Balances ─────────────────────────────────────────────────────────────────
 function renderLeaveBalances(){
   const el=document.getElementById('leaveTabBalances');
   const staff=allActiveStaff();
-  const yr=new Date().getFullYear();
   if(!staff.length){el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No staff found.</div>';return;}
-
-  // Group by division
+  const canManage=CU?.role==='owner'||CU?.role==='manager';
   const divisions=[...new Set(staff.map(s=>s.division||'Other'))];
 
-  // Summary counts
-  const allBalances=staff.map(s=>({...s,...getLeaveBalance(s.name,yr)}));
-  const critical=allBalances.filter(s=>s.annRem<=3).length;
-  const low=allBalances.filter(s=>s.annRem>3&&s.annRem<=7).length;
-  const famExhausted=allBalances.filter(s=>s.famRem<=0).length;
+  const allBal=staff.map(s=>({...s,bal:lvGetBalance(s.name),fam:lvFamUsedThisYear(s.name)}));
+  const critical=allBal.filter(s=>s.bal.available<=3&&s.bal.totalAlloc>0).length;
+  const low=allBal.filter(s=>s.bal.available>3&&s.bal.available<=7).length;
+  const famOut=allBal.filter(s=>s.fam>=FAMILY_LEAVE_DAYS).length;
 
-  const summaryHtml=`
-    <div style="display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap">
-      <div style="flex:1;min-width:100px;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem">
-        <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Total Staff</div>
-        <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:1.4rem;color:var(--ink)">${staff.length}</div>
-      </div>
-      <div style="flex:1;min-width:100px;background:rgba(192,57,58,0.07);border:1px solid rgba(192,57,58,0.2);border-radius:10px;padding:0.7rem 0.9rem">
-        <div style="font-size:0.6rem;color:var(--red);text-transform:uppercase;letter-spacing:0.08em">Critical (≤3 days)</div>
-        <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:1.4rem;color:var(--red)">${critical}</div>
-      </div>
-      <div style="flex:1;min-width:100px;background:rgba(232,184,75,0.10);border:1px solid rgba(232,184,75,0.3);border-radius:10px;padding:0.7rem 0.9rem">
-        <div style="font-size:0.6rem;color:#9A7020;text-transform:uppercase;letter-spacing:0.08em">Running Low (≤7)</div>
-        <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:1.4rem;color:#9A7020">${low}</div>
-      </div>
-      <div style="flex:1;min-width:100px;background:rgba(107,39,55,0.07);border:1px solid rgba(107,39,55,0.18);border-radius:10px;padding:0.7rem 0.9rem">
-        <div style="font-size:0.6rem;color:var(--burg);text-transform:uppercase;letter-spacing:0.08em">Family Used Up</div>
-        <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:1.4rem;color:var(--burg)">${famExhausted}</div>
-      </div>
-    </div>`;
+  const summary=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:0.5rem;margin-bottom:1rem">
+    <div class="stat cb"><div class="snum nb" style="font-size:1.3rem">${staff.length}</div><div class="slbl">Total Staff</div></div>
+    <div class="stat cr"><div class="snum nr" style="font-size:1.3rem">${critical}</div><div class="slbl">Critical ≤3d</div></div>
+    <div class="stat co"><div class="snum no" style="font-size:1.3rem">${low}</div><div class="slbl">Low ≤7d</div></div>
+    <div class="stat cg"><div class="snum ng" style="font-size:1.3rem">${famOut}</div><div class="slbl">Family Used Up</div></div>
+  </div>`;
 
-  const cardsHtml=divisions.map(div=>{
-    const divStaff=allBalances.filter(s=>(s.division||'Other')===div);
+  const cards=divisions.map(div=>{
+    const divStaff=allBal.filter(s=>(s.division||'Other')===div);
     if(!divStaff.length) return '';
     const staffCards=divStaff.map(s=>{
-      const total=ANNUAL_LEAVE_ALLOWANCE+(s.carryOver||0);
-      const pct=Math.min(100,Math.round(s.annTaken/total*100));
-      const rem=s.annRem;
-      const barCol=rem<=3?'#c0392b':rem<=7?'#b85c10':'#1a6a42';
-      const bgCol=rem<=3?'rgba(192,57,58,0.08)':rem<=7?'rgba(184,92,16,0.06)':'rgba(26,106,66,0.05)';
-      const borderCol=rem<=3?'rgba(192,57,58,0.25)':rem<=7?'rgba(184,92,16,0.2)':'rgba(26,106,66,0.15)';
-      const badge=rem<=3?`<span style="background:rgba(192,57,58,0.12);color:#c0392b;font-size:0.6rem;font-weight:800;padding:0.12rem 0.45rem;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em">⚠ Critical</span>`:
-                  rem<=7?`<span style="background:rgba(184,92,16,0.10);color:#b85c10;font-size:0.6rem;font-weight:800;padding:0.12rem 0.45rem;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em">Low</span>`:'';
-      // Family dots
-      const famDots=[0,1,2].map(i=>{
-        const used=i<s.famTaken;
-        return `<div style="width:10px;height:10px;border-radius:50%;background:${used?'var(--burg)':'var(--border)'};border:1.5px solid ${used?'var(--burg)':'var(--border)'}"></div>`;
-      }).join('');
+      const {available,accrued,usedAnnual,usedSick,adjustment,totalAlloc}=s.bal;
+      const famUsed=s.fam;
+      const famRem=Math.max(0,FAMILY_LEAVE_DAYS-famUsed);
+      const pct=totalAlloc>0?Math.min(100,Math.round(usedAnnual/totalAlloc*100)):0;
+      const barCol=available<=3?'#c0392b':available<=7?'#b85c10':'#1a6a42';
+      const bgCol=available<=3?'rgba(192,57,58,0.07)':available<=7?'rgba(184,92,16,0.05)':'rgba(26,106,66,0.04)';
+      const borderCol=available<=3?'rgba(192,57,58,0.2)':available<=7?'rgba(184,92,16,0.18)':'rgba(26,106,66,0.12)';
+      const badge=available<=3?`<span style="background:rgba(192,57,58,0.12);color:#c0392b;font-size:0.58rem;font-weight:800;padding:0.1rem 0.4rem;border-radius:20px">⚠ Critical</span>`:
+                  available<=7?`<span style="background:rgba(184,92,16,0.1);color:#b85c10;font-size:0.58rem;font-weight:800;padding:0.1rem 0.4rem;border-radius:20px">Low</span>`:'';
+      const famDots=[0,1,2].map(i=>`<div style="width:10px;height:10px;border-radius:50%;background:${i<famUsed?'var(--burg)':'var(--border)'};border:1.5px solid ${i<famUsed?'var(--burg)':'var(--border)'}"></div>`).join('');
+      const adjStr=adjustment!==0?`<span style="font-size:0.62rem;${adjustment>0?'color:var(--green)':'color:var(--red)'}">${adjustment>0?'+':''} ${adjustment}d adj</span>`:'';
+      return `<div style="background:${bgCol};border:1.5px solid ${borderCol};border-radius:12px;padding:0.85rem 1rem;display:flex;flex-direction:column;gap:0.5rem">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <div style="width:30px;height:30px;border-radius:50%;background:${DC[s.division]||'var(--burg)'};display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:700;color:#fff;flex-shrink:0">${s.name[0]}</div>
+            <div><div style="font-weight:700;font-size:0.88rem">${s.name}</div><div style="font-size:0.63rem;color:var(--muted)">${s.role||div}</div></div>
+          </div>
+          <div style="display:flex;gap:0.3rem;align-items:center">${badge}${canManage?`<button onclick="lvAdjustBalance('${s.name}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:0.15rem 0.45rem;font-size:0.65rem;cursor:pointer;color:var(--muted);font-family:inherit">⚙ Adjust</button>`:''}</div>
+        </div>
+        <!-- Annual leave bar -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.25rem">
+            <span style="font-size:0.63rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Annual Leave</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.75rem;font-weight:700;color:${barCol}">${available.toFixed(1)} days <span style="font-weight:400;color:var(--muted)">(${(available*LEAVE_DAY_HOURS).toFixed(1)}h) left</span></span>
+          </div>
+          <div class="lv-bal-bar"><div class="lv-bal-fill" style="width:${pct}%;background:${barCol}"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);margin-top:0.15rem">
+            <span>${usedAnnual.toFixed(1)} used</span>
+            <span>${adjStr} ${totalAlloc.toFixed(1)} total (${(accrued/1.5).toFixed(0)} months × 1.5)</span>
+          </div>
+        </div>
+        <!-- Family responsibility -->
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:0.63rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Family Responsibility</span>
+          <div style="display:flex;align-items:center;gap:4px">${famDots}<span style="font-size:0.63rem;color:var(--muted);margin-left:4px">${famRem} left</span></div>
+        </div>
+        ${usedSick>0?`<div style="font-size:0.65rem;color:var(--muted)">🤒 Sick leave used: <strong>${usedSick.toFixed(1)} days</strong></div>`:''}
+      </div>`;
+    }).join('');
+    return `<div style="font-size:0.63rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem">${div}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:0.65rem">${staffCards}</div>`;
+  }).join('');
+
+  // end of renderLeaveBalances — dummy var to close the old map
+  const _dummy=`<div style="display:flex;flex-direction:column;gap:0.5rem">
       return `<div style="background:${bgCol};border:1.5px solid ${borderCol};border-radius:12px;padding:0.9rem 1rem;display:flex;flex-direction:column;gap:0.5rem">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
           <div style="display:flex;align-items:center;gap:0.55rem">
@@ -7428,9 +7731,117 @@ function renderLeaveBalances(){
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.65rem">${staffCards}</div>`;
   }).join('');
 
-  el.innerHTML=summaryHtml+cardsHtml;
+  el.innerHTML=summary+cards;
 }
 
+// ── Manual balance adjustment ─────────────────────────────────────────────────
+async function lvAdjustBalance(staffName){
+  const b=lvGetBalance(staffName);
+  const adj=prompt(`Adjust leave balance for ${staffName}\n\nCurrent available: ${b.available.toFixed(1)} days\nTotal accrued: ${b.accrued.toFixed(1)} days\nManual adjustment so far: ${b.adjustment} days\n\nEnter adjustment (+/- days, e.g. +3 or -2):`);
+  if(adj===null) return;
+  const delta=parseFloat(adj);
+  if(isNaN(delta)||delta===0){ showToast('Invalid amount.','err'); return; }
+  const newAdj=(b.adjustment||0)+delta;
+  await SB.from('leave_balances').update({manual_adjustment:newAdj,updated_at:new Date().toISOString()}).eq('staff_name',staffName);
+  await SB.from('leave_accrual_log').insert({staff_name:staffName,accrual_month:new Date().toISOString().slice(0,7),
+    days_added:delta,balance_before:b.available,balance_after:b.available+delta,note:`Manual adjustment by ${CU?.name||'manager'}`});
+  if(lvBalances[staffName]) lvBalances[staffName].manual_adjustment=newAdj;
+  showToast(`${staffName} leave balance adjusted by ${delta>0?'+':''}${delta} days ✓`);
+  await logAudit('leave','Balance Adjusted',`${staffName}: ${delta>0?'+':''}${delta} days by ${CU?.name||'manager'}`);
+  renderLeaveBalances();
+}
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+function lvRpSetPeriod(p){
+  const now=new Date();
+  const from=document.getElementById('lvRpFrom'), to=document.getElementById('lvRpTo');
+  if(!from||!to) return;
+  if(p==='year'){ from.value=`${now.getFullYear()}-01-01`; to.value=`${now.getFullYear()}-12-31`; }
+  else if(p==='month'){ from.value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`; to.value=now.toISOString().slice(0,10); }
+}
+
+function lvRenderReports(){
+  const from=document.getElementById('lvRpFrom')?.value;
+  const to=document.getElementById('lvRpTo')?.value;
+  const el=document.getElementById('lvReportContent');
+  const expBtn=document.getElementById('lvExportBtn');
+  if(!el) return;
+  const staff=allActiveStaff();
+  const filtered=leaveData.filter(l=>l.status==='Approved'&&(!from||l.start_date>=from)&&(!to||l.end_date<=to));
+
+  // Build per-staff report
+  const rows=staff.map(s=>{
+    const myLeave=filtered.filter(l=>l.staff_name===s.name);
+    const annual=myLeave.filter(l=>l.leave_type==='Annual').reduce((n,l)=>n+leaveDays(l),0);
+    const family=myLeave.filter(l=>['Family Responsibility','Family'].includes(l.leave_type)).reduce((n,l)=>n+leaveDays(l),0);
+    const sick=myLeave.filter(l=>['Sick','Sick — Unplanned'].includes(l.leave_type)).reduce((n,l)=>n+leaveDays(l),0);
+    const unpaid=myLeave.filter(l=>l.leave_type==='Unpaid').reduce((n,l)=>n+leaveDays(l),0);
+    const total=annual+family+sick+unpaid;
+    const bal=lvGetBalance(s.name);
+    return {name:s.name,division:s.division||'',annual,family,sick,unpaid,total,available:bal.available};
+  }).filter(r=>r.total>0||true); // show all staff
+
+  lvReportData=rows;
+  if(expBtn) expBtn.style.display='block';
+
+  const totals={annual:rows.reduce((n,r)=>n+r.annual,0),family:rows.reduce((n,r)=>n+r.family,0),
+    sick:rows.reduce((n,r)=>n+r.sick,0),unpaid:rows.reduce((n,r)=>n+r.unpaid,0),total:rows.reduce((n,r)=>n+r.total,0)};
+
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:0.5rem;margin-bottom:1rem">
+      <div class="stat cg"><div class="snum ng" style="font-size:1.2rem">${totals.annual}</div><div class="slbl">Annual Days</div></div>
+      <div class="stat co"><div class="snum no" style="font-size:1.2rem">${totals.family}</div><div class="slbl">Family Days</div></div>
+      <div class="stat cr"><div class="snum nr" style="font-size:1.2rem">${totals.sick}</div><div class="slbl">Sick Days</div></div>
+      <div class="stat cb"><div class="snum nb" style="font-size:1.2rem">${totals.total}</div><div class="slbl">Total Days</div></div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="overflow-x:auto">
+      <table class="lv-tbl">
+        <thead><tr>
+          <th>Employee</th><th>Department</th><th>Annual</th><th>Family</th><th>Sick</th><th>Unpaid</th><th>Total</th><th>Balance Left</th>
+        </tr></thead>
+        <tbody>${rows.map(r=>`<tr>
+          <td style="font-weight:700">${r.name}</td>
+          <td style="color:var(--muted)">${r.division}</td>
+          <td class="r" style="color:#1a6a42;font-weight:600">${r.annual}</td>
+          <td class="r" style="color:#6B2737">${r.family}</td>
+          <td class="r" style="color:#c0392b">${r.sick}</td>
+          <td class="r" style="color:var(--muted)">${r.unpaid}</td>
+          <td class="r" style="font-weight:700">${r.total}</td>
+          <td class="r" style="font-family:'DM Mono',monospace;color:${r.available<=3?'#c0392b':r.available<=7?'#b85c10':'#1a6a42'};font-weight:700">${r.available.toFixed(1)}</td>
+        </tr>`).join('')}
+        <tr style="background:var(--surface);font-weight:700">
+          <td colspan="2">TOTAL</td>
+          <td class="r">${totals.annual}</td>
+          <td class="r">${totals.family}</td>
+          <td class="r">${totals.sick}</td>
+          <td class="r">${totals.unpaid}</td>
+          <td class="r">${totals.total}</td>
+          <td class="r">${rows.reduce((n,r)=>n+r.available,0).toFixed(1)}</td>
+        </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>`;
+}
+
+async function lvExportReport(){
+  if(!lvReportData.length){ showToast('Run a report first.','err'); return; }
+  if(!window.XLSX){ showToast('Excel library not loaded.','err'); return; }
+  const from=document.getElementById('lvRpFrom')?.value||'';
+  const to=document.getElementById('lvRpTo')?.value||'';
+  const ws=XLSX.utils.json_to_sheet(lvReportData.map(r=>({
+    'Employee':r.name,'Department':r.division,'Annual Days':r.annual,'Family Days':r.family,
+    'Sick Days':r.sick,'Unpaid Days':r.unpaid,'Total Days':r.total,'Balance Remaining':r.available.toFixed(1),
+    'Balance (Hours)':(r.available*LEAVE_DAY_HOURS).toFixed(1)
+  })));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,'Leave Report',ws);
+  XLSX.writeFile(wb,`DieAkker_Leave_${from}_to_${to}.xlsx`);
+  showToast('Excel report downloaded ✓');
+}
+
+// ── Leave request modal ───────────────────────────────────────────────────────
 function filterLeave(n,b){leaveFilter=n;renderLeave();}
 function openLeaveModal(nm){
   const all=allActiveStaff();document.getElementById('leaveStaff').innerHTML=all.map(s=>`<option value="${s.name}" ${nm===s.name?'selected':''}>${s.name}</option>`).join('');
@@ -7452,27 +7863,38 @@ function editLeave(id){
 
 async function saveLeave(){
   const editId=document.getElementById('leaveEditId').value;
-  const staff=document.getElementById('leaveStaff').value,type=document.getElementById('leaveType').value,start=document.getElementById('leaveStart').value,end=document.getElementById('leaveEnd').value,status=document.getElementById('leaveStatus').value,notes=document.getElementById('leaveNotes').value.trim();
+  const staff=document.getElementById('leaveStaff').value,type=document.getElementById('leaveType').value,
+    start=document.getElementById('leaveStart').value,end=document.getElementById('leaveEnd').value,
+    status=document.getElementById('leaveStatus').value,notes=document.getElementById('leaveNotes').value.trim();
   if(!staff){showFieldError('leaveStaff','Select a staff member.');return;}else showFieldError('leaveStaff','');
   if(!start){showFieldError('leaveStart','Start date is required.');return;}else showFieldError('leaveStart','');
   if(!end){showFieldError('leaveEnd','End date is required.');return;}else showFieldError('leaveEnd','');
   if(new Date(end)<new Date(start)){showFieldError('leaveEnd','End date must be after start date.');return;}
   else showFieldError('leaveEnd','');
-  // Warn if date range looks suspiciously long (>30 days)
-  const dayCount=Math.round((new Date(end)-new Date(start))/(1000*60*60*24))+1;
-  if(dayCount>30&&!confirm(`This leave spans ${dayCount} days — is that correct?`))return;
+  const tmpRec={start_date:start,end_date:end};
+  const days=leaveDays(tmpRec);
+  if(days>30&&!confirm(`This leave spans ${days} working days — is that correct?`)) return;
+  // Check balance for Annual leave
+  if(type==='Annual'&&!editId){
+    const bal=lvGetBalance(staff);
+    if(bal.available<days&&bal.totalAlloc>0){
+      if(!confirm(`⚠️ ${staff} only has ${bal.available.toFixed(1)} days available but ${days} days requested.\nApprove anyway (negative balance)?`)) return;
+    }
+  }
   setSyncStatus('syncing');
   let error;
+  const rec={staff_name:staff,leave_type:type,start_date:start,end_date:end,status,notes,days_requested:days};
   if(editId){
-    ({error}=await SB.from('leave_records').update({staff_name:staff,leave_type:type,start_date:start,end_date:end,status,notes}).eq('id',editId));
+    ({error}=await SB.from('leave_records').update(rec).eq('id',editId));
   } else {
-    ({error}=await SB.from('leave_records').insert({staff_name:staff,leave_type:type,start_date:start,end_date:end,status,notes}));
+    ({error}=await SB.from('leave_records').insert(rec));
   }
   if(error){setSyncStatus('err');showToast('Error saving leave.',true);return;}
   closeMo('moLeave');
   const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});
   leaveData=leaveR.data||[];renderLeave();setSyncStatus('ok');
-  showToast(editId?`Leave updated for ${staff} ✓`:`Leave recorded for ${staff} ✓`);
+  showToast(editId?`Leave updated for ${staff} ✓`:`Leave recorded for ${staff} (${days} days) ✓`);
+  if(!editId) await logAudit('leave','Leave Request',`${staff} — ${type} from ${start} to ${end} (${days} days)`);
 }
 async function deleteLeave(id){
   if(!confirm('Delete this leave record?'))return;
@@ -7480,18 +7902,58 @@ async function deleteLeave(id){
 }
 
 async function approveLeave(id){
-  if(!confirm('Approve this leave request? It will automatically mark those days as leave on the shift roster.'))return;
+  if(!confirm('Approve this leave request?')) return;
   setSyncStatus('syncing');
-  const{error}=await SB.from('leave_records').update({status:'Approved'}).eq('id',id);
+  const rec=leaveData.find(l=>l.id===id);
+  const{error}=await SB.from('leave_records').update({
+    status:'Approved',approved_by:CU?.name||'manager',approved_at:new Date().toISOString()
+  }).eq('id',id);
   if(error){setSyncStatus('err');showToast('Error approving leave.',true);return;}
+  // Update leave_balances if it's an annual leave deduction
+  if(rec){
+    const days=leaveDays(rec);
+    const cfg=LEAVE_CFG[rec.leave_type]||{};
+    const b=lvBalances[rec.staff_name];
+    if(b){
+      if(rec.leave_type==='Annual'){
+        const newUsed=(parseFloat(b.used_annual)||0)+days;
+        await SB.from('leave_balances').update({used_annual:newUsed,updated_at:new Date().toISOString()}).eq('staff_name',rec.staff_name).catch(()=>{});
+        lvBalances[rec.staff_name]={...b,used_annual:newUsed};
+      } else if(['Sick','Sick — Unplanned'].includes(rec.leave_type)){
+        const newSick=(parseFloat(b.used_sick)||0)+days;
+        await SB.from('leave_balances').update({used_sick:newSick,updated_at:new Date().toISOString()}).eq('staff_name',rec.staff_name).catch(()=>{});
+        lvBalances[rec.staff_name]={...b,used_sick:newSick};
+      } else if(['Family Responsibility','Family'].includes(rec.leave_type)){
+        const newFam=(parseFloat(b.used_family)||0)+days;
+        await SB.from('leave_balances').update({used_family:newFam,updated_at:new Date().toISOString()}).eq('staff_name',rec.staff_name).catch(()=>{});
+        lvBalances[rec.staff_name]={...b,used_family:newFam};
+      } else if(rec.leave_type==='Unpaid'){
+        const newUnpaid=(parseFloat(b.used_unpaid)||0)+days;
+        await SB.from('leave_balances').update({used_unpaid:newUnpaid,updated_at:new Date().toISOString()}).eq('staff_name',rec.staff_name).catch(()=>{});
+        lvBalances[rec.staff_name]={...b,used_unpaid:newUnpaid};
+      }
+    }
+  }
   const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});
   leaveData=leaveR.data||[];
   renderLeave();
-  // Refresh roster view if it's open so leave days appear immediately
   if(document.getElementById('p-roster')?.classList.contains('act')) renderRGrid();
   setSyncStatus('ok');
+  showToast(`✅ Leave approved for ${rec?.staff_name||'staff member'} · balance updated ✓`);
+  await logAudit('leave','Leave Approved',`${rec?.staff_name} — ${rec?.leave_type} ${rec?.start_date} to ${rec?.end_date}`);
+}
+
+async function lvRejectWithNote(id){
+  const note=prompt('Rejection reason (optional):');
+  if(note===null) return;
+  await SB.from('leave_records').update({status:'Rejected',manager_notes:note||null}).eq('id',id);
+  const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});
+  leaveData=leaveR.data||[];
+  renderLeave();
+  if(document.getElementById('p-roster')?.classList.contains('act')) renderRGrid();
+  showToast('Leave request rejected.');
   const rec=leaveData.find(l=>l.id===id);
-  showToast(`✅ Leave approved for ${rec?.staff_name||'staff member'} — roster updated ✓`);
+  if(rec) await logAudit('leave','Leave Rejected',`${rec.staff_name} — ${rec.leave_type}`);
 }
 
 async function rejectLeave(id){
