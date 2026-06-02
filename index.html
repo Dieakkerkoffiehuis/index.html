@@ -7786,18 +7786,38 @@ function lvRenderReports(){
 
 async function lvExportReport(){
   if(!lvReportData.length){ showToast('Run a report first.','err'); return; }
-  if(!window.XLSX){ showToast('Excel library not loaded.','err'); return; }
-  const from=document.getElementById('lvRpFrom')?.value||'';
-  const to=document.getElementById('lvRpTo')?.value||'';
-  const ws=XLSX.utils.json_to_sheet(lvReportData.map(r=>({
-    'Employee':r.name,'Department':r.division,'Annual Days':r.annual,'Family Days':r.family,
-    'Sick Days':r.sick,'Unpaid Days':r.unpaid,'Total Days':r.total,'Balance Remaining':r.available.toFixed(1),
-    'Balance (Hours)':(r.available*LEAVE_DAY_HOURS).toFixed(1)
-  })));
+  if(!window.XLSX){ showToast('Excel library not loaded — try refreshing.','err'); return; }
+  const from=document.getElementById('lvRpFrom')?.value||new Date().getFullYear()+'-01-01';
+  const to=document.getElementById('lvRpTo')?.value||new Date().toISOString().slice(0,10);
+  const rows=lvReportData.map(r=>({
+    'Employee':r.name,
+    'Department':r.division,
+    'Annual Days Taken':r.annual,
+    'Family Days Taken':r.family,
+    'Sick Days Taken':r.sick,
+    'Unpaid Days Taken':r.unpaid,
+    'Total Days Taken':r.total,
+    'Balance Remaining (Days)':parseFloat(r.available.toFixed(1)),
+    'Balance Remaining (Hours)':parseFloat((r.available*LEAVE_DAY_HOURS).toFixed(1))
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  // Auto-width columns
+  const cols=Object.keys(rows[0]||{}).map(k=>({wch:Math.max(k.length,12)}));
+  ws['!cols']=cols;
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,'Leave Report',ws);
-  XLSX.writeFile(wb,`DieAkker_Leave_${from}_to_${to}.xlsx`);
-  showToast('Excel report downloaded ✓');
+  // Browser-safe download using Blob
+  const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`DieAkker_Leave_${from}_to_${to}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Leave report exported ✓');
 }
 
 // ── Leave request modal ───────────────────────────────────────────────────────
