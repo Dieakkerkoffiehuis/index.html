@@ -1220,6 +1220,7 @@ select option{background:var(--white);color:var(--ink);}
           <button class="ct" onclick="switchReport('value',this)">💰 Stock Value</button>
           <button class="ct" onclick="switchReport('losses',this)">🔴 Losses</button>
           <button class="ct" onclick="switchReport('waiters',this)">👥 Waiter Performance</button>
+          <button class="ct" onclick="switchReport('sales',this)">💵 Sales</button>
         </div>
 
         <!-- VARIANCE TAB -->
@@ -1303,6 +1304,12 @@ select option{background:var(--white);color:var(--ink);}
           <div class="stitle">KPI Correlation</div>
           <div class="card" style="padding:0" id="wpKpiTable"></div>
         </div>
+
+        <!-- SALES TAB (Reports) -->
+        <div id="rp-sales" style="display:none">
+          <div id="rpSalesChartWrap"></div>
+        </div>
+
       </div>
 
       <!-- ANALYTICS -->
@@ -1333,6 +1340,7 @@ select option{background:var(--white);color:var(--ink);}
           <button class="ct" onclick="anSwitch('value',this)">💰 Stock Value</button>
           <button class="ct" onclick="anSwitch('reorder',this)">⏰ Reorder</button>
           <button class="ct" onclick="anSwitch('compare',this)">📅 Day Compare</button>
+          <button class="ct" onclick="anSwitch('sales',this)">💵 Sales</button>
         </div>
 
         <!-- USAGE CHART -->
@@ -1389,6 +1397,12 @@ select option{background:var(--white);color:var(--ink);}
           </div>
           <div id="anCompareTable"></div>
         </div>
+
+        <!-- SALES TAB (Analytics) -->
+        <div id="an-sales" style="display:none">
+          <div id="anSalesChartWrap"></div>
+        </div>
+
       </div>
 
       <!-- RECIPE COSTING -->
@@ -3104,6 +3118,136 @@ function renderDash(){
       });
       act.innerHTML='<div class="tw"><table class="tbl"><thead><tr><th>Time</th><th>Action</th><th>By</th><th>Status</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
     }).catch(()=>{}); // Silently fail if table doesn't exist yet
+}
+
+// ═══════════════════════════════════════════
+// PANEL SALES CHART (Reports + Analytics)
+// ═══════════════════════════════════════════
+let _panelCharts = {}; // keyed by panel id
+
+async function renderPanelSalesChart(panel){
+  // Determine date range from each panel's controls
+  let fromStr, toStr;
+  const today = new Date().toISOString().slice(0,10);
+  if(panel==='reports'){
+    fromStr = document.getElementById('rpFrom')?.value || (() => { const d=new Date(); d.setDate(d.getDate()-29); return d.toISOString().slice(0,10); })();
+    toStr   = document.getElementById('rpTo')?.value   || today;
+  } else {
+    // Analytics uses anPeriodDays
+    const d=new Date(); d.setDate(d.getDate()-(anPeriodDays-1));
+    fromStr = d.toISOString().slice(0,10);
+    toStr   = today;
+  }
+
+  const wrapId   = panel==='reports' ? 'rpSalesChartWrap' : 'anSalesChartWrap';
+  const chartId  = panel+'-sales-canvas';
+  const wrap     = document.getElementById(wrapId);
+  if(!wrap) return;
+
+  // Skeleton while loading
+  wrap.innerHTML = `
+    <div class="card" style="padding:1rem 1.1rem 0.8rem;margin-bottom:0.8rem">
+      <div class="skel skel-title" style="width:40%;margin-bottom:1rem"></div>
+      <div class="skel" style="height:200px;border-radius:8px"></div>
+    </div>`;
+
+  try{
+    const {data} = await SB.from('cash_up').select('date,shift,waiters').gte('date',fromStr).lte('date',toStr).order('date');
+
+    // Aggregate by date and by shift
+    const allDates = {};
+    const shiftTotals = {Morning:{}, Afternoon:{}, Evening:{}};
+    for(let d=new Date(fromStr+'T12:00:00'); d.toISOString().slice(0,10)<=toStr; d.setDate(d.getDate()+1)){
+      const k = d.toISOString().slice(0,10);
+      allDates[k] = 0;
+      Object.keys(shiftTotals).forEach(s=>shiftTotals[s][k]=0);
+    }
+    (data||[]).forEach(r=>{
+      const daySales = (r.waiters||[]).reduce((s,w)=>s+(w.vk||0),0);
+      if(allDates[r.date]!==undefined) allDates[r.date] += daySales;
+      const sh = r.shift||'Morning';
+      if(shiftTotals[sh] && shiftTotals[sh][r.date]!==undefined) shiftTotals[sh][r.date] += daySales;
+    });
+
+    const labels = Object.keys(allDates).sort();
+    const totalVals = labels.map(d=>allDates[d]);
+    const total = totalVals.reduce((a,b)=>a+b,0);
+    const daysWithData = totalVals.filter(v=>v>0).length;
+    const avg = daysWithData>0 ? total/daysWithData : 0;
+    const best = Math.max(0,...totalVals);
+    const bestDate = best>0 ? labels[totalVals.indexOf(best)] : null;
+
+    const fmtLabel = d => {
+      const dt = new Date(d+'T12:00:00');
+      return labels.length<=14
+        ? dt.toLocaleDateString('en-ZA',{weekday:'short',day:'numeric'})
+        : dt.toLocaleDateString('en-ZA',{day:'numeric',month:'short'});
+    };
+    const fmtR = v => `R ${Math.round(v).toLocaleString('en-ZA')}`;
+
+    wrap.innerHTML = `
+      <div class="card" style="padding:1rem 1.1rem 0.8rem;margin-bottom:0.8rem">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem">
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.15rem;color:var(--burg)">Daily Sales</div>
+            <div style="font-size:0.7rem;color:var(--muted)">${fmtLabel(fromStr)} – ${fmtLabel(toStr)} · ${daysWithData} days with data</div>
+          </div>
+          <div style="display:flex;gap:0.8rem;flex-wrap:wrap">
+            <div style="text-align:right"><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">Total</div><div style="font-family:'DM Mono',monospace;font-weight:600;font-size:0.95rem">${fmtR(total)}</div></div>
+            <div style="text-align:right"><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">Daily Avg</div><div style="font-family:'DM Mono',monospace;font-weight:600;font-size:0.95rem">${daysWithData>0?fmtR(avg):'—'}</div></div>
+            <div style="text-align:right"><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">Best Day</div><div style="font-family:'DM Mono',monospace;font-weight:600;font-size:0.95rem;color:var(--green)">${best>0?fmtR(best):'—'}</div></div>
+          </div>
+        </div>
+        <div style="position:relative;height:200px"><canvas id="${chartId}"></canvas></div>
+        <div style="display:flex;gap:1.2rem;margin-top:0.8rem;padding-top:0.6rem;border-top:1px solid var(--border-s);font-size:0.72rem;flex-wrap:wrap">
+          <span><span style="display:inline-block;width:10px;height:10px;background:#6B2737;border-radius:2px;margin-right:4px"></span>Morning</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#b85c10;border-radius:2px;margin-right:4px"></span>Afternoon</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#C9A84C;border-radius:2px;margin-right:4px"></span>Evening</span>
+        </div>
+      </div>`;
+
+    if(_panelCharts[panel]){ _panelCharts[panel].destroy(); delete _panelCharts[panel]; }
+    const ctx = document.getElementById(chartId)?.getContext('2d');
+    if(!ctx) return;
+
+    const gradBurg = ctx.createLinearGradient(0,0,0,180);
+    gradBurg.addColorStop(0,'rgba(107,39,55,0.18)'); gradBurg.addColorStop(1,'rgba(107,39,55,0)');
+    const gradAmb  = ctx.createLinearGradient(0,0,0,180);
+    gradAmb.addColorStop(0,'rgba(184,92,16,0.15)'); gradAmb.addColorStop(1,'rgba(184,92,16,0)');
+    const gradGold = ctx.createLinearGradient(0,0,0,180);
+    gradGold.addColorStop(0,'rgba(201,168,76,0.18)'); gradGold.addColorStop(1,'rgba(201,168,76,0)');
+
+    _panelCharts[panel] = new Chart(ctx, {
+      type:'bar',
+      data:{
+        labels: labels.map(fmtLabel),
+        datasets:[
+          {label:'Morning',  data:labels.map(d=>shiftTotals.Morning[d]),   backgroundColor:'rgba(107,39,55,0.75)',  borderRadius:3, borderSkipped:false},
+          {label:'Afternoon',data:labels.map(d=>shiftTotals.Afternoon[d]), backgroundColor:'rgba(184,92,16,0.75)', borderRadius:3, borderSkipped:false},
+          {label:'Evening',  data:labels.map(d=>shiftTotals.Evening[d]),   backgroundColor:'rgba(201,168,76,0.80)', borderRadius:3, borderSkipped:false},
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            backgroundColor:'#3D2B22', titleColor:'#F5EDD6', bodyColor:'rgba(245,237,214,0.8)',
+            padding:10, cornerRadius:8,
+            callbacks:{ label: c => ` ${c.dataset.label}: R ${c.parsed.y.toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2})}` }
+          }
+        },
+        scales:{
+          x:{stacked:true, grid:{display:false}, ticks:{color:'#8B7060',font:{size:10,family:"'DM Sans',sans-serif"},maxRotation:0,autoSkip:true,maxTicksLimit:12}},
+          y:{stacked:true, grid:{color:'rgba(74,26,39,0.07)',drawBorder:false},
+            ticks:{color:'#8B7060',font:{size:10,family:"'DM Sans',sans-serif"},
+              callback:v=>v>=1000?'R '+(v/1000).toFixed(0)+'k':'R '+v}, beginAtZero:true}
+        }
+      }
+    });
+  }catch(e){
+    if(wrap) wrap.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--red)">Could not load sales data.</div>';
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -8987,7 +9131,7 @@ let rpHistoryData=[];
 
 function switchReport(tab,btn){
   activeReport=tab;
-  ['variance','trends','value','losses','waiters'].forEach(t=>{
+  ['variance','trends','value','losses','waiters','sales'].forEach(t=>{
     const el=document.getElementById('rp-'+t);
     if(el) el.style.display=t===tab?'block':'none';
   });
@@ -8997,6 +9141,7 @@ function switchReport(tab,btn){
   if(tab==='value') renderValueReport();
   if(tab==='losses') renderLossRanking();
   if(tab==='waiters'){ if(!document.getElementById('wpFrom').value) wpSetPeriod('week',document.getElementById('wpPdWeek')); loadWaiterPerf(); }
+  if(tab==='sales') renderPanelSalesChart('reports');
 }
 
 function rpSetPeriod(p){
@@ -9057,6 +9202,7 @@ async function loadReports(){
     if(activeReport==='trends') renderTrend();
     if(activeReport==='value') renderValueReport();
     if(activeReport==='losses') renderLossRanking();
+    if(activeReport==='sales') renderPanelSalesChart('reports');
 
     // Populate trend item selector
     const items=[...new Set(rpHistoryData.map(h=>h.item_name))].sort();
@@ -9497,13 +9643,14 @@ function anSetPeriod(days,btn){
 
 function anSwitch(tab,btn){
   anActiveTab=tab;
-  ['usage','waste','value','reorder','compare'].forEach(t=>{
+  ['usage','waste','value','reorder','compare','sales'].forEach(t=>{
     const el=document.getElementById('an-'+t);
     if(el) el.style.display=t===tab?'block':'none';
   });
   document.querySelectorAll('#anTabs .ct').forEach(b=>b.classList.remove('act'));
   if(btn) btn.classList.add('act');
-  renderAnTab();
+  if(tab==='sales') renderPanelSalesChart('analytics');
+  else renderAnTab();
 }
 
 async function loadAnalytics(){
