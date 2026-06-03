@@ -7862,13 +7862,14 @@ async function saveLeave(){
   }
   setSyncStatus('syncing');
   let error;
-  const rec={staff_name:staff,leave_type:type,start_date:start,end_date:end,status,notes,days_requested:days};
+  // Base record — only columns guaranteed to exist in leave_records
+  const rec={staff_name:staff,leave_type:type,start_date:start,end_date:end,status,notes};
   if(editId){
     ({error}=await SB.from('leave_records').update(rec).eq('id',editId));
   } else {
     ({error}=await SB.from('leave_records').insert(rec));
   }
-  if(error){setSyncStatus('err');showToast('Error saving leave.',true);return;}
+  if(error){setSyncStatus('err');showToast(`Error saving leave: ${error.message||'check Supabase connection'}`,true);return;}
   closeMo('moLeave');
   const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});
   leaveData=leaveR.data||[];renderLeave();setSyncStatus('ok');
@@ -7884,9 +7885,7 @@ async function approveLeave(id){
   if(!confirm('Approve this leave request?')) return;
   setSyncStatus('syncing');
   const rec=leaveData.find(l=>l.id===id);
-  const{error}=await SB.from('leave_records').update({
-    status:'Approved',approved_by:CU?.name||'manager',approved_at:new Date().toISOString()
-  }).eq('id',id);
+  const{error}=await SB.from('leave_records').update({status:'Approved'}).eq('id',id);
   if(error){setSyncStatus('err');showToast('Error approving leave.',true);return;}
   // Update leave_balances if it's an annual leave deduction
   if(rec){
