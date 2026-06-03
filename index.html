@@ -5528,14 +5528,18 @@ function cuLoadScheduledWaiters(){
       }).join('');
   }
 
-  // Auto-add scheduled waiters who aren't in the list yet, tagged with their shift
-  if(scheduled.length && cuD.waiters.length===0){
+  // Always add scheduled waiters who aren't already in the list
+  // (removed the cuD.waiters.length===0 guard — that was causing scheduled
+  //  waiters to disappear after saving one waiter and reopening)
+  if(scheduled.length){
+    let added=false;
     scheduled.forEach(name=>{
       if(!cuD.waiters.find(w=>w.name===name)){
         cuD.waiters.push({name,shift:shift,vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0});
+        added=true;
       }
     });
-    renderCUCards(); updCUTots();
+    if(added){ renderCUCards(); updCUTots(); }
   }
 }
 
@@ -7291,13 +7295,25 @@ function leaveDays(l){
 // ── Leave balance from persistent leave_balances table ──────────────────────
 function lvGetBalance(staffName){
   const b=lvBalances[staffName];
-  if(!b) return {available:0,accrued:0,usedAnnual:0,usedFamily:0,usedSick:0,usedUnpaid:0,adjustment:0,totalAlloc:0};
+  const yr=String(new Date().getFullYear());
+  // Always compute used days from actual leave_records — more accurate than the
+  // stored used_annual which only updates through the in-app approval flow.
+  const usedAnnual=leaveData.filter(l=>
+    l.staff_name===staffName && l.status==='Approved' &&
+    l.leave_type==='Annual' && (l.start_date||'').startsWith(yr)
+  ).reduce((s,l)=>s+leaveDays(l),0);
+  const usedSick=leaveData.filter(l=>
+    l.staff_name===staffName && l.status==='Approved' &&
+    ['Sick','Sick — Unplanned'].includes(l.leave_type) && (l.start_date||'').startsWith(yr)
+  ).reduce((s,l)=>s+leaveDays(l),0);
+  const usedUnpaid=leaveData.filter(l=>
+    l.staff_name===staffName && l.status==='Approved' &&
+    l.leave_type==='Unpaid' && (l.start_date||'').startsWith(yr)
+  ).reduce((s,l)=>s+leaveDays(l),0);
+  if(!b) return {available:0,accrued:0,usedAnnual,usedFamily:0,usedSick,usedUnpaid,adjustment:0,totalAlloc:0};
   const accrued=parseFloat(b.accrued_days||0);
   const adj=parseFloat(b.manual_adjustment||0);
-  const usedAnnual=parseFloat(b.used_annual||0);
   const usedFamily=parseFloat(b.used_family||0);
-  const usedSick=parseFloat(b.used_sick||0);
-  const usedUnpaid=parseFloat(b.used_unpaid||0);
   const totalAlloc=accrued+adj;
   const available=Math.max(0,totalAlloc-usedAnnual);
   return {available,accrued,usedAnnual,usedFamily,usedSick,usedUnpaid,adjustment:adj,totalAlloc};
