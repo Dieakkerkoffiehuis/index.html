@@ -637,6 +637,12 @@ select option{background:var(--white);color:var(--ink);}
   font-size:0.55rem;font-weight:800;min-width:16px;height:16px;border-radius:8px;
   padding:0 3px;display:flex;align-items:center;justify-content:center;}
 
+/* ── LEAVE POLICY ── */
+.lv-pol-row{display:flex;justify-content:space-between;align-items:center;padding:0.6rem 1rem;border-bottom:1px solid var(--border-s);font-size:0.82rem;}
+.lv-pol-row:last-child{border-bottom:none;}
+.lv-pol-row span{color:var(--muted);}
+.lv-pol-row strong{color:var(--ink);font-weight:700;}
+
 /* ── DASHBOARD CHART ── */
 .dash-period-btn{font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:600;padding:0.25rem 0.65rem;border:1.5px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s;}
 .dash-period-btn.act{background:var(--burg);border-color:var(--burg);color:#fff;}
@@ -1915,6 +1921,7 @@ select option{background:var(--white);color:var(--ink);}
             <button class="lvtab" id="lvtab-calendar" onclick="switchLeaveTab('calendar')">📅 Calendar</button>
             <button class="lvtab" id="lvtab-balances" onclick="switchLeaveTab('balances')">💳 Balances</button>
             <button class="lvtab" id="lvtab-reports" onclick="switchLeaveTab('reports')">📈 Reports</button>
+          <button class="lvtab" id="lvtab-policy" onclick="switchLeaveTab('policy')">📋 Policy</button>
           </div>
           <button class="btn bp bsm" id="recordLeaveBtn" onclick="openLeaveModal(null)">+ Request Leave</button>
         </div>
@@ -1993,6 +2000,79 @@ select option{background:var(--white);color:var(--ink);}
           <div id="lvReportContent"></div>
           <button class="btn bs bsm" id="lvExportBtn" style="display:none;margin-top:0.8rem;width:100%" onclick="lvExportReport()">📥 Export to Excel</button>
         </div>
+
+        <!-- POLICY TAB -->
+        <div id="leaveTabPolicy" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+
+            <!-- Annual Leave -->
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="padding:0.85rem 1rem;background:rgba(26,106,66,0.06);border-bottom:1px solid var(--border)">
+                <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.05rem;color:#1a6a42">🏖️ Annual Leave</div>
+              </div>
+              <div id="lvPolicyAnnual">
+                <div class="lv-pol-row"><span>Allocation</span><strong>21 days per year</strong></div>
+                <div class="lv-pol-row"><span>Accrual rate</span><strong>1.5 days per month</strong></div>
+                <div class="lv-pol-row"><span>1 day equals</span><strong>7.5 hours</strong></div>
+                <div class="lv-pol-row"><span>Carry-over deadline</span><strong>Use by 30 June</strong></div>
+                <div class="lv-pol-row"><span>Payout on resignation</span><strong>Full balance owed</strong></div>
+                <div class="lv-pol-row"><span>Advance notice required</span><strong>Minimum 7 days</strong></div>
+              </div>
+            </div>
+
+            <!-- Sick Leave -->
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="padding:0.85rem 1rem;background:rgba(192,57,58,0.06);border-bottom:1px solid var(--border)">
+                <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.05rem;color:#c0392b">🤒 Sick Leave</div>
+              </div>
+              <div class="lv-pol-row"><span>Entitlement</span><strong>30 days per 3-year cycle</strong></div>
+              <div class="lv-pol-row"><span>Medical certificate</span><strong>After 2 consecutive days</strong></div>
+              <div class="lv-pol-row"><span>Unplanned sick</span><strong>Deducted from sick balance</strong></div>
+              <div class="lv-pol-row"><span>After balance exhausted</span><strong>Unpaid leave applies</strong></div>
+            </div>
+
+            <!-- Family Responsibility -->
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="padding:0.85rem 1rem;background:rgba(107,39,55,0.06);border-bottom:1px solid var(--border)">
+                <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.05rem;color:var(--burg)">👨‍👩‍👧 Family Responsibility</div>
+              </div>
+              <div class="lv-pol-row"><span>Entitlement</span><strong>3 days per year</strong></div>
+              <div class="lv-pol-row"><span>Valid for</span><strong>Child illness, family death, births</strong></div>
+              <div class="lv-pol-row"><span>Does not carry over</span><strong>Resets 1 January</strong></div>
+              <div class="lv-pol-row"><span>Supporting document</span><strong>May be requested</strong></div>
+            </div>
+
+            <!-- Approval Rules -->
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="padding:0.85rem 1rem;background:rgba(201,168,76,0.10);border-bottom:1px solid var(--border)">
+                <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.05rem;color:#9A7020">⚡ Approval Rules</div>
+              </div>
+              <div class="lv-pol-row"><span>Peak season blackout</span><strong>15 Dec – 15 Jan</strong></div>
+              <div class="lv-pol-row"><span>Min Kitchen per shift</span><strong>2 staff on duty</strong></div>
+              <div class="lv-pol-row"><span>Min Floor per shift</span><strong>2 waiters on duty</strong></div>
+              <div class="lv-pol-row"><span>Max overlap (same role)</span><strong>1 person at a time</strong></div>
+            </div>
+          </div>
+
+          <!-- Per-person balance summary from Excel -->
+          <div class="stitle">2026 Leave Balances — From Register</div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="padding:0.6rem 1rem;background:var(--surface);border-bottom:1px solid var(--border);font-size:0.72rem;color:var(--muted);display:flex;gap:1rem;flex-wrap:wrap">
+              <span>📅 Based on Akker.leave register · 1 day = 7.5 hours · Annual allocation: 21 days</span>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="lv-tbl">
+                <thead><tr>
+                  <th>Staff Member</th><th>Section</th>
+                  <th>Annual Taken</th><th>Annual Left</th><th>Hours Left</th>
+                  <th>Family Taken</th><th>Family Left</th>
+                </tr></thead>
+                <tbody id="lvPolicyBalanceTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- KPI REVIEWS -->
@@ -5528,10 +5608,10 @@ function cuLoadScheduledWaiters(){
       }).join('');
   }
 
-  // Always add scheduled waiters who aren't already in the list
-  // (removed the cuD.waiters.length===0 guard — that was causing scheduled
-  //  waiters to disappear after saving one waiter and reopening)
-  if(scheduled.length){
+  // Auto-add scheduled waiters for THIS shift only if no waiters for this shift exist yet.
+  // This prevents overwriting other shifts' saved data with blank auto-populated entries.
+  const alreadyThisShift = cuD.waiters.filter(w => (w.shift||shift) === shift);
+  if(scheduled.length && alreadyThisShift.length === 0){
     let added=false;
     scheduled.forEach(name=>{
       if(!cuD.waiters.find(w=>w.name===name)){
@@ -5715,24 +5795,33 @@ function updCUTots(){
     shiftGroups[s].push(w);
   });
   const shifts=Object.keys(shiftGroups);
-  let anyError=false;
+  let anyError=false, savedShifts=[];
   for(const sh of shifts){
     const waitersInShift=shiftGroups[sh];
-    // Denoms only go on the first/only shift, not duplicated across multiple
-    const isFirst=sh===shifts[0];
+    // Only save waiters that have at least one non-zero field — skip blank auto-populated rows
+    const waitersWithData=waitersInShift.filter(w=>
+      (w.vk||0)+(w.kt||0)+(w.ks||0)+(w.zp||0)+(w.rk||0)+(w.st||0)+(w.vo||0)+(w.s2||0)+(w.ct||0)>0
+      || w.bk===true // breakage explicitly paid
+    );
+    // Skip this shift entirely if no waiter has any data
+    if(!waitersWithData.length) continue;
+    const isFirst=savedShifts.length===0;
     const {error}=await SB.from('cash_up').upsert(
       {date:dt,shift:sh,waiters:waitersInShift,denoms:isFirst?cuD.denoms:[],saved_at:new Date().toISOString()},
       {onConflict:'date,shift'}
     );
-    if(error) anyError=true;
+    if(error){ anyError=true; }
     else{
-      await logAudit('cashup','Cash Up Saved',`${sh} shift saved for ${dt} (${waitersInShift.length} waiter${waitersInShift.length!==1?'s':''})`);
+      savedShifts.push(sh);
+      await logAudit('cashup','Cash Up Saved',`${sh} shift saved for ${dt} (${waitersWithData.length} waiter${waitersWithData.length!==1?'s':''})`);
       await syncWaiterSalesFromCashUp(dt, waitersInShift);
     }
   }
   setSyncStatus(anyError?'err':'ok');
-  const shiftList=shifts.join(', ');
-  showToast(anyError?'Error saving one or more shifts.':`Cash up saved ✓ (${shiftList})`, anyError);
+  if(!savedShifts.length&&!anyError){
+    showToast('Nothing to save — enter sales data first.','err'); return;
+  }
+  showToast(anyError?`Error saving one or more shifts.`:`Cash up saved ✓ (${savedShifts.join(', ')})`, anyError);
 }
 
 let cuHistoryCache={};// stores loaded records keyed by date_shift so onclick can reference safely
@@ -7393,7 +7482,7 @@ function setLeaveYearFilter(){ renderLeave(); }
 // ── Tab switching ────────────────────────────────────────────────────────────
 function switchLeaveTab(tab){
   leaveActiveTab=tab;
-  ['dashboard','requests','calendar','balances','reports'].forEach(t=>{
+  ['dashboard','requests','calendar','balances','reports','policy'].forEach(t=>{
     document.getElementById('lvtab-'+t)?.classList.toggle('act',t===tab);
     const el=document.getElementById('leaveTab'+t.charAt(0).toUpperCase()+t.slice(1));
     if(el) el.style.display=t===tab?'block':'none';
@@ -7403,6 +7492,7 @@ function switchLeaveTab(tab){
   else if(tab==='calendar') renderLeaveCalendar();
   else if(tab==='balances') renderLeaveBalances();
   else if(tab==='reports'){ lvRpSetPeriod('year'); lvRenderReports(); }
+  else if(tab==='policy') renderLeavePolicy();
 }
 
 function renderLeave(){
@@ -7836,6 +7926,92 @@ async function lvExportReport(){
   showToast('Leave report exported ✓');
 }
 
+// ── Leave Policy tab ─────────────────────────────────────────────────────────
+// Hardcoded 2026 register data from Akker.leave CORRECT-972babef.xlsx
+const LV_REGISTER_2026 = [
+  {name:'Adelaide',      section:'Kitchen', annual_taken:8,  fam_taken:0},
+  {name:'Agnes',         section:'Kitchen', annual_taken:5,  fam_taken:0},
+  {name:'Annah Plaatjie',section:'Kitchen', annual_taken:10, fam_taken:0},
+  {name:'Fridah',        section:'Kitchen', annual_taken:10, fam_taken:3},
+  {name:'Isaac',         section:'Kitchen', annual_taken:10, fam_taken:1},
+  {name:'Lena',          section:'Kitchen', annual_taken:10, fam_taken:0},
+  {name:'Maria',         section:'Kitchen', annual_taken:7,  fam_taken:0},
+  {name:'Mpho',          section:'Kitchen', annual_taken:6,  fam_taken:0},
+  {name:'Poppy',         section:'Kitchen', annual_taken:8,  fam_taken:0},
+  {name:'Sizwe',         section:'Kitchen', annual_taken:0,  fam_taken:0},
+  {name:'Pakiso',        section:'Bar',     annual_taken:12, fam_taken:0},
+  {name:'Thabo',         section:'Bar',     annual_taken:0,  fam_taken:0},
+];
+const LV_ANNUAL_TOTAL = 21;
+const LV_FAMILY_TOTAL = 3;
+const LV_HOURS_PER_DAY = 7.5;
+
+function renderLeavePolicy(){
+  const tbody = document.getElementById('lvPolicyBalanceTable');
+  if(!tbody) return;
+
+  // Merge register data with live leaveData for most accurate count
+  const yr = String(new Date().getFullYear());
+  const rows = LV_REGISTER_2026.map(r => {
+    // Use live data if available, else fall back to register
+    const liveAnnual = leaveData.filter(l =>
+      l.staff_name === r.name && l.status === 'Approved' &&
+      l.leave_type === 'Annual' && (l.start_date||'').startsWith(yr)
+    ).reduce((s,l)=>s+leaveDays(l),0);
+    const liveFam = leaveData.filter(l =>
+      l.staff_name === r.name && l.status === 'Approved' &&
+      ['Family Responsibility','Family'].includes(l.leave_type) && (l.start_date||'').startsWith(yr)
+    ).reduce((s,l)=>s+leaveDays(l),0);
+
+    const annTaken = liveAnnual || r.annual_taken;
+    const famTaken = liveFam || r.fam_taken;
+    const annLeft  = Math.max(0, LV_ANNUAL_TOTAL - annTaken);
+    const famLeft  = Math.max(0, LV_FAMILY_TOTAL - famTaken);
+    const hrsLeft  = annLeft * LV_HOURS_PER_DAY;
+    const annPct   = Math.round(annTaken / LV_ANNUAL_TOTAL * 100);
+    const barCol   = annLeft <= 3 ? '#c0392b' : annLeft <= 7 ? '#b85c10' : '#1a6a42';
+
+    return `<tr>
+      <td><strong>${r.name}</strong></td>
+      <td style="color:var(--muted);font-size:0.78rem">${r.section}</td>
+      <td style="text-align:center">
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;min-width:60px">
+            <div style="height:100%;width:${annPct}%;background:${barCol};border-radius:3px"></div>
+          </div>
+          <span style="font-family:'DM Mono',monospace;font-weight:600;font-size:0.82rem">${annTaken}</span>
+        </div>
+      </td>
+      <td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;color:${barCol}">${annLeft}</td>
+      <td style="text-align:center;font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--muted)">${hrsLeft.toFixed(1)}h</td>
+      <td style="text-align:center">${famTaken > 0 ? `<span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--burg)">${famTaken}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td style="text-align:center">
+        ${[0,1,2].map(i=>`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 1px;background:${i<famTaken?'var(--burg)':'var(--border)'};border:1.5px solid ${i<famTaken?'var(--burg)':'var(--border)'}"></span>`).join('')}
+        <span style="font-size:0.72rem;color:${famLeft===0?'var(--red)':'var(--muted)'};margin-left:4px">${famLeft} left</span>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tbody.innerHTML = rows;
+}
+
+// ── Conflict detection ────────────────────────────────────────────────────────
+function lvCheckConflict(staffName, startDate, endDate){
+  if(!startDate||!endDate) return null;
+  const s = stfD.find(x=>x.name===staffName);
+  if(!s) return null;
+  const conflicts = leaveData.filter(l=>{
+    if(l.staff_name===staffName||l.status==='Rejected') return false;
+    const other = stfD.find(x=>x.name===l.staff_name);
+    if(!other) return false;
+    // Same division check
+    if((other.division||'')!==(s.division||'')) return false;
+    // Date overlap check
+    return l.start_date<=endDate && l.end_date>=startDate && l.status==='Approved';
+  });
+  return conflicts.length > 0 ? conflicts : null;
+}
+
 // ── Leave request modal ───────────────────────────────────────────────────────
 function filterLeave(n,b){leaveFilter=n;renderLeave();}
 function openLeaveModal(nm){
@@ -7869,6 +8045,14 @@ async function saveLeave(){
   const tmpRec={start_date:start,end_date:end};
   const days=leaveDays(tmpRec);
   if(days>30&&!confirm(`This leave spans ${days} working days — is that correct?`)) return;
+  // Conflict detection — check if someone from same department is already on leave
+  if(!editId){
+    const conflicts=lvCheckConflict(staff,start,end);
+    if(conflicts&&conflicts.length>0){
+      const names=[...new Set(conflicts.map(c=>c.staff_name))].join(', ');
+      if(!confirm(`⚠️ Staffing conflict detected!\n\n${names} (same department) already has approved leave overlapping these dates.\n\nMinimum staffing may not be met. Approve anyway?`)) return;
+    }
+  }
   // Check balance for Annual leave
   if(type==='Annual'&&!editId){
     const bal=lvGetBalance(staff);
