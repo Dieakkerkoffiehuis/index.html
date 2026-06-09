@@ -7410,6 +7410,10 @@ function renderStf(){
           ${s.phone?`<div style="font-size:0.68rem;color:var(--muted);margin-top:0.1rem">📞 ${s.phone}</div>`:''}
           ${s.id_number?`<div style="font-size:0.65rem;color:var(--muted);font-family:monospace;margin-top:0.1rem">🪪 ${s.id_number}</div>`:'<div style="font-size:0.65rem;color:var(--red);margin-top:0.1rem">⚠ No ID number</div>'}
           ${s.emergency_name||s.emergency_phone?`<div style="font-size:0.65rem;color:var(--muted);margin-top:0.1rem">🆘 ${s.emergency_name||''}${s.emergency_phone?' · '+s.emergency_phone:''}</div>`:''}
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;margin-top:0.35rem">
+            <button onclick="toggleClockIn('${s.name.replace(/'/g,"\\'")}')" style="font-size:0.62rem;padding:0.15rem 0.5rem;border-radius:20px;border:1px solid;cursor:pointer;${isClockInRequired(s.name)?'background:#1a6a42;color:#fff;border-color:#1a6a42':'background:transparent;color:var(--muted);border-color:var(--muted)'}">⏱ ${isClockInRequired(s.name)?'Clock-In ON':'Clock-In OFF'}</button>
+            ${appRoleSelector(s.name)}
+          </div>
         </div>
         <span class="bdg ${s.active?'bgg':'bgr'}">${s.active?'Active':'Inactive'}</span>
         ${ce?`<button class="btn bs bsm" onclick="openEditStf('${s.id}')" title="Edit">✏️</button>`:''}
@@ -7560,6 +7564,44 @@ let lvReportData=[];
 let lvCalSelectedDay=null;
 function kitchenStaff(){return stfD.filter(s=>s.active!==false && (s.division==='Kitchen'||(s.role||'').startsWith('Kitchen')));}
 function allActiveStaff(){return stfD.filter(s=>s.active!==false);}
+
+// ── Clock-in QR grid helpers (per-staff, stored in localStorage) ──
+function getClockInStaff(){
+  try{ return JSON.parse(localStorage.getItem('clockInStaff')||'[]'); }catch(e){ return []; }
+}
+function setClockInStaff(arr){ localStorage.setItem('clockInStaff', JSON.stringify(arr)); }
+function isClockInRequired(name){
+  const n=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');
+  return getClockInStaff().some(x=>n(x)===n(name));
+}
+function toggleClockIn(name){
+  const n=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');
+  let arr=getClockInStaff();
+  const wasOn=arr.some(x=>n(x)===n(name));
+  if(wasOn){ arr=arr.filter(x=>n(x)!==n(name)); }
+  else{ arr.push(name); }
+  setClockInStaff(arr);
+  renderStf();
+  showToast(`Clock-In for ${name} ${wasOn?'disabled':'enabled'}`);
+}
+function appRoleSelector(staffName){
+  const n=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');
+  const login=appLogins.find(l=>n(l.staff_name||'')===n(staffName));
+  if(!login) return '<span style="font-size:0.62rem;color:var(--muted);font-style:italic">No login</span>';
+  const cur=login.role_level||'employee';
+  const safe=staffName.replace(/'/g,"\\'");
+  return `<select onchange="updateStaffAppRole('${safe}',this.value)" style="font-size:0.62rem;padding:0.1rem 0.3rem;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--ink);cursor:pointer" title="App Role"><option value="owner"${cur==='owner'?' selected':''}>Owner</option><option value="manager"${cur==='manager'?' selected':''}>Manager</option><option value="employee"${cur==='employee'?' selected':''}>Employee</option></select>`;
+}
+async function updateStaffAppRole(staffName, roleLevel){
+  const n=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');
+  if(!appLogins.length){ await loadStaffLogins(); }
+  const login=appLogins.find(l=>n(l.staff_name||'')===n(staffName));
+  if(!login){ showToast(`No app login for ${staffName}. Create one in the Logins tab.`,true); return; }
+  const{error}=await SB.from('staff_logins').update({role_level:roleLevel}).eq('id',login.id);
+  if(error){ showToast('Error updating role: '+(error.message||'unknown'),true); return; }
+  login.role_level=roleLevel;
+  showToast(`${staffName} → ${roleLevel} ✓`);
+}
 
 // ── Working days count (includes Sat for restaurant, excludes Sun) ──────────
 function leaveDays(l){
@@ -9262,6 +9304,7 @@ function switchStaffTab(tab, btn){
   });
   document.querySelectorAll('#staffTabs .ct').forEach(b=>b.classList.remove('act'));
   btn.classList.add('act');
+  if(tab==='list'){ if(!appLogins.length) loadStaffLogins().then(()=>renderStf()); }
   if(tab==='logins') loadStaffLogins();
   if(tab==='qrcodes') renderQRCodes();
   if(tab==='attendance'){ attSetToday(); loadAttendance(); }
@@ -13073,8 +13116,8 @@ async function qrImgSrc(url, size){
 async function renderQRCodes(){
   const el = document.getElementById('qrCodeGrid');
   if(!el) return;
-  const staff = allActiveStaff();
-  if(!staff.length){ el.innerHTML='<div style="color:var(--muted);font-size:0.85rem">No staff found.</div>'; return; }
+  const staff = allActiveStaff().filter(s=>isClockInRequired(s.name));
+  if(!staff.length){ el.innerHTML='<div style="color:var(--muted);font-size:0.85rem;text-align:center;padding:2rem">No staff marked for clock-in.<br><small style="font-size:0.75rem">Go to Staff → List and tap "Clock-In OFF" to enable clock-in for each person.</small></div>'; return; }
 
   el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;text-align:center;padding:1.5rem;grid-column:1/-1">Generating QR codes…</div>';
 
