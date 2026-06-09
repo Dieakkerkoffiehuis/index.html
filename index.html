@@ -13047,14 +13047,23 @@ function ciGenToken(name){
   return raw;
 }
 
+// ── QR image source: tries branded library first, falls back to Google Charts ──
+async function qrImgSrc(url, size){
+  if(window.QRCode){
+    try{
+      return await QRCode.toDataURL(url, {width:size, margin:1, color:{dark:'#3D2B22', light:'#FFFFFF'}});
+    }catch(e){}
+  }
+  // Fallback: Google Charts QR API — always works, plain black/white
+  return `https://chart.googleapis.com/chart?cht=qr&chs=${size}x${size}&chl=${encodeURIComponent(url)}&choe=UTF-8`;
+}
+
 // ── Render QR codes grid in Staff → QR Codes tab ──
 async function renderQRCodes(){
   const el = document.getElementById('qrCodeGrid');
   if(!el) return;
   const staff = allActiveStaff();
   if(!staff.length){ el.innerHTML='<div style="color:var(--muted);font-size:0.85rem">No staff found.</div>'; return; }
-
-  if(!window.QRCode){ el.innerHTML='<div style="color:var(--muted);font-size:0.85rem">QR library not loaded — refresh the page.</div>'; return; }
 
   el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;text-align:center;padding:1.5rem;grid-column:1/-1">Generating QR codes…</div>';
 
@@ -13064,18 +13073,10 @@ async function renderQRCodes(){
   for(const s of staff){
     const token = ciGenToken(s.name);
     const url = `${baseUrl}?checkin=${token}`;
-    let imgSrc = '';
-    try{
-      // Use toDataURL (async, returns base64 img) — avoids canvas CSS height:auto distortion
-      imgSrc = await QRCode.toDataURL(url, {width:130, margin:1, color:{dark:'#3D2B22', light:'#FFFFFF'}});
-    }catch(e){ imgSrc = ''; }
-
-    const qrHtml = imgSrc
-      ? `<img src="${imgSrc}" style="width:130px;height:130px;display:block;margin:0 auto;border-radius:6px" />`
-      : `<div style="width:130px;height:130px;background:var(--mist);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:var(--muted);border-radius:6px">Error</div>`;
+    const imgSrc = await qrImgSrc(url, 130);
 
     cards.push(`<div class="card" style="padding:1rem;text-align:center" id="qrc-${token}">
-      ${qrHtml}
+      <img src="${imgSrc}" style="width:130px;height:130px;display:block;margin:0 auto;border-radius:6px" />
       <div style="font-weight:700;font-size:0.82rem;margin-top:0.5rem;color:var(--ink)">${s.name}</div>
       <div style="font-size:0.65rem;color:var(--muted)">${s.role||s.division||''}</div>
       <button onclick="ciPrintQR('${token}','${s.name.replace(/'/g,"\\'")}','${s.role||s.division||''}')" class="btn bs bsm" style="margin-top:0.6rem;font-size:0.68rem;width:100%">🖨 Print</button>
@@ -13086,16 +13087,9 @@ async function renderQRCodes(){
 }
 
 async function ciPrintQR(token, name, role){
-  if(!window.QRCode){ showToast('QR library not loaded — refresh and try again.','err'); return; }
   const baseUrl = window.location.origin + window.location.pathname;
   const url = `${baseUrl}?checkin=${token}`;
-  let imgSrc = '';
-  try{
-    imgSrc = await QRCode.toDataURL(url, {
-      width: 220, margin: 2,
-      color: {dark:'#3D2B22', light:'#FFFFFF'}
-    });
-  }catch(e){ showToast('Could not generate QR code.','err'); return; }
+  const imgSrc = await qrImgSrc(url, 220);
 
   const w = window.open('','_blank');
   if(!w){ showToast('Pop-up blocked — allow pop-ups for this site.','err'); return; }
