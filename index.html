@@ -768,10 +768,12 @@ select option{background:var(--white);color:var(--ink);}
       <div id="ciAvatar" style="width:72px;height:72px;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700;color:#fff;background:#6B2737"></div>
       <div id="ciName" style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.8rem;color:#3D2B22;line-height:1.1;margin-bottom:0.3rem"></div>
       <div id="ciRole" style="font-size:0.75rem;color:#8B7060;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:1.2rem"></div>
-      <div id="ciTypeLabel" style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.4rem"></div>
       <div id="ciTime" style="font-family:'DM Mono',monospace;font-size:3rem;font-weight:500;color:#6B2737;line-height:1;margin-bottom:0.25rem"></div>
       <div id="ciDate" style="font-size:0.8rem;color:#8B7060;margin-bottom:1.5rem"></div>
-      <button id="ciBtn" onclick="ciConfirm()" style="width:100%;padding:0.95rem;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:0.04em;transition:all 0.2s"></button>
+      <div style="display:flex;gap:0.75rem">
+        <button onclick="ciConfirm('check-in')" style="flex:1;padding:0.95rem;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;letter-spacing:0.04em;background:#1a6a42;color:#fff">✓ Clock In</button>
+        <button onclick="ciConfirm('check-out')" style="flex:1;padding:0.95rem;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;letter-spacing:0.04em;background:#6B2737;color:#fff">✓ Clock Out</button>
+      </div>
       <div style="margin-top:0.8rem;font-size:0.7rem;color:#8B7060" id="ciLastRecord"></div>
     </div>
     <!-- Success state -->
@@ -13084,15 +13086,47 @@ async function renderQRCodes(){
     const url = `${baseUrl}?checkin=${token}`;
     const imgSrc = await qrImgSrc(url, 130);
 
+    const safeName = s.name.replace(/'/g,"\\'");
     cards.push(`<div class="card" style="padding:1rem;text-align:center" id="qrc-${token}">
       <img src="${imgSrc}" style="width:130px;height:130px;display:block;margin:0 auto;border-radius:6px" />
       <div style="font-weight:700;font-size:0.82rem;margin-top:0.5rem;color:var(--ink)">${s.name}</div>
-      <div style="font-size:0.65rem;color:var(--muted)">${s.role||s.division||''}</div>
-      <button onclick="ciPrintQR('${token}','${s.name.replace(/'/g,"\\'")}','${s.role||s.division||''}')" class="btn bs bsm" style="margin-top:0.6rem;font-size:0.68rem;width:100%">🖨 Print</button>
+      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.5rem">${s.role||s.division||''}</div>
+      <div id="qrc-status-${token}" style="font-size:0.65rem;color:var(--muted);min-height:1rem;margin-bottom:0.4rem"></div>
+      <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem">
+        <button onclick="mgrClock('${safeName}','${token}','check-in')" class="btn bsm" style="flex:1;font-size:0.65rem;background:#1a6a42;color:#fff;border:none">✓ In</button>
+        <button onclick="mgrClock('${safeName}','${token}','check-out')" class="btn bsm" style="flex:1;font-size:0.65rem;background:#6B2737;color:#fff;border:none">✓ Out</button>
+      </div>
+      <button onclick="ciPrintQR('${token}','${safeName}','${s.role||s.division||''}')" class="btn bs bsm" style="font-size:0.65rem;width:100%">🖨 Print</button>
     </div>`);
   }
 
   el.innerHTML = cards.join('');
+}
+
+// ── Manager manually clocks a staff member in or out ──
+async function mgrClock(name, token, type){
+  const statusEl = document.getElementById('qrc-status-'+token);
+  if(statusEl){ statusEl.textContent = 'Saving…'; statusEl.style.color = 'var(--muted)'; }
+
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0,10);
+  const timeStr  = now.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+  try{
+    await SB.from('attendance_log').insert({
+      staff_name: name,
+      token,
+      type,
+      date: todayStr,
+      logged_at: now.toISOString(),
+      time_str: timeStr,
+    });
+    const label = type === 'check-in' ? '✅ In' : '👋 Out';
+    if(statusEl){ statusEl.textContent = `${label} @ ${timeStr}`; statusEl.style.color = type==='check-in'?'#1a6a42':'#6B2737'; }
+    showToast(`${name.split(' ')[0]} clocked ${type==='check-in'?'in':'out'} at ${timeStr} ✓`);
+  }catch(e){
+    if(statusEl){ statusEl.textContent = 'Error — check Settings SQL'; statusEl.style.color = 'var(--red)'; }
+    showToast('Could not save — run attendance SQL in Settings first.', true);
+  }
 }
 
 async function ciPrintQR(token, name, role){
@@ -13168,21 +13202,18 @@ async function initCheckInScreen(){
     return true;
   }
 
-  // Check last attendance record for today
+  // Show last attendance record for today (informational only)
   const todayStr = new Date().toISOString().slice(0,10);
   try{
     const {data} = await SB.from('attendance_log')
       .select('*').eq('staff_name',ciStaffName).eq('date',todayStr)
       .order('logged_at',{ascending:false}).limit(1);
     const last = data?.[0];
-    ciIsCheckIn = !last || last.type === 'check-out';
-    ciLastId = last?.id || null;
-
     const lastMsg = last
-      ? `Last: ${last.type} at ${new Date(last.logged_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'})}`
+      ? `Last action: ${last.type} at ${new Date(last.logged_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'})}`
       : 'No records today yet';
     document.getElementById('ciLastRecord').textContent = lastMsg;
-  }catch(e){ ciIsCheckIn = true; }
+  }catch(e){ document.getElementById('ciLastRecord').textContent = ''; }
 
   // Populate confirm view
   const s = matched || {name:ciStaffName, division:'Staff'};
@@ -13194,21 +13225,6 @@ async function initCheckInScreen(){
   document.getElementById('ciAvatar').style.background = avatarBg;
   document.getElementById('ciName').textContent = ciStaffName;
   document.getElementById('ciRole').textContent = (s.role||s.division||'Staff').toUpperCase();
-
-  const btn = document.getElementById('ciBtn');
-  if(ciIsCheckIn){
-    document.getElementById('ciTypeLabel').textContent = 'CLOCKING IN';
-    document.getElementById('ciTypeLabel').style.color = '#1a6a42';
-    btn.style.background = '#1a6a42';
-    btn.style.color = '#fff';
-    btn.textContent = '✓ Clock In';
-  } else {
-    document.getElementById('ciTypeLabel').textContent = 'CLOCKING OUT';
-    document.getElementById('ciTypeLabel').style.color = '#6B2737';
-    btn.style.background = '#6B2737';
-    btn.style.color = '#fff';
-    btn.textContent = '✓ Clock Out';
-  }
 
   // Live clock
   function updateClock(){
@@ -13224,12 +13240,12 @@ async function initCheckInScreen(){
   return true;
 }
 
-async function ciConfirm(){
-  const btn = document.getElementById('ciBtn');
-  btn.disabled = true; btn.textContent = 'Saving…';
+async function ciConfirm(type){
+  // Disable both buttons while saving
+  document.querySelectorAll('#ciConfirm button').forEach(b=>{ b.disabled=true; b.style.opacity='0.5'; });
   const now = new Date();
   const todayStr = now.toISOString().slice(0,10);
-  const type = ciIsCheckIn ? 'check-in' : 'check-out';
+  const isIn = type === 'check-in';
   try{
     await SB.from('attendance_log').insert({
       staff_name: ciStaffName,
@@ -13241,12 +13257,14 @@ async function ciConfirm(){
     // Show success
     document.getElementById('ciConfirm').style.display = 'none';
     document.getElementById('ciSuccess').style.display = 'block';
-    document.getElementById('ciSuccessIcon').textContent = ciIsCheckIn ? '✅' : '👋';
-    document.getElementById('ciSuccessMsg').textContent = ciIsCheckIn ? `Good morning, ${ciStaffName.split(' ')[0]}!` : `See you later, ${ciStaffName.split(' ')[0]}!`;
+    document.getElementById('ciSuccessIcon').textContent = isIn ? '✅' : '👋';
+    document.getElementById('ciSuccessMsg').textContent = isIn
+      ? `Good morning, ${ciStaffName.split(' ')[0]}!`
+      : `See you later, ${ciStaffName.split(' ')[0]}!`;
     document.getElementById('ciSuccessTime').textContent = now.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
-    setTimeout(()=>{ window.close(); }, 3000);
+    setTimeout(()=>{ try{ window.close(); }catch(e){} }, 3000);
   }catch(e){
-    btn.disabled=false; btn.textContent = ciIsCheckIn?'✓ Clock In':'✓ Clock Out';
+    document.querySelectorAll('#ciConfirm button').forEach(b=>{ b.disabled=false; b.style.opacity='1'; });
     alert('Could not save — check connection. Run SQL setup in Settings first.');
   }
 }
