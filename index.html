@@ -6659,6 +6659,102 @@ async function syncRosterHoursToPayroll(){
   } catch(e){ console.error('Roster→Payroll sync error',e); }
 }
 
+// ── Attendance → Payroll: overlay actual clock-in/out hours onto payD ──────
+async function syncAttendanceToPayroll(){
+  const pp=getPayPeriod();
+  if(!pp.from||!pp.to) return;
+  const normN=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');
+  try{
+    const{data,error}=await SB.from('attendance_log').select('*')
+      .gte('date',pp.from).lte('date',pp.to).order('logged_at');
+    if(error||!data||!data.length) return;
+
+    const holidays=getSAHolidays(new Date(pp.from).getFullYear());
+
+    // Group: normName → date → {ins[], outs[]}
+    const byStaff={};
+    data.forEach(r=>{
+      const nk=normN(r.staff_name||'');
+      if(!byStaff[nk]) byStaff[nk]={name:r.staff_name,days:{}};
+      if(!byStaff[nk].days[r.date]) byStaff[nk].days[r.date]={ins:[],outs:[]};
+      if(r.type==='check-in')  byStaff[nk].days[r.date].ins.push(r.logged_at);
+      if(r.type==='check-out') byStaff[nk].days[r.date].outs.push(r.logged_at);
+    });
+
+    // Calculate reg / sun / hol hours per staff from paired clock events
+    const hourMap={};
+    Object.values(byStaff).forEach(({name,days})=>{
+      const nk=normN(name);
+      hourMap[nk]={name,reg:0,sun:0,hol:0,incomplete:[]};
+      Object.entries(days).forEach(([date,{ins,outs}])=>{
+        ins.sort(); outs.sort();
+        let dayHrs=0;
+        const pairs=Math.min(ins.length,outs.length);
+        for(let i=0;i<pairs;i++){
+          const diff=(new Date(outs[i])-new Date(ins[i]))/3600000;
+          if(diff>0&&diff<=16) dayHrs+=diff; // >16h = bad data, skip
+        }
+        if(ins.length>outs.length) hourMap[nk].incomplete.push(date);
+        if(dayHrs>0){
+          const dow=new Date(date+'T00:00:00Z').getUTCDay();
+          if(holidays.includes(date))  hourMap[nk].hol+=dayHrs;
+          else if(dow===0)             hourMap[nk].sun+=dayHrs;
+          else                         hourMap[nk].reg+=dayHrs;
+        }
+      });
+    });
+
+    // Overlay onto payD — only update entries that have actual clock data
+    let updated=0;
+    ['mgr','kit','bar','waitph','waiters'].forEach(grp=>{
+      (payD[grp]||[]).forEach(s=>{
+        const nk=normN(s.name||'');
+        if(!hourMap[nk]) return;
+        const h=hourMap[nk];
+        if(h.reg+h.sun+h.hol>0||h.incomplete.length){
+          s.hrs     =parseFloat(h.reg.toFixed(2));
+          s.sun_hrs =parseFloat(h.sun.toFixed(2));
+          s.hol_hrs =parseFloat(h.hol.toFixed(2));
+          s._attSource  =true;
+          s._incomplete =h.incomplete;
+          updated++;
+        }
+      });
+    });
+
+    // Update sync label
+    if(updated>0){
+      const lbl=document.getElementById('payPeriodSyncLabel');
+      const misses=Object.values(hourMap).reduce((a,v)=>a+(v.incomplete?.length||0),0);
+      let msg=`⏱ ${updated} staff: hours auto-filled from clock-in records.`;
+      if(misses>0) msg+=` ⚠️ ${misses} day${misses!==1?'s':''} missing clock-out — check Attendance tab.`;
+      if(lbl) lbl.textContent=msg;
+    }
+  }catch(e){ console.error('Attendance→Payroll error',e); }
+}
+
+// SA public holidays (fixed + Easter-calculated)
+function getSAHolidays(year){
+  const f=[
+    `${year}-01-01`,`${year}-03-21`,`${year}-04-27`,`${year}-05-01`,
+    `${year}-06-16`,`${year}-08-09`,`${year}-09-24`,`${year}-12-16`,
+    `${year}-12-25`,`${year}-12-26`
+  ];
+  const e=calcEaster(year);
+  const gf=new Date(e); gf.setDate(gf.getDate()-2);
+  const fd=new Date(e); fd.setDate(fd.getDate()+1);
+  return[...f,gf.toISOString().slice(0,10),fd.toISOString().slice(0,10)];
+}
+function calcEaster(year){
+  const a=year%19,b=Math.floor(year/100),c=year%100,d=Math.floor(b/4),e=b%4,
+        f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,
+        i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,
+        m=Math.floor((a+11*h+22*l)/451),
+        mo=Math.floor((h+l-7*m+114)/31),
+        dy=((h+l-7*m+114)%31)+1;
+  return new Date(year,mo-1,dy);
+}
+
 function getPayList(cId){
   if(cId==='mgrPay')    return payD.mgr;
   if(cId==='kitPay')    return payD.kit;
@@ -6706,9 +6802,11 @@ function renderPaySec(list,cId,tId){
       <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:180px">
         <div class="prav" style="background:${PAC[i%PAC.length]}">${s.name[0]||'?'}</div>
         <div class="pri">
-          <div style="display:flex;align-items:center;gap:0.4rem">
+          <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap">
             <div class="prn">${s.name}</div>
             <button onclick="editPayName('${cId}',${i},'${tId}')" style="background:none;border:none;cursor:pointer;font-size:0.75rem;color:var(--muted);padding:0.1rem 0.3rem;border-radius:4px" title="Edit name">✏️</button>
+            ${s._attSource?`<span style="font-size:0.56rem;background:#1a6a42;color:#fff;padding:0.1rem 0.35rem;border-radius:20px;font-weight:700;white-space:nowrap" title="Hours auto-filled from clock-in/out records">⏱ Auto</span>`:''}
+            ${s._incomplete?.length?`<span style="font-size:0.56rem;background:#c0392b;color:#fff;padding:0.1rem 0.35rem;border-radius:20px;font-weight:700;white-space:nowrap;cursor:help" title="Missing clock-out on: ${s._incomplete.join(', ')}">⚠ ${s._incomplete.length} missing</span>`:''}
           </div>
           <div class="prp">${s.pos}</div>
         </div>
@@ -12982,6 +13080,7 @@ async function loadPayrollForPeriod(){
   loadPayPaid(); // load paid state for this period before rendering
   showToast('Loading payroll for selected period…');
   await syncRosterHoursToPayroll();
+  await syncAttendanceToPayroll(); // overlay actual clock-in/out hours (overrides roster for clock-in staff)
   await loadWaiterSalesForMonth();
   renderPay();
   renderPayPeriodLabel();
