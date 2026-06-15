@@ -6533,7 +6533,8 @@ function buildPayEntry(s, rows, defaultRate){
     hrs:r?r.hours||0:0,
     sun_hrs:r?r.sun_hours||0:0,
     hol_hrs:r?r.holiday_hours||0:0,
-    taxi:r?r.taxi||0:0,borrowed:r?r.borrowed||0:0,saccawu:r?r.saccawu||0:0,breakage:r?r.breakage||0:0};
+    taxi:r?r.taxi||0:0,borrowed:r?r.borrowed||0:0,saccawu:r?r.saccawu||0:0,breakage:r?r.breakage||0:0,
+    garnish:getStaffGarnish(s.name)};
 }
 // Returns raw hours split by type (not multiplied)
 function calcHoursBreakdown(start,end,brk,dayIndex,flags){
@@ -6564,7 +6565,12 @@ function buildPayData(rows){
   payD.mgr    = mgrStaff.map(s=>buildPayEntry({...s,_grp:'manager'}, rows, 42.50));
   payD.kit    = kitStaff.map(s=>buildPayEntry({...s,_grp:'kitchen'}, rows, 30.23));
   payD.bar    = barStaff.map(s=>buildPayEntry({...s,_grp:'bar'},     rows, 30.60));
-  payD.waitph = waitphStaff.map(s=>buildPayEntry(s, rows, 30.23));
+  payD.waitph = waitphStaff.map(s=>{
+    const e=buildPayEntry({...s,_grp:'waitph'}, rows, 30.23);
+    // Waiter PH rate is always R30.23 — override any stale DB value from a different group
+    if(!rows.find(x=>x.staff_name===s.name&&x.group_type==='waitph')) e.hourly_rate=30.23;
+    return e;
+  });
 }
 
 async function syncRosterHoursToPayroll(){
@@ -6793,6 +6799,10 @@ function renderPaySec(list,cId,tId){
           <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase">${label}</div>
           <input type="number" class="hi" value="${val||''}" placeholder="0" min="0" style="width:62px" oninput="updKitField('${cId}',${i},'${field}',this.value,'${tId}')">
         </div>`;
+    const garInp=(val)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:0.1rem">
+          <div style="font-size:0.58rem;color:var(--burg);text-transform:uppercase;font-weight:700">Garnish</div>
+          <input type="number" class="hi" value="${val||''}" placeholder="0" min="0" style="width:62px;border-color:var(--burg-b,#c0392b)" oninput="updGarnish('${cId}',${i},this.value,'${tId}')">
+        </div>`;
     const grossBreak=g>0?`<div style="font-size:0.68rem;color:var(--muted);margin-top:0.1rem">
         ${s.hrs>0?`Reg: R${((s.hrs||0)*(s.hourly_rate||0)).toFixed(2)}`:''}
         ${s.sun_hrs>0?` · Sun: R${((s.sun_hrs||0)*(s.hourly_rate||0)*1.5).toFixed(2)}`:''}
@@ -6827,6 +6837,7 @@ function renderPaySec(list,cId,tId){
         ${dedInp('borrowed',borrowed,'Lening')}
         ${dedInp('saccawu',saccawu,'SACCAWU')}
         ${dedInp('breakage',breakage,'Breakage')}
+        ${garInp(s.garnish||0)}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.1rem;min-width:80px">
         <div class="pnet" id="pnet-${cId}-${i}">${net>0?'R '+net.toFixed(2):'—'}</div>
@@ -6842,7 +6853,7 @@ function calcRowNet(s){
   const g=calcGross(s);
   if(g<=0) return 0;
   const uif=Math.round(g*0.01*100)/100;
-  return g-uif-(s.taxi||0)-(s.borrowed||0)-(s.saccawu||0)-(s.breakage||0);
+  return g-uif-(s.taxi||0)-(s.borrowed||0)-(s.saccawu||0)-(s.breakage||0)-(s.garnish||0);
 }
 function refreshRowNet(c,i){
   const s=getPayList(c)[i];
@@ -6867,6 +6878,20 @@ function updH(c,i,v,t){const l=getPayList(c);l[i].hrs=parseFloat(v)||0;refreshRo
 function updPayHrs(c,i,field,v,t){const l=getPayList(c);l[i][field]=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
 function updR(c,i,v,t){if(!canER())return;const l=getPayList(c);l[i].hourly_rate=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
 function updKitField(c,i,field,v,t){const l=getPayList(c);l[i][field]=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
+// ── Garnish order helpers (per-staff, localStorage — court-ordered fixed deduction) ──
+function getGarnishMap(){try{return JSON.parse(localStorage.getItem('garnishOrders')||'{}')}catch(e){return{}}}
+function saveGarnishMap(m){localStorage.setItem('garnishOrders',JSON.stringify(m));}
+function getStaffGarnish(name){
+  const n=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');
+  return getGarnishMap()[n(name)]||0;
+}
+function updGarnish(c,i,val,t){
+  const l=getPayList(c);
+  l[i].garnish=parseFloat(val)||0;
+  const n=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');
+  const m=getGarnishMap(); m[n(l[i].name)]=l[i].garnish; saveGarnishMap(m);
+  refreshRowNet(c,i); updPTot(l,t);
+}
 function updPTot(l,t){
   const s=l.reduce((sum,x)=>sum+Math.max(0,calcRowNet(x)),0);
   document.getElementById(t).textContent='R '+s.toFixed(2);
@@ -6889,168 +6914,157 @@ function exportPayrollToExcel(){
   const pp = getPayPeriod();
   const period = (pp.from && pp.to) ? `${pp.from} to ${pp.to}` : 'Current Period';
   const genLine = `Generated: ${new Date().toLocaleString('en-ZA')}`;
-
-  // Normalize names for accent-insensitive first-name matching
   const normN = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');
-  // Managers = whoever is in payD.waitph (Juan, Marleigh, Jabu)
   const mgrFirstNames = (payD.waitph||[]).map(s => normN(s.name.split(' ')[0]));
   const isMgr = name => mgrFirstNames.includes(normN(name.split(' ')[0]));
-
-  // Find manager's canonical key across different name spellings (e.g. "Jabu" → "Jabulani")
   const mgrKey = name => {
     const fn = normN(name.split(' ')[0]);
-    // Look up full name in payD.mgr if possible
     const m = (payD.mgr||[]).find(s => normN(s.name.split(' ')[0]) === fn);
     return m ? m.name : name;
   };
 
-  // Hourly row helper
-  const hourlyRow = (s, type) => {
-    const gross = calcGross(s);
-    if(gross <= 0) return null;
-    const uif   = Math.round(gross*0.01*100)/100;
-    const net   = calcRowNet(s);
-    const deduct= (s.taxi||0)+(s.breakage||0)+(s.borrowed||0)+(s.saccawu||0);
-    return [s.name, type, s.hourly_rate||0, s.hrs||0, s.sun_hrs||0, s.hol_hrs||0,
-            parseFloat(gross.toFixed(2)), parseFloat(uif.toFixed(2)),
-            parseFloat(deduct.toFixed(2)), parseFloat(net.toFixed(2))];
-  };
-  const HOURLY_COLS = [{wch:22},{wch:14},{wch:12},{wch:10},{wch:10},{wch:10},{wch:12},{wch:10},{wch:14},{wch:12}];
-  const HOURLY_HDR  = ['Name','Type','Rate (R/hr)','Reg Hrs','Sun Hrs','PH Hrs','Gross (R)','UIF (R)','Deductions (R)','Net Pay (R)'];
-
   const wb = XLSX.utils.book_new();
 
+  // ── HOURLY SHEET BUILDER (Kitchen / Bar / Manager sections) ──────────────
+  // Columns: A=Name B=Type C=Rate D=RegHrs E=SunHrs F=PHHrs
+  //          G=Gross H=UIF I=Taxi J=Breakage K=SACCAWU L=Borrowed M=Garnish N=Net
+  const HDR_H = ['Name','Type','Rate (R/hr)','Reg Hrs','Sun Hrs','PH Hrs',
+                 'Gross (R)','UIF (1%)','Taxi','Breakage','SACCAWU','Borrowed (Loan)','Garnish','Net Pay (R)'];
+  const COLS_H = [{wch:22},{wch:14},{wch:12},{wch:10},{wch:10},{wch:10},
+                  {wch:12},{wch:10},{wch:10},{wch:10},{wch:10},{wch:14},{wch:10},{wch:12}];
+
+  const buildHourlySheet = (title, list, type) => {
+    const rows = [[title],[`Pay Period: ${period}`],[genLine],[],HDR_H];
+    const DATA_START = 6; // Excel row where first data row appears
+    list.forEach((s, di) => {
+      const er = DATA_START + di;
+      rows.push([
+        s.name, type, s.hourly_rate||0, s.hrs||0, s.sun_hrs||0, s.hol_hrs||0,
+        {t:'n',f:`C${er}*D${er}+C${er}*E${er}*1.5+C${er}*F${er}*2`},
+        {t:'n',f:`ROUND(G${er}*0.01,2)`},
+        s.taxi||0, s.breakage||0, s.saccawu||0, s.borrowed||0, s.garnish||0,
+        {t:'n',f:`G${er}-H${er}-I${er}-J${er}-K${er}-L${er}-M${er}`}
+      ]);
+    });
+    const lastRow = DATA_START + list.length - 1;
+    rows.push([]);
+    if(list.length){
+      rows.push(['TOTAL','','','','','',
+        {t:'n',f:`SUM(G${DATA_START}:G${lastRow})`},
+        {t:'n',f:`SUM(H${DATA_START}:H${lastRow})`},
+        {t:'n',f:`SUM(I${DATA_START}:I${lastRow})`},
+        {t:'n',f:`SUM(J${DATA_START}:J${lastRow})`},
+        {t:'n',f:`SUM(K${DATA_START}:K${lastRow})`},
+        {t:'n',f:`SUM(L${DATA_START}:L${lastRow})`},
+        {t:'n',f:`SUM(M${DATA_START}:M${lastRow})`},
+        {t:'n',f:`SUM(N${DATA_START}:N${lastRow})`}
+      ]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = COLS_H;
+    return ws;
+  };
+
   // ── SHEET 1: WAITERS ─────────────────────────────────────────────────────
-  // Commission (3% of sales) + tips, excluding managers
-  const wRows = [
-    ['Die Akker Koffiehuis — Waiters Payroll'],
-    [`Pay Period: ${period}`],
-    [genLine],
-    [],
-    ['Name','Sales (R)','3% Commission (R)','Tips (R)','Extra (R)','Breakage (R)','Borrowed (R)','Net (R)']
-  ];
-  let wTotal = 0;
-  (payD.waiters||[]).filter(w => !isMgr(w.name)).forEach(w => {
-    const comm  = Math.round((w.sales||0)*0.03*100)/100;
-    const gross = comm + (w.tips||0) + (w.extra||0);
-    const net   = gross - (w.breakage||0) - (w.borrowed||0);
-    wRows.push([w.name,
-      parseFloat((w.sales||0).toFixed(2)), parseFloat(comm.toFixed(2)),
-      parseFloat((w.tips||0).toFixed(2)),  parseFloat((w.extra||0).toFixed(2)),
-      parseFloat((w.breakage||0).toFixed(2)), parseFloat((w.borrowed||0).toFixed(2)),
-      parseFloat(net.toFixed(2))]);
-    wTotal += net;
+  // Columns: A=Name B=Sales C=3%Comm D=Tips E=Extra F=Breakage G=Borrowed H=Garnish I=Net
+  const HDR_W = ['Name','Sales (R)','3% Commission (R)','Tips (R)','Extra (R)',
+                 'Breakage (R)','Borrowed (Loan)','Garnish','Net Pay (R)'];
+  const waiterList = (payD.waiters||[]).filter(w => !isMgr(w.name));
+  const wRows = [['Die Akker Koffiehuis — Waiters Payroll'],[`Pay Period: ${period}`],[genLine],[],HDR_W];
+  const W_START = 6;
+  waiterList.forEach((w, di) => {
+    const er = W_START + di;
+    wRows.push([
+      w.name, w.sales||0,
+      {t:'n',f:`ROUND(B${er}*0.03,2)`},
+      w.tips||0, w.extra||0, w.breakage||0, w.borrowed||0, w.garnish||0,
+      {t:'n',f:`C${er}+D${er}+E${er}-F${er}-G${er}-H${er}`}
+    ]);
   });
+  const wLast = W_START + waiterList.length - 1;
   wRows.push([]);
-  wRows.push(['TOTAL','','','','','','', parseFloat(wTotal.toFixed(2))]);
+  if(waiterList.length){
+    wRows.push(['TOTAL','',
+      {t:'n',f:`SUM(C${W_START}:C${wLast})`},
+      {t:'n',f:`SUM(D${W_START}:D${wLast})`},
+      {t:'n',f:`SUM(E${W_START}:E${wLast})`},
+      {t:'n',f:`SUM(F${W_START}:F${wLast})`},
+      {t:'n',f:`SUM(G${W_START}:G${wLast})`},
+      {t:'n',f:`SUM(H${W_START}:H${wLast})`},
+      {t:'n',f:`SUM(I${W_START}:I${wLast})`}
+    ]);
+  }
   const wsW = XLSX.utils.aoa_to_sheet(wRows);
-  wsW['!cols'] = [{wch:22},{wch:12},{wch:18},{wch:12},{wch:12},{wch:14},{wch:14},{wch:12}];
+  wsW['!cols'] = [{wch:22},{wch:12},{wch:18},{wch:10},{wch:10},{wch:12},{wch:14},{wch:10},{wch:12}];
   XLSX.utils.book_append_sheet(wb, wsW, 'Waiters');
 
   // ── SHEET 2: KITCHEN ─────────────────────────────────────────────────────
-  const kRows = [
-    ['Die Akker Koffiehuis — Kitchen Staff Payroll'],
-    [`Pay Period: ${period}`],
-    [genLine],
-    [],
-    HOURLY_HDR
-  ];
-  let kTotal = 0;
-  (payD.kit||[]).forEach(s => {
-    const r = hourlyRow(s, 'Kitchen');
-    if(!r) return;
-    kRows.push(r);
-    kTotal += r[9];
-  });
-  kRows.push([]);
-  kRows.push(['TOTAL','','','','','','','','', parseFloat(kTotal.toFixed(2))]);
-  const wsK = XLSX.utils.aoa_to_sheet(kRows);
-  wsK['!cols'] = HOURLY_COLS;
-  XLSX.utils.book_append_sheet(wb, wsK, 'Kitchen');
+  XLSX.utils.book_append_sheet(wb,
+    buildHourlySheet('Die Akker Koffiehuis — Kitchen Staff Payroll', payD.kit||[], 'Kitchen'), 'Kitchen');
 
-  // ── SHEET 3: BAR STAFF ────────────────────────────────────────────────────
-  const bRows = [
-    ['Die Akker Koffiehuis — Bar Staff Payroll'],
-    [`Pay Period: ${period}`],
-    [genLine],
-    [],
-    HOURLY_HDR
-  ];
-  let bTotal = 0;
-  (payD.bar||[]).forEach(s => {
-    const r = hourlyRow(s, 'Bar');
-    if(!r) return;
-    bRows.push(r);
-    bTotal += r[9];
-  });
-  bRows.push([]);
-  bRows.push(['TOTAL','','','','','','','','', parseFloat(bTotal.toFixed(2))]);
-  const wsB = XLSX.utils.aoa_to_sheet(bRows);
-  wsB['!cols'] = HOURLY_COLS;
-  XLSX.utils.book_append_sheet(wb, wsB, 'Bar');
+  // ── SHEET 3: BAR ─────────────────────────────────────────────────────────
+  XLSX.utils.book_append_sheet(wb,
+    buildHourlySheet('Die Akker Koffiehuis — Bar Staff Payroll', payD.bar||[], 'Bar'), 'Bar');
 
-  // ── SHEET 4: MANAGERS (Juan, Marleigh, Jabu) ─────────────────────────────
-  // Section A: Hourly (Management shifts + Waiter PH shifts)
-  // Section B: Waiter Commission & Tips
-  // Section C: Grand Total per manager
+  // ── SHEET 4: MANAGERS ─────────────────────────────────────────────────────
+  // Section A (hourly) starts at row 8 (rows 1-7 = title,period,gen,empty,secA header,empty,HDR_H)
   const mRows = [
     ['Die Akker Koffiehuis — Managers Payroll'],
-    [`Pay Period: ${period}`],
-    [genLine],
-    [],
-    ['SECTION A — Management & Waiter PH Hours'],
-    [],
-    HOURLY_HDR
+    [`Pay Period: ${period}`],[genLine],[],
+    ['SECTION A — Management & Waiter PH Hours'],[],HDR_H
   ];
-  const mgrTotals = {}; // {canonicalName: {hourlyNet, tipsNet}}
-
-  const trackHourly = (s, type) => {
-    const r = hourlyRow(s, type);
-    if(!r) return;
-    mRows.push(r);
+  const MA_START = 8;
+  const allMgrH = [...(payD.mgr||[]).map(s=>({...s,_t:'Management'})), ...(payD.waitph||[]).map(s=>({...s,_t:'Waiter PH'}))];
+  const mgrTotals = {};
+  allMgrH.forEach((s, di) => {
+    const er = MA_START + di;
+    mRows.push([
+      s.name, s._t, s.hourly_rate||0, s.hrs||0, s.sun_hrs||0, s.hol_hrs||0,
+      {t:'n',f:`C${er}*D${er}+C${er}*E${er}*1.5+C${er}*F${er}*2`},
+      {t:'n',f:`ROUND(G${er}*0.01,2)`},
+      s.taxi||0, s.breakage||0, s.saccawu||0, s.borrowed||0, s.garnish||0,
+      {t:'n',f:`G${er}-H${er}-I${er}-J${er}-K${er}-L${er}-M${er}`}
+    ]);
     const key = mgrKey(s.name);
-    if(!mgrTotals[key]) mgrTotals[key] = {hourlyNet:0, tipsNet:0};
-    mgrTotals[key].hourlyNet += r[9];
-  };
-
-  (payD.mgr||[]).forEach(s   => trackHourly(s, 'Management'));
-  (payD.waitph||[]).forEach(s => trackHourly(s, 'Waiter PH'));
+    if(!mgrTotals[key]) mgrTotals[key]={hourlyNet:0,tipsNet:0};
+    mgrTotals[key].hourlyNet += calcRowNet(s);
+  });
+  const MA_END = MA_START + allMgrH.length - 1;
+  if(allMgrH.length) mRows.push(['TOTAL','','','','','',
+    {t:'n',f:`SUM(G${MA_START}:G${MA_END})`},{t:'n',f:`SUM(H${MA_START}:H${MA_END})`},
+    {t:'n',f:`SUM(I${MA_START}:I${MA_END})`},{t:'n',f:`SUM(J${MA_START}:J${MA_END})`},
+    {t:'n',f:`SUM(K${MA_START}:K${MA_END})`},{t:'n',f:`SUM(L${MA_START}:L${MA_END})`},
+    {t:'n',f:`SUM(M${MA_START}:M${MA_END})`},{t:'n',f:`SUM(N${MA_START}:N${MA_END})`}]);
 
   // Section B
-  mRows.push([]);
-  mRows.push(['SECTION B — Waiter Commission & Tips']);
-  mRows.push([]);
-  mRows.push(['Name','Sales (R)','3% Commission (R)','Tips (R)','Extra (R)','Breakage (R)','Borrowed (R)','Net (R)']);
-
-  (payD.waiters||[]).filter(w => isMgr(w.name)).forEach(w => {
-    const comm  = Math.round((w.sales||0)*0.03*100)/100;
-    const gross = comm + (w.tips||0) + (w.extra||0);
-    const net   = gross - (w.breakage||0) - (w.borrowed||0);
-    mRows.push([w.name,
-      parseFloat((w.sales||0).toFixed(2)), parseFloat(comm.toFixed(2)),
-      parseFloat((w.tips||0).toFixed(2)),  parseFloat((w.extra||0).toFixed(2)),
-      parseFloat((w.breakage||0).toFixed(2)), parseFloat((w.borrowed||0).toFixed(2)),
-      parseFloat(net.toFixed(2))]);
+  mRows.push([],['SECTION B — Waiter Commission & Tips'],[],HDR_W);
+  const MB_START = mRows.length + 1; // +1 = 1-based Excel row
+  const mgrWaiters = (payD.waiters||[]).filter(w => isMgr(w.name));
+  mgrWaiters.forEach((w, di) => {
+    const er = MB_START + di;
+    mRows.push([
+      w.name, w.sales||0, {t:'n',f:`ROUND(B${er}*0.03,2)`},
+      w.tips||0, w.extra||0, w.breakage||0, w.borrowed||0, w.garnish||0,
+      {t:'n',f:`C${er}+D${er}+E${er}-F${er}-G${er}-H${er}`}
+    ]);
     const key = mgrKey(w.name);
-    if(!mgrTotals[key]) mgrTotals[key] = {hourlyNet:0, tipsNet:0};
-    mgrTotals[key].tipsNet += net;
+    if(!mgrTotals[key]) mgrTotals[key]={hourlyNet:0,tipsNet:0};
+    const comm=Math.round((w.sales||0)*0.03*100)/100;
+    mgrTotals[key].tipsNet += comm+(w.tips||0)+(w.extra||0)-(w.breakage||0)-(w.borrowed||0)-(w.garnish||0);
   });
 
-  // Section C: Grand Total
-  mRows.push([]);
-  mRows.push(['SECTION C — Grand Total per Manager']);
-  mRows.push([]);
-  mRows.push(['Name','Hourly Net (R)','Commission & Tips Net (R)','Grand Total (R)']);
+  // Section C: Grand Total (calculated values — cross-section formulas not feasible)
+  mRows.push([],['SECTION C — Grand Total per Manager'],[],
+    ['Name','Hourly Net (R)','Commission & Tips Net (R)','Grand Total (R)']);
   let grandTotal = 0;
-  Object.entries(mgrTotals).forEach(([name, v]) => {
-    const tot = v.hourlyNet + v.tipsNet;
+  Object.entries(mgrTotals).forEach(([name,v]) => {
+    const tot = v.hourlyNet+v.tipsNet;
     grandTotal += tot;
-    mRows.push([name, parseFloat(v.hourlyNet.toFixed(2)), parseFloat(v.tipsNet.toFixed(2)), parseFloat(tot.toFixed(2))]);
+    mRows.push([name,parseFloat(v.hourlyNet.toFixed(2)),parseFloat(v.tipsNet.toFixed(2)),parseFloat(tot.toFixed(2))]);
   });
-  mRows.push(['TOTAL','','', parseFloat(grandTotal.toFixed(2))]);
-
+  mRows.push(['TOTAL','','',parseFloat(grandTotal.toFixed(2))]);
   const wsM = XLSX.utils.aoa_to_sheet(mRows);
-  wsM['!cols'] = [{wch:22},{wch:14},{wch:24},{wch:12},{wch:12},{wch:14},{wch:14},{wch:14}];
+  wsM['!cols'] = COLS_H;
   XLSX.utils.book_append_sheet(wb, wsM, 'Managers');
 
   // ── DOWNLOAD ─────────────────────────────────────────────────────────────
