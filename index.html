@@ -6567,8 +6567,7 @@ function buildPayData(rows){
   payD.bar    = barStaff.map(s=>buildPayEntry({...s,_grp:'bar'},     rows, 30.60));
   payD.waitph = waitphStaff.map(s=>{
     const e=buildPayEntry({...s,_grp:'waitph'}, rows, 30.23);
-    // Waiter PH rate is always R30.23 — override any stale DB value from a different group
-    if(!rows.find(x=>x.staff_name===s.name&&x.group_type==='waitph')) e.hourly_rate=30.23;
+    e.hourly_rate=30.23; // Waiter PH rate is always R30.23 — override any stale management rate in DB
     return e;
   });
 }
