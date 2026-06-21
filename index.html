@@ -1872,10 +1872,10 @@ select option{background:var(--white);color:var(--ink);}
       <div class="pnl" id="p-staff">
         <!-- Tab switcher -->
         <div class="ctabs" id="staffTabs" style="margin-bottom:0.8rem">
-          <button class="ct act" onclick="switchStaffTab('list',this)">👥 Staff List</button>
-          <button class="ct" onclick="switchStaffTab('logins',this)">🔐 User Logins</button>
-          <button class="ct" onclick="switchStaffTab('qrcodes',this)">📲 QR Codes</button>
-          <button class="ct" onclick="switchStaffTab('attendance',this)">🕐 Attendance</button>
+          <button class="ct act" id="staffTabBtnList" onclick="switchStaffTab('list',this)">👥 Staff List</button>
+          <button class="ct" id="staffTabBtnLogins" onclick="switchStaffTab('logins',this)">🔐 User Logins</button>
+          <button class="ct" id="staffTabBtnQrcodes" onclick="switchStaffTab('qrcodes',this)">📲 QR Codes</button>
+          <button class="ct" id="staffTabBtnAttendance" onclick="switchStaffTab('attendance',this)">🕐 Attendance</button>
         </div>
 
         <!-- STAFF LIST TAB -->
@@ -3054,7 +3054,7 @@ const SECTION_LABELS = {dashboard:'Dashboard',spotcheck:'Daily Spot Check',stock
 // Owner always has full access (hardcoded, cannot be removed)
 const ACCESS = {
   owner:   ALL_SECTIONS,
-  manager: ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','micros','waiterlog','roster','payroll','leave','kpi','docs','invoices'],
+  manager: ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','micros','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices'],
   employee:['dashboard','modules','spotcheck','stocktake'],
 };
 const TTLS = {dashboard:'Dashboard',modules:'Modules',spotcheck:'Daily Spot Check',stocktake:'Stock Take',micros:'Micros Reports',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
@@ -3311,7 +3311,7 @@ function go(id){
   if(id==='waiterlog'){ wlToday(); initLeaderboard(); initScheduling(); }
   if(id==='auditlog') loadAuditLog();
   if(id==='invoices' && firstVisit) initInvoicesPanel();
-  if(id==='staff' && firstVisit) loadStaffLogins();
+  if(id==='staff'){ if(firstVisit) loadStaffLogins(); applyStaffTabAccess(); }
   if(id==='reports'){ initReportDates(); loadReports(); }
   if(id==='analytics'){ initAnalytics(); loadAnalytics(); }
   if(id==='recipes' && firstVisit) renderRecipes();
@@ -3357,7 +3357,7 @@ const SEC_GROUPS = {
   people:{tabs:[
     {id:'roster',label:'Roster',r:'manager'},
     {id:'payroll',label:'Payroll',r:'manager'},
-    {id:'staff',label:'Staff',r:'owner'},
+    {id:'staff',label:'Staff',r:'manager'},
     {id:'leave',label:'Leave',r:'manager'},
     {id:'kpi',label:'KPI Reviews',r:'manager'},
     {id:'docs',label:'Documents',r:'manager'},
@@ -9365,7 +9365,7 @@ const ACCESS_OPTIONS = [
 const PRESETS = {
   owner:    ALL_SECTIONS,
   investor: INVESTOR_SECTIONS,
-  manager:  ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','micros','waiterlog','roster','payroll','leave','kpi','docs','invoices'],
+  manager:  ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','micros','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices'],
   staff:    ['dashboard','modules','spotcheck','stocktake'],
 };
 
@@ -9408,6 +9408,24 @@ function renderLoginsList(){
     </div>`).join('');
 }
 
+// Managers get QR Codes + Attendance only (clock-in tools); Staff List & User Logins
+// stay owner-only since they expose pay rates and login/role credentials.
+function applyStaffTabAccess(){
+  const role = CU?.role || 'employee';
+  const isOwner = role==='owner' || role==='investor';
+  const listBtn   = document.getElementById('staffTabBtnList');
+  const loginsBtn = document.getElementById('staffTabBtnLogins');
+  if(listBtn)   listBtn.style.display   = isOwner ? '' : 'none';
+  if(loginsBtn) loginsBtn.style.display = isOwner ? '' : 'none';
+  if(!isOwner){
+    // If a non-owner somehow landed on List/Logins (e.g. stale state), bounce to QR Codes.
+    const activeBtn = document.querySelector('#staffTabs .ct.act');
+    if(activeBtn && (activeBtn.id==='staffTabBtnList' || activeBtn.id==='staffTabBtnLogins')){
+      const qrBtn = document.getElementById('staffTabBtnQrcodes');
+      if(qrBtn) switchStaffTab('qrcodes', qrBtn);
+    }
+  }
+}
 function switchStaffTab(tab, btn){
   ['list','logins','qrcodes','attendance'].forEach(t=>{
     const el=document.getElementById('staffTab'+t.charAt(0).toUpperCase()+t.slice(1));
