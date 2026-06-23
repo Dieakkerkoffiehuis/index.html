@@ -2907,6 +2907,16 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
   </div>
 </div>
 
+<div class="mo" id="moBirthday">
+  <div class="md" style="max-width:440px;text-align:center">
+    <button class="md-close" onclick="closeMo('moBirthday')">✕</button>
+    <div style="font-size:3.2rem;line-height:1;margin:0.4rem 0 0.6rem">🎉🎂🎈</div>
+    <div class="md-title" style="margin-bottom:0.3rem" id="birthdayTitle">It's a Birthday!</div>
+    <div id="birthdayBody" style="font-size:0.92rem;color:var(--muted);line-height:1.6;margin-bottom:1.2rem"></div>
+    <button class="btn bp" onclick="closeMo('moBirthday')" style="width:100%">🎁 Got it!</button>
+  </div>
+</div>
+
 <div class="mo" id="moKpiDetail">
   <div class="md" style="max-width:460px">
     <button class="md-close" onclick="closeMo('moKpiDetail')">✕</button>
@@ -3164,6 +3174,46 @@ async function launchApp(){
     go('stocktake');
     syncBottomTabs('stocktake');
   }
+
+  checkBirthdays();
+}
+
+// ═══════════════════════════════════════════
+// BIRTHDAY POPUP — derives DOB from each staff member's SA ID number
+// (digits 3-6 = YYMMDD) so no extra data entry is needed.
+// ═══════════════════════════════════════════
+function getTodaysBirthdays(){
+  const today = new Date();
+  const tm = today.getMonth()+1, td = today.getDate();
+  return allActiveStaff().filter(s=>{
+    const id=(s.id_number||'').replace(/\s/g,'');
+    if(!/^\d{13}$/.test(id)) return false;
+    const mo=parseInt(id.slice(2,4),10), dy=parseInt(id.slice(4,6),10);
+    return mo===tm && dy===td;
+  });
+}
+function checkBirthdays(){
+  const todays = getTodaysBirthdays();
+  if(!todays.length) return;
+  const todayKey = new Date().toISOString().slice(0,10);
+  const shownKey = 'birthdayShown_'+todayKey;
+  let shown = [];
+  try{ shown = JSON.parse(localStorage.getItem(shownKey)||'[]'); }catch(e){ shown=[]; }
+  const fresh = todays.filter(s=>!shown.includes(s.name));
+  if(!fresh.length) return;
+  const titleEl = document.getElementById('birthdayTitle');
+  const bodyEl  = document.getElementById('birthdayBody');
+  if(fresh.length===1){
+    titleEl.textContent = `It's ${fresh[0].name}'s Birthday!`;
+    bodyEl.textContent  = `Wish ${fresh[0].name} a happy birthday today 🎈`;
+  } else {
+    titleEl.textContent = `${fresh.length} Birthdays Today!`;
+    bodyEl.textContent  = `Wish ${fresh.map(s=>s.name).join(', ')} a happy birthday today 🎈`;
+  }
+  openMo('moBirthday');
+  localStorage.setItem(shownKey, JSON.stringify([...shown, ...fresh.map(s=>s.name)]));
+  // Clean up old days' keys so localStorage doesn't grow forever
+  Object.keys(localStorage).forEach(k=>{ if(k.startsWith('birthdayShown_') && k!==shownKey) localStorage.removeItem(k); });
 }
 
 // ═══════════════════════════════════════════
