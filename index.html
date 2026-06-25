@@ -4305,7 +4305,16 @@ async function deleteAllStockItems(){
   if(typed!=='DELETE'){ showToast('Cancelled — nothing was deleted.'); return; }
   setSyncStatus('syncing');
   try{
-    const {error}=await SB.from('stock').delete().gte('id',0);
+    // Clear spot-check variance history first — it has a foreign key on stock_id,
+    // so old records would otherwise block the delete (and they're meaningless
+    // once the items they reference are gone).
+    await SB.from('variance_log').delete().gte('stock_id',0);
+    let {error}=await SB.from('stock').delete().gte('id',0);
+    if(error && /foreign key constraint.*on table "(\w+)"/i.test(error.message||'')){
+      const tbl=error.message.match(/on table "(\w+)"/i)[1];
+      await SB.from(tbl).delete().gte('stock_id',0);
+      ({error}=await SB.from('stock').delete().gte('id',0));
+    }
     if(error) throw new Error(error.message||'Delete failed');
     await loadAllData(); setSyncStatus('ok');
     showToast('All stock items deleted. Ready for a clean rebuild ✓');
