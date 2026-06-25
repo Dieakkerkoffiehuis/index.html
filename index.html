@@ -4305,16 +4305,23 @@ async function deleteAllStockItems(){
   if(typed!=='DELETE'){ showToast('Cancelled — nothing was deleted.'); return; }
   setSyncStatus('syncing');
   try{
-    // Clear spot-check variance history first — it has a foreign key on stock_id,
-    // so old records would otherwise block the delete (and they're meaningless
-    // once the items they reference are gone).
-    await SB.from('variance_log').delete().gte('stock_id',0);
-    let {error}=await SB.from('stock').delete().gte('id',0);
-    if(error && /foreign key constraint.*on table "(\w+)"/i.test(error.message||'')){
-      const tbl=error.message.match(/on table "(\w+)"/i)[1];
-      await SB.from(tbl).delete().gte('stock_id',0);
+    // Several tables (variance_log, stock_history, and possibly others) keep
+    // historical records pointing at stock.id via a foreign key. Those old
+    // records are meaningless once the items they reference are gone, so
+    // clear known history tables up front, then keep retrying the stock
+    // delete — clearing whatever table each foreign key error names — until
+    // it succeeds or we run out of attempts.
+    await SB.from('variance_log').delete().not('id','is',null);
+    await SB.from('stock_history').delete().not('id','is',null);
+    let error, attempts=0;
+    do{
       ({error}=await SB.from('stock').delete().gte('id',0));
-    }
+      if(error && /foreign key constraint.*on table "(\w+)"/i.test(error.message||'')){
+        const tbl=error.message.match(/on table "(\w+)"/i)[1];
+        await SB.from(tbl).delete().not('id','is',null);
+      }
+      attempts++;
+    } while(error && attempts<6);
     if(error) throw new Error(error.message||'Delete failed');
     await loadAllData(); setSyncStatus('ok');
     showToast('All stock items deleted. Ready for a clean rebuild ✓');
