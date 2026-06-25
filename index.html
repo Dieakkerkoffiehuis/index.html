@@ -1133,6 +1133,8 @@ select option{background:var(--white);color:var(--ink);}
           <div style="font-size:0.82rem;color:var(--muted)">Tap any item to edit.</div>
           <div class="brow">
             <button class="btn bs bsm" id="dedupBtn" onclick="deduplicateStock()" style="display:none;color:var(--orange);border-color:var(--orange)">🧹 Remove Duplicates</button>
+            <button class="btn bs bsm" id="backupStBtn" onclick="exportStockBackup()">📥 Export Backup</button>
+            <button class="btn bs bsm" id="delAllStBtn" onclick="deleteAllStockItems()" style="display:none;color:var(--red);border-color:var(--red)">🗑️ Delete All</button>
             <button class="btn bs bsm" id="addStBtn" onclick="openAddStock()">+ Add Item</button>
           </div>
         </div>
@@ -2666,6 +2668,12 @@ UPDATE stock SET section = 'Orders'     WHERE category IN ('Produce','Dairy') AN
 UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (section IS NULL OR section = '');</pre>
           <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('stockSectionSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
+        <div class="card" id="stockPriceSQL">
+          <div class="card-title">Stock Item Pricing Setup</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this once in Supabase to add a <strong>price</strong> column to the Stock Database. Once added, every product gets its own cost price, and Recipe Costing will automatically use that price (by matching ingredient names) instead of the old hardcoded ingredient list.</div>
+          <pre id="stockPriceSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">ALTER TABLE stock ADD COLUMN IF NOT EXISTS price numeric DEFAULT 0;</pre>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('stockPriceSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
         <div class="card" id="aiSettingsCard">
           <div class="card-title">🤖 AI Photo Scan</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">The <strong>📸 Scan Form</strong> feature uses Claude AI to read handwritten stock counts from a photo of the printed form.</div>
@@ -2794,6 +2802,8 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
       <div class="fg"><label>Current Stock</label><input type="number" id="nsQty" placeholder="0" min="0" step="0.1"></div>
       <div class="fg"><label>Min Level</label><input type="number" id="nsMn" placeholder="0" min="0" step="0.1"></div>
     </div>
+    <div class="fg"><label>Price per Unit (R) <span style="font-size:0.7rem;color:var(--muted);font-weight:400">(used to cost dishes in Recipe Costing)</span></label>
+      <input type="number" id="nsPrice" placeholder="0.00" min="0" step="0.01"></div>
     <div class="fg"><label>Supplier</label>
       <select id="nsSup">
         <option>Chubby Chick</option><option>Vision Meats</option><option>Impala</option>
@@ -4118,6 +4128,10 @@ function renderDB(){
   const hasDups=names.length!==new Set(names).size;
   const dedupBtn=document.getElementById('dedupBtn');
   if(dedupBtn) dedupBtn.style.display=ce&&hasDups?'inline-flex':'none';
+  const backupBtn=document.getElementById('backupStBtn');
+  if(backupBtn) backupBtn.style.display=ce?'inline-flex':'none';
+  const delAllBtn=document.getElementById('delAllStBtn');
+  if(delAllBtn) delAllBtn.style.display=CU?.role==='owner'?'inline-flex':'none';
 
   document.getElementById('dbList').innerHTML=items.map(i=>{
     const pct=i.min_level>0?Math.min(100,Math.round(i.stock/i.min_level*100)):100;
@@ -4129,7 +4143,7 @@ function renderDB(){
         <div style="font-size:0.7rem;color:var(--muted)">${CEM[i.category]||''} ${i.category} · <span style="background:var(--surface);padding:0.1rem 0.4rem;border-radius:3px;font-size:0.68rem">${i.supplier}</span>${i.section?`<span style="margin-left:0.4rem;background:var(--burg-l,#f9eff1);color:var(--burg);border:1px solid #eac8d0;padding:0.1rem 0.4rem;border-radius:3px;font-size:0.65rem;font-weight:700">${i.section}</span>`:''}</div>
         <div class="sbar"><div class="sbf" style="width:${pct}%;background:${col}"></div></div>
       </div>
-      <div style="text-align:right;min-width:55px"><div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:${col}">${i.stock<=0?'OUT':i.stock}</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">${i.unit}</div></div>
+      <div style="text-align:right;min-width:55px"><div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:${col}">${i.stock<=0?'OUT':i.stock}</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">${i.unit}</div>${i.price?`<div style="font-size:0.68rem;color:var(--burg);font-weight:700;margin-top:0.15rem">R${(+i.price).toFixed(2)}</div>`:`<div style="font-size:0.6rem;color:var(--muted);font-style:italic;margin-top:0.15rem">no price</div>`}</div>
     </div>`;
   }).join('');
 }
@@ -4142,6 +4156,7 @@ function openAddStock(){
   document.getElementById('nsUn').value='unit';
   document.getElementById('nsQty').value='';
   document.getElementById('nsMn').value='';
+  document.getElementById('nsPrice').value='';
   document.getElementById('nsSup').value='Chubby Chick';
   document.getElementById('nsSection').value='';
   document.getElementById('nsDeleteBtn').style.display='none';
@@ -4167,6 +4182,7 @@ function openEditStock(id){
   document.getElementById('nsUn').value=it.unit;
   document.getElementById('nsQty').value=it.stock;
   document.getElementById('nsMn').value=it.min_level;
+  document.getElementById('nsPrice').value=it.price??'';
   setSelectVal(document.getElementById('nsSup'), it.supplier);
   document.getElementById('nsSection').value=it.section||'';
   document.getElementById('nsDeleteBtn').style.display='inline-flex';
@@ -4188,12 +4204,14 @@ async function saveNS(){
   if(!valid) return;
   const id=document.getElementById('nsId').value;
   const sectionVal = document.getElementById('nsSection').value||null;
+  const priceRaw = document.getElementById('nsPrice').value;
   const rec={
     name:nm,
     category:document.getElementById('nsCat').value,
     unit:document.getElementById('nsUn').value,
     stock:parseFloat(qtyRaw)||0,
     min_level:parseFloat(mnRaw)||0,
+    price:parseFloat(priceRaw)||0,
     supplier:document.getElementById('nsSup').value,
     section:sectionVal,
     updated_at:new Date().toISOString(),
@@ -4207,13 +4225,17 @@ async function saveNS(){
       ({error}=await SB.from('stock').insert(rec));
     }
     if(error){
-      // If section column missing, save without it and warn user
-      if(error.message&&error.message.toLowerCase().includes('section')){
-        const recNoSec={...rec}; delete recNoSec.section;
-        if(id){ await SB.from('stock').update(recNoSec).eq('id',parseInt(id)); }
-        else   { await SB.from('stock').insert(recNoSec); }
+      // If section and/or price columns are missing, retry without them and warn user
+      const msg=(error.message||'').toLowerCase();
+      if(msg.includes('section')||msg.includes('price')){
+        const recFallback={...rec};
+        if(msg.includes('section')) delete recFallback.section;
+        if(msg.includes('price'))   delete recFallback.price;
+        if(id){ await SB.from('stock').update(recFallback).eq('id',parseInt(id)); }
+        else   { await SB.from('stock').insert(recFallback); }
         closeMo('moAddStock'); await loadAllData(); setSyncStatus('ok');
-        showToast(`${nm} saved — but section not stored yet. Run the SQL in Settings → Stock Sections Setup first.`, true);
+        const missing = msg.includes('section') ? 'section' : 'price';
+        showToast(`${nm} saved — but ${missing} not stored yet. Run the matching SQL in Settings first.`, true);
         return;
       }
       throw new Error(error.message||'Save failed');
@@ -4252,6 +4274,45 @@ async function deduplicateStock(){
   }
   await loadAllData(); setSyncStatus('ok');
   showToast(`✓ Removed ${toDelete.length} duplicate${toDelete.length!==1?'s':''}`);
+}
+
+// Download every current stock item as a spreadsheet — used as a safety-net backup
+// before a full wipe, and available any time from the Stock Database tab.
+function exportStockBackup(){
+  if(!DB.length){ showToast('No stock items to export.', true); return; }
+  const rows=[['Name','Category','Section','Supplier','Unit','Current Stock','Min Level','Price per Unit (R)']];
+  DB.forEach(i=>rows.push([i.name,i.category,i.section||'',i.supplier,i.unit,i.stock,i.min_level,i.price||0]));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:28},{wch:14},{wch:12},{wch:18},{wch:8},{wch:14},{wch:10},{wch:16}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Stock Backup');
+  const blob=new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})],{type:'application/octet-stream'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`DieAkker_StockBackup_${new Date().toISOString().slice(0,10)}.xlsx`;
+  a.click();
+  showToast(`Backed up ${DB.length} items ✓`);
+}
+
+// Wipes every row from the stock table so the Stock Database can be rebuilt from
+// scratch with accurate products, prices and dish-usage. Owner-only, backed up first,
+// and gated behind a typed confirmation since this cannot be undone.
+async function deleteAllStockItems(){
+  if(CU?.role!=='owner'){ showToast('Only the owner can delete all stock items.', true); return; }
+  if(!DB.length){ showToast('Stock Database is already empty.', true); return; }
+  exportStockBackup();
+  const typed=prompt(`This will permanently delete all ${DB.length} products from the Stock Database.\n\nA backup spreadsheet was just downloaded.\n\nType DELETE to confirm:`);
+  if(typed!=='DELETE'){ showToast('Cancelled — nothing was deleted.'); return; }
+  setSyncStatus('syncing');
+  try{
+    const {error}=await SB.from('stock').delete().gte('id',0);
+    if(error) throw new Error(error.message||'Delete failed');
+    await loadAllData(); setSyncStatus('ok');
+    showToast('All stock items deleted. Ready for a clean rebuild ✓');
+  }catch(e){
+    setSyncStatus('err');
+    showToast('Error deleting: '+e.message, true);
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -11392,6 +11453,17 @@ const INGR_COST = {
 
 function getIngCost(name, qty, unit) {
   const n = name.toLowerCase().trim();
+  // Prefer a real Stock Database item (exact name match) so dishes cost out from
+  // the prices Zaviér enters when rebuilding stock, not the old hardcoded list.
+  const stockItem = (typeof DB!=='undefined' ? DB : []).find(s=>(s.name||'').toLowerCase().trim()===n && s.price);
+  if (stockItem) {
+    const cost = +stockItem.price;
+    if (unit === 'g' || unit === 'ml') return (qty / 1000) * cost;
+    if (unit === 'kg' || unit === 'L') return qty * cost;
+    return qty * cost; // per unit/each
+  }
+  // Fall back to the legacy hardcoded ingredient price list for items not yet
+  // re-entered into the Stock Database.
   for (const [key, cost] of Object.entries(INGR_COST)) {
     if (n.includes(key) || key.includes(n)) {
       // Convert units
@@ -11748,15 +11820,26 @@ function openEditRecipe(id){
 }
 
 function renderIngRows(ings){
-  document.getElementById('recipeIngredients').innerHTML=ings.map((ing,i)=>`
+  // Datalist of Stock Database product names so ingredient rows can be linked to
+  // real stock items (and pick up their price automatically) instead of free text.
+  if(!document.getElementById('stockItemsList')){
+    const dl=document.createElement('datalist');
+    dl.id='stockItemsList';
+    document.body.appendChild(dl);
+  }
+  document.getElementById('stockItemsList').innerHTML=DB.map(i=>`<option value="${(i.name||'').replace(/"/g,'&quot;')}">`).join('');
+  document.getElementById('recipeIngredients').innerHTML=ings.map((ing,i)=>{
+    const matched=DB.find(s=>(s.name||'').toLowerCase().trim()===(ing.name||'').toLowerCase().trim());
+    return `
     <div class="recipe-ing-row" id="ing-row-${i}">
-      <input type="text" placeholder="Ingredient name" value="${ing.name||''}" oninput="updIng(${i},'name',this.value)">
+      <input type="text" list="stockItemsList" placeholder="Ingredient name (start typing to link a stock item)" value="${(ing.name||'').replace(/"/g,'&quot;')}" oninput="updIng(${i},'name',this.value)" style="${matched?'border-color:var(--green)':''}">
       <input type="number" placeholder="Qty" value="${ing.qty||''}" min="0" step="0.1" oninput="updIng(${i},'qty',parseFloat(this.value)||0)">
       <select onchange="updIng(${i},'unit',this.value)">
         ${['each','g','kg','ml','L'].map(u=>`<option ${u===ing.unit?'selected':''}>${u}</option>`).join('')}
       </select>
       <button onclick="removeIng(${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;flex-shrink:0">✕</button>
-    </div>`).join('');
+    </div>${matched?`<div style="font-size:0.68rem;color:var(--green);margin:-0.3rem 0 0.4rem 0.1rem">🔗 Linked to Stock Database · R${(+matched.price||0).toFixed(2)}/${matched.unit}</div>`:''}`;
+  }).join('');
 }
 
 let editIngredients=[];
