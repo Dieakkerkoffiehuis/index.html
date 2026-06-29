@@ -931,6 +931,11 @@ select option{background:var(--white);color:var(--ink);}
             <div class="mod-title">Daily Cash-Up</div>
             <div class="mod-sub">Waiter sales sync</div>
           </div>
+          <div class="mod-card mod-ops" onclick="go('cleaning');closeSb()">
+            <div class="mod-ic">🧹</div>
+            <div class="mod-title">Cleaning Checklist</div>
+            <div class="mod-sub">End-of-day closing tasks</div>
+          </div>
         </div>
 
         <div class="mod-section-label lbl-fin">Finance</div>
@@ -1146,6 +1151,50 @@ select option{background:var(--white);color:var(--ink);}
           <div class="skel-row"><div style="flex:1"><div class="skel skel-line w60"></div><div class="skel skel-line w30 sm"></div></div><div class="skel skel-badge"></div></div>
           <div class="skel-row"><div style="flex:1"><div class="skel skel-line w75"></div><div class="skel skel-line w45 sm"></div></div><div class="skel skel-badge"></div></div>
           <div class="skel-row"><div style="flex:1"><div class="skel skel-line w65"></div><div class="skel skel-line w35 sm"></div></div><div class="skel skel-badge"></div></div>
+        </div>
+      </div>
+
+      <!-- CLEANING CHECKLIST -->
+      <div class="pnl" id="p-cleaning">
+        <div class="ctabs" style="margin-bottom:1rem">
+          <button class="ct act" id="ccTab-check" onclick="ccSwitchTab('check',this)">Today's Checklist</button>
+          <button class="ct" id="ccTab-history" onclick="ccSwitchTab('history',this)">History</button>
+        </div>
+
+        <!-- CHECK PANE -->
+        <div id="ccCheckPane">
+          <div class="card" style="padding:0.9rem 1rem;margin-bottom:0.8rem;display:flex;align-items:center;justify-content:space-between;gap:0.8rem;flex-wrap:wrap">
+            <div>
+              <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.2rem;color:var(--burg)" id="ccDateLabel">Today's Cleaning Checklist</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:0.1rem">Tap each item once it's done</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem">
+              <div id="ccProgressPill" style="font-family:'DM Mono',monospace;font-size:0.78rem;font-weight:600;background:var(--surface);color:var(--muted);border-radius:20px;padding:0.25rem 0.7rem">0 / 0</div>
+              <button class="btn bs bsm" onclick="ccAddItem()">+ Add Item</button>
+            </div>
+          </div>
+
+          <!-- Already submitted today banner -->
+          <div id="ccDoneBanner" style="display:none;background:rgba(26,106,66,0.10);border:2px solid var(--green);border-radius:10px;padding:0.8rem 1rem;margin-bottom:0.75rem">
+            <div style="display:flex;align-items:flex-start;gap:0.6rem">
+              <span style="font-size:1.3rem;line-height:1">✅</span>
+              <div>
+                <div style="font-weight:700;font-size:0.88rem;color:var(--green)">Cleaning checklist already completed today</div>
+                <div style="font-size:0.78rem;color:var(--ink);margin-top:0.15rem" id="ccDoneMeta"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="ccItemList" style="display:flex;flex-direction:column;gap:0.5rem"></div>
+
+          <button class="btn bp" style="width:100%;margin-top:1rem;font-size:0.95rem;padding:0.85rem" onclick="saveCleaningChecklist()" id="ccSaveBtn">
+            Submit Checklist
+          </button>
+        </div>
+
+        <!-- HISTORY PANE -->
+        <div id="ccHistoryPane" style="display:none">
+          <div id="ccHistoryList"><div style="text-align:center;padding:2rem;color:var(--muted)">Loading…</div></div>
         </div>
       </div>
 
@@ -2333,6 +2382,31 @@ ALTER TABLE spot_checks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "allow_all" ON spot_checks FOR ALL USING (true) WITH CHECK (true);</pre>
           <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('spotCheckSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
+        <div class="card" id="cleaningChecklistSQL" style="display:none">
+          <div class="card-title">Cleaning Checklist Table Setup</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL in your Supabase SQL editor to enable the End-of-Day Cleaning Checklist feature:</div>
+          <pre style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">CREATE TABLE IF NOT EXISTS cleaning_items (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  label text NOT NULL,
+  sort_order int DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE cleaning_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON cleaning_items FOR ALL USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS cleaning_checklist_log (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  date date NOT NULL UNIQUE,
+  submitted_by text,
+  submitted_at timestamptz DEFAULT now(),
+  items jsonb,
+  completed_count int DEFAULT 0,
+  total_items int DEFAULT 0
+);
+ALTER TABLE cleaning_checklist_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON cleaning_checklist_log FOR ALL USING (true) WITH CHECK (true);</pre>
+          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('cleaningChecklistSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
         <div class="card" id="pendingOrdersSQL" style="display:none">
           <div class="card-title">Pending Orders Table Setup</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL in your Supabase SQL editor to enable the order approval workflow:</div>
@@ -3068,17 +3142,17 @@ const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // AUTH
 // ═══════════════════════════════════════════
 // All sections available
-const ALL_SECTIONS = ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','analytics','micros','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
-const SECTION_LABELS = {dashboard:'Dashboard',spotcheck:'Daily Spot Check',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
+const ALL_SECTIONS = ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','analytics','micros','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
+const SECTION_LABELS = {dashboard:'Dashboard',spotcheck:'Daily Spot Check',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',cleaning:'Cleaning Checklist',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
 
 // Owner always has full access (hardcoded, cannot be removed)
 const ACCESS = {
   owner:   ALL_SECTIONS,
-  manager: ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','micros','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices'],
+  manager: ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','micros','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices'],
   employee:['dashboard','modules','spotcheck','stocktake'],
 };
-const TTLS = {dashboard:'Dashboard',modules:'Modules',spotcheck:'Daily Spot Check',stocktake:'Stock Take',micros:'Micros Reports',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
-const TSUBS = {dashboard:'Overview of all operations',modules:'All features in one place',spotcheck:'15 random items · different every day',micros:'Upload & analyse Micros 3700 sales reports',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
+const TTLS = {dashboard:'Dashboard',modules:'Modules',spotcheck:'Daily Spot Check',stocktake:'Stock Take',micros:'Micros Reports',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',cleaning:'Cleaning Checklist',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
+const TSUBS = {dashboard:'Overview of all operations',modules:'All features in one place',spotcheck:'15 random items · different every day',micros:'Upload & analyse Micros 3700 sales reports',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',cleaning:'End-of-day closing tasks',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
 const INVESTOR_SECTIONS = ['dashboard','modules','spotcheck','stockdb','reports','analytics','recipes','pricing','cashup','payroll','roster','leave','kpi','docs','auditlog'];
 const ROLE_COLORS = {owner:'#7a1528', investor:'#c8922a', manager:'#152438', employee:'#1a6e40'};
 
@@ -3160,6 +3234,10 @@ async function launchApp(){
   if(!CU.access.includes('modules')) CU.access = [...CU.access, 'modules'];
   if(CU.role==='manager' || CU.role==='employee'){
     if(!CU.access.includes('spotcheck')) CU.access = [...CU.access, 'spotcheck'];
+  }
+  // Ensure existing manager logins (created before this feature) also get the cleaning checklist
+  if(CU.role==='manager'){
+    if(!CU.access.includes('cleaning')) CU.access = [...CU.access, 'cleaning'];
   }
 
   // Stock employee mode: ensure orders access + hide full nav clutter
@@ -3366,6 +3444,7 @@ function go(id){
 
   if(id==='dashboard') loadDashChart(dashChartDays);
   if(id==='spotcheck') renderSpotCheck();
+  if(id==='cleaning') renderCleaningChecklist();
   if(id==='roster') initRosterPanel();
   if(id==='payroll'){ renderPaymentDate(); initPayPeriod(); loadPayrollForPeriod(); }
   if(id==='waiterlog'){ wlToday(); initLeaderboard(); initScheduling(); }
@@ -3382,6 +3461,8 @@ function go(id){
     if(sqlCard) sqlCard.style.display=CU?.role==='owner'?'block':'none';
     const scSqlCard=document.getElementById('spotCheckSQL');
     if(scSqlCard) scSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    const ccSqlCard=document.getElementById('cleaningChecklistSQL');
+    if(ccSqlCard) ccSqlCard.style.display=CU?.role==='owner'?'block':'none';
     const mxSqlCard=document.getElementById('microsSQL');
     if(mxSqlCard) mxSqlCard.style.display=CU?.role==='owner'?'block':'none';
     const attSqlCard=document.getElementById('attendanceSQL');
@@ -3403,6 +3484,7 @@ const SEC_GROUPS = {
     {id:'stockdb',label:'Stock Database',r:'manager'},
     {id:'pending',label:'Pending Deliveries',r:'manager'},
     {id:'orders',label:'Supplier Orders',r:'manager'},
+    {id:'cleaning',label:'Cleaning Checklist',r:'manager'},
   ]},
   finance:{tabs:[
     {id:'cashup',label:'Cash Up',r:'manager'},
@@ -3429,7 +3511,7 @@ const SEC_GROUPS = {
 };
 const SEC_GROUP_MAP = {
   dashboard:'overview',
-  spotcheck:'operations',stocktake:'operations',stockdb:'operations',pending:'operations',orders:'operations',
+  spotcheck:'operations',stocktake:'operations',stockdb:'operations',pending:'operations',orders:'operations',cleaning:'operations',
   cashup:'finance',reports:'finance',analytics:'finance',micros:'finance',recipes:'finance',pricing:'finance',waiterlog:'finance',invoices:'finance',
   roster:'people',payroll:'people',staff:'people',leave:'people',kpi:'people',docs:'people',
   auditlog:'system',settings:'system',
@@ -5666,6 +5748,235 @@ async function loadSpotCheckHistory(){
     }).join('');
   }catch(e){
     el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--red)">Error loading history.</div>';
+  }
+}
+
+// ═══════════════════════════════════════════
+// CLEANING CHECKLIST
+// ═══════════════════════════════════════════
+// Standard end-of-day closing checklist — seeded into cleaning_items on first
+// use so the owner/managers can add or remove items afterward via the UI.
+const DEFAULT_CLEANING_ITEMS = [
+  'Wipe down all counters and till area',
+  'Clean and sanitize the coffee machine',
+  'Empty and clean the coffee grinder',
+  'Wash and put away all dishes, cups and cutlery',
+  'Wipe down all tables and chairs',
+  'Sweep and mop all floors',
+  'Empty all bins and replace liners',
+  'Clean and restock the bathrooms',
+  'Wipe down fridges and freezers, inside and out',
+  'Check perishables are covered and stored correctly',
+  'Clean kitchen equipment (grill, oven, fryer)',
+  'Take out the rubbish and recycling',
+  'Cash drawer counted and locked away safely',
+  'Switch off all equipment not needed overnight',
+  'Lock all doors and windows, set the alarm',
+];
+
+let cleaningItems = []; // master list [{id,label,sort_order}]
+let ccItems = [];        // today's working copy [{...item, done}]
+let ccSubmittedToday = false;
+
+async function loadCleaningItems(){
+  try{
+    const {data,error} = await SB.from('cleaning_items').select('*').order('sort_order').order('created_at');
+    if(error) throw error;
+    if(data && data.length){
+      cleaningItems = data;
+    } else {
+      await seedCleaningItems();
+    }
+  }catch(e){
+    // Table doesn't exist yet — use defaults in memory until the SQL is run
+    cleaningItems = DEFAULT_CLEANING_ITEMS.map((label,i)=>({id:'local-'+i, label, sort_order:i}));
+  }
+}
+
+async function seedCleaningItems(){
+  const rows = DEFAULT_CLEANING_ITEMS.map((label,i)=>({label, sort_order:i}));
+  try{
+    await SB.from('cleaning_items').insert(rows);
+    const {data} = await SB.from('cleaning_items').select('*').order('sort_order').order('created_at');
+    cleaningItems = data || [];
+  }catch(e){
+    cleaningItems = DEFAULT_CLEANING_ITEMS.map((label,i)=>({id:'local-'+i, label, sort_order:i}));
+  }
+}
+
+async function renderCleaningChecklist(){
+  await loadCleaningItems();
+  ccSubmittedToday = false;
+  ccItems = cleaningItems.map(it => ({...it, done:false}));
+
+  const today = new Date();
+  const label = today.toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const dateEl = document.getElementById('ccDateLabel');
+  if(dateEl) dateEl.textContent = label + ' — Cleaning Checklist';
+
+  try{
+    const todayStr = today.toISOString().split('T')[0];
+    const {data} = await SB.from('cleaning_checklist_log').select('id,submitted_by,submitted_at,items').eq('date',todayStr).maybeSingle();
+    if(data){
+      ccSubmittedToday = true;
+      const when = new Date(data.submitted_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+      const meta = document.getElementById('ccDoneMeta');
+      if(meta) meta.textContent = `Submitted at ${when} by ${data.submitted_by||'unknown'} — tap Resubmit if anything changes.`;
+      const banner = document.getElementById('ccDoneBanner');
+      if(banner) banner.style.display='flex';
+      const saved = data.items||[];
+      ccItems = ccItems.map(it => {
+        const found = saved.find(s => s.id===it.id || s.label===it.label);
+        return found ? {...it, done:!!found.done} : it;
+      });
+    } else {
+      const banner = document.getElementById('ccDoneBanner');
+      if(banner) banner.style.display='none';
+    }
+  }catch(e){ /* non-critical */ }
+
+  ccRenderItems();
+}
+
+function ccRenderItems(){
+  const el = document.getElementById('ccItemList');
+  if(!el) return;
+  const completed = ccItems.filter(it=>it.done).length;
+  const prog = document.getElementById('ccProgressPill');
+  if(prog){
+    prog.textContent = `${completed} / ${ccItems.length}`;
+    const allDone = completed===ccItems.length && ccItems.length>0;
+    prog.style.background = allDone ? 'rgba(26,106,66,0.15)' : 'var(--surface)';
+    prog.style.color = allDone ? 'var(--green)' : 'var(--muted)';
+  }
+
+  el.innerHTML = ccItems.map((it,i) => `
+    <div class="cc-item" id="cc-row-${i}" onclick="${ccSubmittedToday?'':'ccToggleItem('+i+')'}"
+      style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 0.9rem;background:${it.done?'rgba(26,106,66,0.08)':'var(--white)'};border:1.5px solid ${it.done?'var(--green)':'var(--border)'};border-radius:10px;cursor:${ccSubmittedToday?'default':'pointer'};transition:background 0.15s,border-color 0.15s">
+      <div style="width:26px;height:26px;border-radius:50%;border:2px solid ${it.done?'var(--green)':'var(--border)'};background:${it.done?'var(--green)':'transparent'};color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.85rem;font-weight:700">${it.done?'✓':''}</div>
+      <div style="flex:1;font-size:0.86rem;${it.done?'color:var(--muted);text-decoration:line-through':''}">${it.label}</div>
+      ${ccSubmittedToday?'':`<button onclick="event.stopPropagation();ccRemoveItem(${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:0.9rem;flex-shrink:0;padding:0.2rem">✕</button>`}
+    </div>`).join('') || '<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No checklist items yet — tap + Add Item to start one.</div>';
+
+  const saveBtn = document.getElementById('ccSaveBtn');
+  if(saveBtn){
+    if(ccSubmittedToday){
+      saveBtn.textContent = 'Resubmit Checklist';
+      saveBtn.style.background = 'var(--muted)';
+    } else {
+      saveBtn.textContent = 'Submit Checklist';
+      saveBtn.style.background = '';
+    }
+  }
+}
+
+function ccToggleItem(i){
+  if(!ccItems[i]) return;
+  ccItems[i].done = !ccItems[i].done;
+  ccRenderItems();
+}
+
+async function ccAddItem(){
+  const label = prompt('Add a new cleaning checklist item:');
+  if(!label || !label.trim()) return;
+  const newItem = {label: label.trim(), sort_order: cleaningItems.length};
+  try{
+    const {data,error} = await SB.from('cleaning_items').insert(newItem).select().single();
+    if(error) throw error;
+    cleaningItems.push(data);
+    ccItems.push({...data, done:false});
+  }catch(e){
+    const local = {id:'local-'+Date.now(), ...newItem};
+    cleaningItems.push(local);
+    ccItems.push({...local, done:false});
+  }
+  ccRenderItems();
+  showToast('Item added ✓');
+}
+
+async function ccRemoveItem(i){
+  const item = ccItems[i];
+  if(!item) return;
+  if(!confirm(`Remove "${item.label}" from the checklist?`)) return;
+  ccItems.splice(i,1);
+  cleaningItems = cleaningItems.filter(it=>it.id!==item.id);
+  ccRenderItems();
+  if(item.id && !String(item.id).startsWith('local-')){
+    await SB.from('cleaning_items').delete().eq('id',item.id);
+  }
+}
+
+async function saveCleaningChecklist(){
+  if(ccItems.length===0){ showToast('No checklist items to submit.', true); return; }
+  const todayStr = new Date().toISOString().split('T')[0];
+  const items = ccItems.map(it => ({id:it.id, label:it.label, done:!!it.done}));
+  const completedCount = items.filter(it=>it.done).length;
+  const rec = {
+    date: todayStr,
+    submitted_by: CU?.name || CU?.username || 'Unknown',
+    submitted_at: new Date().toISOString(),
+    items,
+    completed_count: completedCount,
+    total_items: items.length,
+  };
+  setSyncStatus('syncing');
+  const {error} = await SB.from('cleaning_checklist_log').upsert(rec, {onConflict:'date'});
+  setSyncStatus(error?'err':'ok');
+  if(error){ showToast('Error saving checklist.', true); return; }
+  ccSubmittedToday = true;
+  const banner = document.getElementById('ccDoneBanner');
+  if(banner) banner.style.display='flex';
+  const meta = document.getElementById('ccDoneMeta');
+  const when = new Date().toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+  if(meta) meta.textContent = `Submitted at ${when} by ${rec.submitted_by}.`;
+  const incomplete = items.length - completedCount;
+  const msg = incomplete>0
+    ? `Checklist saved · ${completedCount}/${items.length} done — ${incomplete} item${incomplete!==1?'s':''} left unticked`
+    : `Checklist saved ✓ · All ${items.length} items done`;
+  showToast(msg, incomplete>0);
+  await logAudit('cleaning','Cleaning Checklist Submitted',`${completedCount}/${items.length} items completed`);
+  ccRenderItems();
+}
+
+function ccSwitchTab(tab, btn){
+  document.querySelectorAll('#p-cleaning .ct').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  document.getElementById('ccCheckPane').style.display = tab==='check' ? '' : 'none';
+  document.getElementById('ccHistoryPane').style.display = tab==='history' ? '' : 'none';
+  if(tab==='history') loadCleaningHistory();
+}
+
+async function loadCleaningHistory(){
+  const el = document.getElementById('ccHistoryList');
+  el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">Loading…</div>';
+  try{
+    const {data,error} = await SB.from('cleaning_checklist_log').select('*').order('date',{ascending:false}).limit(30);
+    if(error||!data?.length){
+      el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No cleaning checklists recorded yet.</div>';
+      return;
+    }
+    el.innerHTML = data.map(r => {
+      const dt = new Date(r.date+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+      const when = r.submitted_at ? new Date(r.submitted_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'}) : '';
+      const complete = r.completed_count===r.total_items && r.total_items>0;
+      const pill = complete
+        ? `<span style="background:rgba(26,106,66,0.12);color:var(--green);border-radius:12px;padding:0.15rem 0.55rem;font-size:0.7rem;font-weight:700">✓ All done</span>`
+        : `<span style="background:rgba(192,57,43,0.12);color:var(--red);border-radius:12px;padding:0.15rem 0.55rem;font-size:0.7rem;font-weight:700">${r.completed_count||0}/${r.total_items||0}</span>`;
+      const missed = (r.items||[]).filter(it=>!it.done);
+      const missedTxt = missed.length ? missed.map(it=>it.label).join(', ') : '';
+      return `<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.6rem;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:700;font-size:0.86rem">${dt}</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:0.1rem">Submitted ${when} by ${r.submitted_by||'unknown'}</div>
+          </div>
+          ${pill}
+        </div>
+        ${missedTxt?`<div style="font-size:0.72rem;color:var(--red);margin-top:0.5rem">⚠️ Not done: ${missedTxt}</div>`:''}
+      </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">Error loading history.</div>';
   }
 }
 
@@ -9492,7 +9803,7 @@ const ACCESS_OPTIONS = [
 const PRESETS = {
   owner:    ALL_SECTIONS,
   investor: INVESTOR_SECTIONS,
-  manager:  ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','reports','micros','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices'],
+  manager:  ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','micros','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices'],
   staff:    ['dashboard','modules','spotcheck','stocktake'],
 };
 
