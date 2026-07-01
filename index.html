@@ -1915,6 +1915,7 @@ select option{background:var(--white);color:var(--ink);}
         <div class="brow" style="margin-top:0.5rem;gap:0.6rem;flex-wrap:wrap">
           <button class="btn bp" onclick="savePay()">Save Payroll</button>
           <button class="btn bs" onclick="exportPayrollToExcel()" style="display:flex;align-items:center;gap:0.35rem">📊 Export to Excel</button>
+          <button class="btn bs" onclick="exportDailyHoursToExcel()" style="display:flex;align-items:center;gap:0.35rem">📅 Daily Hours</button>
         </div>
         </div><!-- end payrollDetailPane -->
       </div>
@@ -7345,6 +7346,100 @@ async function savePay(){
   const{error}=await SB.from('payroll').upsert(rows,{onConflict:'staff_name,month,group_type'});
   setSyncStatus(error?'err':'ok');
   showToast(error?'Error saving payroll.':'Payroll saved to database ✓',!!error);
+}
+
+async function exportDailyHoursToExcel(){
+  const pp = getPayPeriod();
+  const fromStr = pp.from || new Date().toISOString().slice(0,7)+'-01';
+  const [yr,mth] = fromStr.split('-').map(Number);
+  const monthStart = pp.from ? new Date(pp.from+'T00:00:00Z') : new Date(Date.UTC(yr,mth-1,1));
+  const monthEnd   = pp.to   ? new Date(pp.to  +'T00:00:00Z') : new Date(Date.UTC(yr,mth,  0));
+  const fmt = d => d.toISOString().slice(0,10);
+
+  // Extend query start back 6 days (same logic as syncRosterHoursToPayroll)
+  const queryStart = new Date(monthStart);
+  queryStart.setUTCDate(queryStart.getUTCDate()-6);
+
+  showToast('Building daily hours report…');
+  const {data,error} = await SB.from('roster').select('*')
+    .gte('week_start',fmt(queryStart))
+    .lte('week_start',fmt(monthEnd))
+    .order('staff_name').order('week_start').order('day_index');
+
+  if(error||!data?.length){ showToast('No roster data found for this pay period.',true); return; }
+
+  const DAYS      = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const GRP_LABEL = {'Managers':'Management','Kitchen':'Kitchen','Bar / Waiters':'Bar','Waiters PH':'Waiters PH'};
+  const holidays  = getSAHolidays(yr);
+
+  // Build one row per shift within the pay period
+  const shiftRows = [];
+  data.forEach(r=>{
+    const d = new Date(r.week_start+'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate()+r.day_index);
+    if(d<monthStart||d>monthEnd) return;
+    const hrs = calcShiftHours(r.start_time,r.end_time,r.break_hours);
+    if(!hrs||hrs<=0) return;
+    const dateStr = fmt(d);
+    const flags   = r.flags||{};
+    const isSun   = r.day_index===6;
+    const isPH    = !!flags.ph || holidays.includes(dateStr);
+    const type    = isPH?'Public Holiday':isSun?'Sunday':'Regular';
+    shiftRows.push({
+      name:     r.staff_name,
+      group:    GRP_LABEL[r.group_type]||r.group_type||'',
+      date:     dateStr,
+      day:      DAYS[r.day_index],
+      start:    r.start_time||'',
+      end:      r.end_time||'',
+      hrs:      parseFloat(hrs.toFixed(2)),
+      reg:      (!isSun&&!isPH)?parseFloat(hrs.toFixed(2)):0,
+      sun:      (isSun&&!isPH)?parseFloat(hrs.toFixed(2)):0,
+      hol:      isPH?parseFloat(hrs.toFixed(2)):0,
+      type,
+    });
+  });
+
+  // Sort by group → name → date
+  shiftRows.sort((a,b)=>(a.group+a.name+a.date).localeCompare(b.group+b.name+b.date));
+
+  // ── Sheet 1: Daily Breakdown (one row per shift) ────────────────────────
+  const dailyHdr=['Name','Group','Date','Day','Start','End','Hours Worked','Regular Hrs','Sunday Hrs','PH Hrs','Type'];
+  const dailyData=[dailyHdr,...shiftRows.map(r=>[r.name,r.group,r.date,r.day,r.start,r.end,r.hrs,r.reg||'',r.sun||'',r.hol||'',r.type])];
+  const ws1=XLSX.utils.aoa_to_sheet(dailyData);
+  ws1['!cols']=[{wch:22},{wch:14},{wch:12},{wch:6},{wch:8},{wch:8},{wch:13},{wch:12},{wch:12},{wch:10},{wch:14}];
+
+  // ── Sheet 2: Summary per employee ──────────────────────────────────────
+  const summaryMap={};
+  shiftRows.forEach(r=>{
+    if(!summaryMap[r.name]) summaryMap[r.name]={name:r.name,group:r.group,days:0,reg:0,sun:0,hol:0};
+    summaryMap[r.name].days+=1;
+    summaryMap[r.name].reg +=r.reg;
+    summaryMap[r.name].sun +=r.sun;
+    summaryMap[r.name].hol +=r.hol;
+  });
+  const sumHdr=['Name','Group','Days Worked','Regular Hrs','Sunday Hrs','PH Hrs','Total Hrs'];
+  const sumData=[sumHdr,...Object.values(summaryMap)
+    .sort((a,b)=>(a.group+a.name).localeCompare(b.group+b.name))
+    .map(s=>[s.name,s.group,s.days,
+      parseFloat(s.reg.toFixed(2)),
+      parseFloat(s.sun.toFixed(2)),
+      parseFloat(s.hol.toFixed(2)),
+      parseFloat((s.reg+s.sun+s.hol).toFixed(2))])];
+  const ws2=XLSX.utils.aoa_to_sheet(sumData);
+  ws2['!cols']=[{wch:22},{wch:14},{wch:12},{wch:13},{wch:12},{wch:10},{wch:10}];
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws1,'Daily Breakdown');
+  XLSX.utils.book_append_sheet(wb,ws2,'Summary');
+
+  const periodStr=`${fmt(monthStart)}_${fmt(monthEnd)}`.replace(/-/g,'');
+  const blob=new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})],{type:'application/octet-stream'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`DieAkker_DailyHours_${periodStr}.xlsx`;
+  a.click();
+  showToast(`Exported ${shiftRows.length} shifts across ${Object.keys(summaryMap).length} staff ✓`);
 }
 
 function exportPayrollToExcel(){
