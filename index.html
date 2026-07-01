@@ -7753,6 +7753,7 @@ function openPayslip(name, group){
   document.getElementById('psAcct').value = staffRec?.eft_account || 'EFT ACCOUNT';
   document.getElementById('psBreakage').value = '';
   document.getElementById('psBorrowed').value = '';
+  document.getElementById('psTaxi').value = '';
   document.getElementById('psProvident').value = '';
   document.getElementById('psOtherDeduct').value = '';
   const now=new Date();
@@ -7762,8 +7763,19 @@ function openPayslip(name, group){
   document.getElementById('psTo').value=lastDay.toISOString().split('T')[0];
   document.getElementById('psExtraIncome').innerHTML=`<div class="fg2" style="margin-bottom:0.4rem"><div class="fg"><label>Description</label><input type="text" class="ps-desc" placeholder="e.g. Admin Work"></div><div class="fg"><label>Amount (R)</label><input type="number" class="ps-amt" placeholder="0.00" min="0" step="0.01"></div></div>`;
   if(group==='waiter'){
+    // Waiter commission-based staff — pull breakage and borrowed from waiter payroll data
     const w=payD.waiters?.find(x=>x.name===name);
     if(w){document.getElementById('psBreakage').value=w.breakage||'';document.getElementById('psBorrowed').value=w.borrowed||'';}
+  } else {
+    // Hourly-rate staff (manager, kitchen, bar, waitph) — pull breakage, borrowed and taxi
+    const grpMap={manager:'mgr',kitchen:'kit',bar:'bar',waitph:'waitph'};
+    const grpKey=grpMap[group]||'kit';
+    const s=(payD[grpKey]||[]).find(x=>x.name===name);
+    if(s){
+      document.getElementById('psBreakage').value=s.breakage||'';
+      document.getElementById('psBorrowed').value=s.borrowed||'';
+      document.getElementById('psTaxi').value=s.taxi||'';
+    }
   }
   openMo('moPayslip');
 }
@@ -7784,6 +7796,7 @@ function printPayslip(){
   const to       = document.getElementById('psTo').value;
   const breakage = parseFloat(document.getElementById('psBreakage').value)||0;
   const borrowed = parseFloat(document.getElementById('psBorrowed').value)||0;
+  const taxi     = parseFloat(document.getElementById('psTaxi').value)||0;
   const provident= parseFloat(document.getElementById('psProvident').value)||0;
   const otherD   = parseFloat(document.getElementById('psOtherDeduct').value)||0;
 
@@ -7800,13 +7813,17 @@ function printPayslip(){
     const sales=w.sales||0, tips=w.tips||0;
     const comm=Math.round(sales*0.03*100)/100;
     if(sales>0) incomeLines.push({desc:'Sales 3%', rate:'0.03', qty:`@ R ${sales.toFixed(2)}`, amt:comm});
-    if(tips>0)  incomeLines.push({desc:'Tips', rate:'1', qty:`@ R ${tips.toFixed(2)}`, amt:tips});
-  } else if(group==='manager'){
-    const s=payD.mgr?.find(x=>x.name===name)||{hrs:0,hourly_rate:resolveRate(name,42.50)};
-    if(s.hrs>0) incomeLines.push({desc:`Hourly Pay (${s.hrs} hrs @ R${s.hourly_rate}/hr)`, rate:'', qty:'', amt:s.hrs*s.hourly_rate});
+    if(tips>0)  incomeLines.push({desc:'Tips', rate:'', qty:`@ R ${tips.toFixed(2)}`, amt:tips});
   } else {
-    const s=payD.kit?.find(x=>x.name===name)||payD.waitph?.find(x=>x.name===name)||{hrs:0,hourly_rate:resolveRate(name,30.23)};
-    if(s.hrs>0) incomeLines.push({desc:`Hourly Pay (${s.hrs} hrs @ R${s.hourly_rate}/hr)`, rate:'', qty:'', amt:s.hrs*s.hourly_rate});
+    // Hourly-rate groups: manager, kitchen, bar, waitph
+    const grpMap={manager:'mgr',kitchen:'kit',bar:'bar',waitph:'waitph'};
+    const grpKey=grpMap[group]||'kit';
+    const defaultRate=group==='manager'?42.50:group==='bar'?30.60:30.23;
+    const s=(payD[grpKey]||[]).find(x=>x.name===name)||{hrs:0,sun_hrs:0,hol_hrs:0,hourly_rate:resolveRate(name,defaultRate)};
+    const r=s.hourly_rate||defaultRate;
+    if((s.hrs||0)>0)     incomeLines.push({desc:'Hourly Pay',            rate:`R${r.toFixed(2)}/hr`,          qty:`${s.hrs} hrs`,     amt:(s.hrs||0)*r});
+    if((s.sun_hrs||0)>0) incomeLines.push({desc:'Sunday Pay (×1.5)',     rate:`R${(r*1.5).toFixed(2)}/hr`,    qty:`${s.sun_hrs} hrs`, amt:(s.sun_hrs||0)*r*1.5});
+    if((s.hol_hrs||0)>0) incomeLines.push({desc:'Public Holiday Pay (×2)',rate:`R${(r*2).toFixed(2)}/hr`,    qty:`${s.hol_hrs} hrs`, amt:(s.hol_hrs||0)*r*2});
   }
 
   // Extra income lines from modal
@@ -7815,7 +7832,8 @@ function printPayslip(){
   descs.forEach((d,i)=>{ const a=parseFloat(amts[i]?.value)||0; if(d.value.trim()&&a>0) incomeLines.push({desc:d.value.trim(),rate:'1',qty:`@ R ${a.toFixed(2)}`,amt:a}); });
 
   const gross = incomeLines.reduce((s,l)=>s+l.amt,0);
-  const totalDeduct = breakage+borrowed+provident+otherD;
+  const uif   = Math.round(gross*0.01*100)/100;
+  const totalDeduct = uif+taxi+breakage+borrowed+provident+otherD;
   const netPay = gross-totalDeduct;
 
   const html=`<!DOCTYPE html>
@@ -7902,9 +7920,10 @@ table.pay-table td.qty{text-align:center;color:#444;padding:0 3mm;}
   <div class="section-title deduct-section">DEDUCTIONS</div>
   <table class="pay-table">
     <tbody>
-      <tr><td>UIF:</td><td></td><td></td><td class="num">R 0,00</td></tr>
-      <tr><td>BORROWED :</td><td></td><td></td><td class="num">R ${borrowed.toFixed(2)}</td></tr>
-      <tr><td>BREAKAGE :</td><td></td><td></td><td class="num">R ${breakage.toFixed(2)}</td></tr>
+      ${uif>0?`<tr><td>UIF (1%) :</td><td></td><td></td><td class="num">R ${uif.toFixed(2)}</td></tr>`:''}
+      ${taxi>0?`<tr><td>TAXI :</td><td></td><td></td><td class="num">R ${taxi.toFixed(2)}</td></tr>`:''}
+      ${breakage>0?`<tr><td>BREAKAGE :</td><td></td><td></td><td class="num">R ${breakage.toFixed(2)}</td></tr>`:''}
+      ${borrowed>0?`<tr><td>BORROWED :</td><td></td><td></td><td class="num">R ${borrowed.toFixed(2)}</td></tr>`:''}
       ${provident>0?`<tr><td>PROVIDENT FUND :</td><td></td><td></td><td class="num">R ${provident.toFixed(2)}</td></tr>`:''}
       ${otherD>0?`<tr><td>OTHER :</td><td></td><td></td><td class="num">R ${otherD.toFixed(2)}</td></tr>`:''}
       <tr class="gross-row">
@@ -14012,8 +14031,12 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       <div class="fg"><label>Borrowed (R)</label><input type="number" id="psBorrowed" placeholder="0.00" min="0" step="0.01"></div>
     </div>
     <div class="fg2">
+      <div class="fg"><label>Taxi (R)</label><input type="number" id="psTaxi" placeholder="0.00" min="0" step="0.01"></div>
       <div class="fg"><label>Provident Fund (R)</label><input type="number" id="psProvident" placeholder="0.00" min="0" step="0.01"></div>
+    </div>
+    <div class="fg2">
       <div class="fg"><label>Other Deduction (R)</label><input type="number" id="psOtherDeduct" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="fg"></div>
     </div>
     <button class="btn bp" onclick="printPayslip()" style="width:100%;margin-top:0.5rem">🖨️ Generate & Print Payslip</button>
   </div>
