@@ -2442,8 +2442,25 @@ CREATE INDEX IF NOT EXISTS att_staff_idx ON attendance_log(staff_name);</pre>
         </div>
         <div class="card" id="nfcAttendanceSQL" style="display:none">
           <div class="card-title">NFC Clock-In Setup</div>
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL once in Supabase to enable the NFC Clock In/Out module (registers the fixed entrance tag, adds NFC/geofence/offline-sync columns to the existing attendance log, and stores geofence/Wi-Fi settings). Safe to run even though attendance_log already exists — every statement is additive.</div>
-          <pre style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">-- Registered NFC tags (normally just the one fixed tag at the staff entrance)
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL once in Supabase to enable the NFC Clock In/Out module. It creates attendance_log if it doesn't exist yet (it's needed either way — the QR system's own setup box never got run in this project) and only adds columns/tables on top of it. Safe to run more than once.</div>
+          <pre style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">-- Base attendance log (same table the QR check-in system also uses).
+-- Created here too since this project doesn't have it yet.
+CREATE TABLE IF NOT EXISTS attendance_log (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  staff_name text NOT NULL,
+  token text,
+  type text NOT NULL CHECK (type IN ('check-in','check-out')),
+  date date NOT NULL,
+  time_str text,
+  logged_at timestamptz DEFAULT now()
+);
+ALTER TABLE attendance_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "allow_all" ON attendance_log;
+CREATE POLICY "allow_all" ON attendance_log FOR ALL USING (true) WITH CHECK (true);
+CREATE INDEX IF NOT EXISTS att_date_idx ON attendance_log(date);
+CREATE INDEX IF NOT EXISTS att_staff_idx ON attendance_log(staff_name);
+
+-- Registered NFC tags (normally just the one fixed tag at the staff entrance)
 CREATE TABLE IF NOT EXISTS nfc_tags (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   tag_uid text NOT NULL UNIQUE,
@@ -2453,9 +2470,10 @@ CREATE TABLE IF NOT EXISTS nfc_tags (
   created_at timestamptz DEFAULT now()
 );
 ALTER TABLE nfc_tags ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "allow_all" ON nfc_tags;
 CREATE POLICY "allow_all" ON nfc_tags FOR ALL USING (true) WITH CHECK (true);
 
--- Extend the existing attendance_log table — additive only, nothing removed.
+-- Extend attendance_log — additive only, nothing removed.
 -- The old QR check-in flow keeps working exactly as before.
 ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS method text DEFAULT 'qr';
 ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS tag_uid text;
@@ -2484,6 +2502,7 @@ CREATE TABLE IF NOT EXISTS attendance_settings (
 );
 INSERT INTO attendance_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 ALTER TABLE attendance_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "allow_all" ON attendance_settings;
 CREATE POLICY "allow_all" ON attendance_settings FOR ALL USING (true) WITH CHECK (true);</pre>
           <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('nfcAttendanceSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
