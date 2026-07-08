@@ -905,7 +905,12 @@ select option{background:var(--white);color:var(--ink);}
       <div class="pnl" id="p-modules">
         <div class="mod-section-label lbl-ops">Operations</div>
         <div class="mod-grid">
-          <div class="mod-card mod-ops" onclick="go('spotcheck');closeSb()" style="border:2px solid rgba(255,255,255,0.25)">
+          <div class="mod-card mod-ops" onclick="go('clockin');closeSb()" style="border:2px solid rgba(255,255,255,0.25)">
+            <div class="mod-ic">⏱️</div>
+            <div class="mod-title">Clock In / Clock Out</div>
+            <div class="mod-sub">Tap the NFC tag at the entrance</div>
+          </div>
+          <div class="mod-card mod-ops" onclick="go('spotcheck');closeSb()">
             <div class="mod-ic">🎲</div>
             <div class="mod-title">Daily Spot Check</div>
             <div class="mod-sub">15 random items · catches theft</div>
@@ -1060,6 +1065,52 @@ select option{background:var(--white);color:var(--ink);}
       </div>
 
       <!-- SPOT CHECK -->
+      <!-- CLOCK IN / CLOCK OUT (NFC) -->
+      <div class="pnl" id="p-clockin">
+        <div id="clockinOfflineBanner" style="display:none;background:var(--orange-l,#fff3e0);border:1px solid var(--orange);border-radius:10px;padding:0.7rem 1rem;margin-bottom:0.8rem;display:flex;align-items:center;justify-content:space-between;gap:0.6rem;flex-wrap:wrap">
+          <div style="font-size:0.82rem;color:var(--ink)">📴 <span id="clockinOfflineCount">0</span> clock event(s) saved on this device, waiting to sync.</div>
+          <button class="btn bs bsm" onclick="syncNfcOfflineQueue(true)">🔄 Sync now</button>
+        </div>
+
+        <div class="card" style="text-align:center;padding:1.6rem 1rem" id="clockinStatusCard">
+          <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem">Current Status</div>
+          <div id="clockinStatusBadge" style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.8rem;color:var(--muted)">—</div>
+          <div id="clockinStatusTime" style="font-size:0.78rem;color:var(--muted);margin-top:0.2rem">Checking…</div>
+        </div>
+
+        <div id="clockinIdle" style="text-align:center;margin:1.2rem 0">
+          <button class="btn bp" id="clockinActionBtn" onclick="startNfcClockAction()" style="font-size:1rem;padding:0.9rem 2rem;border-radius:14px">⏱ Clock In</button>
+        </div>
+
+        <!-- Waiting for NFC tap -->
+        <div id="clockinPrompt" class="card" style="display:none;text-align:center;padding:2rem 1rem">
+          <div style="font-size:2.4rem;margin-bottom:0.6rem">📡</div>
+          <div style="font-weight:700;font-size:1rem;margin-bottom:0.3rem">Tap the NFC tag at the staff entrance</div>
+          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem" id="clockinPromptSub">Hold your device near the tag near the door.</div>
+          <button class="btn bs bsm" onclick="cancelNfcClockAction()">Cancel</button>
+        </div>
+
+        <!-- Result -->
+        <div id="clockinResult" class="card" style="display:none;text-align:center;padding:1.6rem 1rem">
+          <div id="clockinResultIcon" style="font-size:2.2rem;margin-bottom:0.4rem">✅</div>
+          <div id="clockinResultMsg" style="font-weight:700;font-size:1.05rem;margin-bottom:0.2rem">Clocked in</div>
+          <div id="clockinResultTime" style="font-size:0.8rem;color:var(--muted)"></div>
+          <div id="clockinResultFlag" style="display:none;margin-top:0.6rem;font-size:0.75rem;background:var(--orange-l,#fff3e0);color:#b25e00;border-radius:8px;padding:0.5rem 0.7rem"></div>
+          <button class="btn bs bsm" style="margin-top:0.9rem" onclick="resetClockInScreen()">Done</button>
+        </div>
+
+        <!-- Web NFC unsupported -->
+        <div id="clockinUnsupportedNotice" class="card" style="display:none;padding:1rem 1.1rem;background:var(--surface);font-size:0.8rem;color:var(--muted)">
+          ⚠️ This browser/device can't read NFC tags directly (Web NFC needs Chrome on Android, HTTPS, and NFC turned on).
+          Ask a manager to clock you in from <strong>Staff → 📡 NFC &amp; Live</strong>, or open this page in Chrome on an NFC-enabled Android device.
+        </div>
+
+        <div class="stitle">Today's Activity</div>
+        <div id="clockinTodayList" class="card" style="padding:0.6rem 1rem">
+          <div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:0.6rem">No activity yet today.</div>
+        </div>
+      </div>
+
       <div class="pnl" id="p-spotcheck">
         <!-- Tab bar -->
         <div class="ctabs" style="margin-bottom:1rem">
@@ -1520,7 +1571,7 @@ select option{background:var(--white);color:var(--ink);}
           <div class="stat cb"><div class="snum nb" id="an-days">—</div><div class="slbl">Days of Data</div></div>
           <div class="stat cg"><div class="snum ng" id="an-stocktakes">—</div><div class="slbl">Stocktakes Done</div></div>
           <div class="stat co"><div class="snum no" id="an-items">—</div><div class="slbl">Items Tracked</div></div>
-          <div class="stat cr"><div class="snum nr" id="an-waste">—</div><div class="slbl">Total Waste Units</div></div>
+          <div class="stat cr"><div class="snum nr" id="an-wasteKpi">—</div><div class="slbl">Total Waste Units</div></div>
         </div>
 
         <!-- Chart tabs -->
@@ -1611,6 +1662,7 @@ select option{background:var(--white);color:var(--ink);}
             <div class="brow">
               <button class="btn bs bsm" onclick="openMicrosUpload()">📤 Upload Micros CSV</button>
               <button class="btn bp bsm" id="addRecipeBtn" onclick="openEditRecipe(null)">+ Add Recipe</button>
+              <button class="btn bs bsm" id="delAllRecipesBtn" onclick="eraseAllRecipes()" style="display:none;color:var(--red);border-color:var(--red)">🗑️ Erase All Recipes</button>
             </div>
           </div>
           <div id="microsBanner" style="display:none;background:var(--green-l);border:1px solid var(--green-b);border-radius:10px;padding:0.8rem 1rem;margin-bottom:0.8rem;font-size:0.82rem;color:var(--green)"></div>
@@ -1928,6 +1980,7 @@ select option{background:var(--white);color:var(--ink);}
           <button class="ct" id="staffTabBtnLogins" onclick="switchStaffTab('logins',this)">🔐 User Logins</button>
           <button class="ct" id="staffTabBtnQrcodes" onclick="switchStaffTab('qrcodes',this)">📲 QR Codes</button>
           <button class="ct" id="staffTabBtnAttendance" onclick="switchStaffTab('attendance',this)">🕐 Attendance</button>
+          <button class="ct" id="staffTabBtnNfc" onclick="switchStaffTab('nfc',this)">📡 NFC &amp; Live</button>
         </div>
 
         <!-- STAFF LIST TAB -->
@@ -1971,6 +2024,46 @@ select option{background:var(--white);color:var(--ink);}
             <button class="btn bs bsm" onclick="attSetToday()">Today</button>
           </div>
           <div id="attList"><div class="skel-card"><div class="skel skel-line w60"></div><div class="skel skel-line w80 sm"></div></div></div>
+        </div>
+
+        <!-- NFC & LIVE TAB -->
+        <div id="staffTabNfc" style="display:none">
+          <div class="stitle" style="margin-top:0">🟢 Currently Clocked In</div>
+          <div id="nfcLiveBoard" class="card" style="padding:0.6rem 1rem;margin-bottom:1rem">
+            <div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:0.8rem">Loading…</div>
+          </div>
+
+          <div class="stitle">🚩 Flagged Events Needing Review</div>
+          <div id="nfcFlaggedList" class="card" style="padding:0.6rem 1rem;margin-bottom:1rem">
+            <div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:0.8rem">Loading…</div>
+          </div>
+
+          <div class="stitle">📡 Registered NFC Tags</div>
+          <div class="card" style="padding:0.8rem 1rem;margin-bottom:1rem">
+            <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.7rem">Register the fixed tag stuck at the staff entrance once. Staff then tap this same tag to clock in/out — the tag itself never moves.</div>
+            <div id="nfcTagsList" style="margin-bottom:0.7rem"></div>
+            <button class="btn bp bsm" onclick="registerNfcTag()">+ Register New Tag</button>
+          </div>
+
+          <div class="stitle">⚙️ Validation Settings</div>
+          <div class="card" style="padding:0.8rem 1rem">
+            <div class="fg" style="display:flex;align-items:center;gap:0.5rem;flex-direction:row">
+              <input type="checkbox" id="nfcReqGeofence" style="width:auto" onchange="saveAttendanceSettings()">
+              <label style="margin:0">Require staff to be within range of the restaurant (GPS) to clock in/out</label>
+            </div>
+            <div class="fg2" style="margin-top:0.6rem">
+              <div class="fg"><label>Restaurant Latitude</label><input type="number" id="nfcGeoLat" step="0.000001"></div>
+              <div class="fg"><label>Restaurant Longitude</label><input type="number" id="nfcGeoLng" step="0.000001"></div>
+            </div>
+            <div class="fg2">
+              <div class="fg"><label>Allowed Radius (metres)</label><input type="number" id="nfcGeoRadius" step="1" min="10"></div>
+              <div class="fg"><label>Wi-Fi Network Name <span style="font-size:0.68rem;color:var(--muted)">(informational — browsers can't verify SSID)</span></label><input type="text" id="nfcWifiHint" placeholder="e.g. DieAkker-Staff"></div>
+            </div>
+            <div class="brow" style="margin-top:0.5rem">
+              <button class="btn bs bsm" onclick="useCurrentLocationForGeofence()">📍 Use My Current Location</button>
+              <button class="btn bp bsm" onclick="saveAttendanceSettings()">Save Settings</button>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -2346,6 +2439,53 @@ CREATE POLICY "allow_all" ON attendance_log FOR ALL USING (true) WITH CHECK (tru
 CREATE INDEX IF NOT EXISTS att_date_idx ON attendance_log(date);
 CREATE INDEX IF NOT EXISTS att_staff_idx ON attendance_log(staff_name);</pre>
           <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('attendanceSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
+        <div class="card" id="nfcAttendanceSQL" style="display:none">
+          <div class="card-title">NFC Clock-In Setup</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL once in Supabase to enable the NFC Clock In/Out module (registers the fixed entrance tag, adds NFC/geofence/offline-sync columns to the existing attendance log, and stores geofence/Wi-Fi settings). Safe to run even though attendance_log already exists — every statement is additive.</div>
+          <pre style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">-- Registered NFC tags (normally just the one fixed tag at the staff entrance)
+CREATE TABLE IF NOT EXISTS nfc_tags (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  tag_uid text NOT NULL UNIQUE,
+  label text NOT NULL DEFAULT 'Staff Entrance',
+  active boolean DEFAULT true,
+  registered_by text,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE nfc_tags ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON nfc_tags FOR ALL USING (true) WITH CHECK (true);
+
+-- Extend the existing attendance_log table — additive only, nothing removed.
+-- The old QR check-in flow keeps working exactly as before.
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS method text DEFAULT 'qr';
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS tag_uid text;
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS client_event_id text;
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS lat double precision;
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS lng double precision;
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS gps_accuracy_m numeric;
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS wifi_ok boolean;
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS flagged boolean DEFAULT false;
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS flag_reason text;
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS reviewed boolean DEFAULT false;
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS reviewed_by text;
+ALTER TABLE attendance_log ADD COLUMN IF NOT EXISTS reviewed_at timestamptz;
+CREATE UNIQUE INDEX IF NOT EXISTS att_client_event_idx ON attendance_log(client_event_id) WHERE client_event_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS att_flagged_idx ON attendance_log(flagged, reviewed);
+
+-- Geofence / Wi-Fi / validation settings (single row)
+CREATE TABLE IF NOT EXISTS attendance_settings (
+  id int PRIMARY KEY DEFAULT 1,
+  geofence_lat double precision,
+  geofence_lng double precision,
+  geofence_radius_m numeric DEFAULT 150,
+  wifi_ssid_hint text,
+  require_geofence boolean DEFAULT false,
+  updated_at timestamptz DEFAULT now()
+);
+INSERT INTO attendance_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+ALTER TABLE attendance_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON attendance_settings FOR ALL USING (true) WITH CHECK (true);</pre>
+          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('nfcAttendanceSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
         <div class="card" id="microsSQL" style="display:none">
           <div class="card-title">Micros Imports Table Setup</div>
@@ -2896,6 +3036,41 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
   </div>
 </div>
 
+<div class="mo" id="moIngPrice">
+  <div class="md">
+    <button class="md-close" onclick="closeMo('moIngPrice')">✕</button>
+    <div class="md-title" id="ingPriceModalTitle">Edit Ingredient</div>
+    <div id="ingPriceStockHint" style="display:none;font-size:0.72rem;color:var(--green);font-weight:600;margin:-0.4rem 0 0.6rem">🔗 Linked to a Stock Database item — saving here updates Stock DB too</div>
+    <input type="hidden" id="ingPriceKey">
+    <div class="fg"><label>Ingredient Name</label><input type="text" id="ingPriceName" placeholder="e.g. cream cheese"></div>
+    <div class="fg2">
+      <div class="fg"><label>Price per Unit (R)</label><input type="number" id="ingPriceVal" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="fg"><label>Unit</label>
+        <select id="ingPriceUnit"><option>kg</option><option>litre</option><option>each</option><option>g</option><option>ml</option></select>
+      </div>
+    </div>
+    <div class="fg2">
+      <div class="fg"><label>Category</label>
+        <select id="ingPriceCat">
+          <option>Meat</option><option>Dairy</option><option>Produce</option><option>Bakery</option>
+          <option>Sauces</option><option>Bar</option><option>Dry Goods</option><option>Other</option>
+        </select>
+      </div>
+      <div class="fg"><label>Supplier</label>
+        <select id="ingPriceSupplier"></select>
+      </div>
+    </div>
+    <div id="ingImpactPreview" style="display:none;background:var(--surface);border-radius:8px;padding:0.6rem 0.8rem;margin:0.4rem 0 0.8rem">
+      <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem">Dishes using this ingredient</div>
+      <div id="ingImpactList"></div>
+    </div>
+    <div class="brow" style="margin-top:0.5rem">
+      <button class="btn bp" onclick="saveIngPrice()" style="flex:1">Save Ingredient</button>
+      <button class="btn bs" id="ingDeleteBtn" onclick="deleteIngredient()" style="color:var(--red);border-color:var(--red-b);display:none">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
 <div class="mo" id="moOrder">
   <div class="md" style="max-width:560px">
     <button class="md-close" onclick="closeMo('moOrder')">✕</button>
@@ -3143,8 +3318,8 @@ const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // AUTH
 // ═══════════════════════════════════════════
 // All sections available
-const ALL_SECTIONS = ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','analytics','micros','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
-const SECTION_LABELS = {dashboard:'Dashboard',spotcheck:'Daily Spot Check',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',cleaning:'Cleaning Checklist',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
+const ALL_SECTIONS = ['dashboard','modules','clockin','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','analytics','micros','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
+const SECTION_LABELS = {dashboard:'Dashboard',clockin:'Clock In / Clock Out',spotcheck:'Daily Spot Check',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',cleaning:'Cleaning Checklist',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
 
 // Owner always has full access (hardcoded, cannot be removed)
 const ACCESS = {
@@ -3152,8 +3327,8 @@ const ACCESS = {
   manager: ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','micros','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices'],
   employee:['dashboard','modules','spotcheck','stocktake'],
 };
-const TTLS = {dashboard:'Dashboard',modules:'Modules',spotcheck:'Daily Spot Check',stocktake:'Stock Take',micros:'Micros Reports',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',cleaning:'Cleaning Checklist',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
-const TSUBS = {dashboard:'Overview of all operations',modules:'All features in one place',spotcheck:'15 random items · different every day',micros:'Upload & analyse Micros 3700 sales reports',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',cleaning:'End-of-day closing tasks',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
+const TTLS = {dashboard:'Dashboard',modules:'Modules',clockin:'Clock In / Clock Out',spotcheck:'Daily Spot Check',stocktake:'Stock Take',micros:'Micros Reports',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',cleaning:'Cleaning Checklist',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
+const TSUBS = {dashboard:'Overview of all operations',modules:'All features in one place',clockin:'Tap the NFC tag at the entrance to clock in or out',spotcheck:'15 random items · different every day',micros:'Upload & analyse Micros 3700 sales reports',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',cleaning:'End-of-day closing tasks',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
 const INVESTOR_SECTIONS = ['dashboard','modules','spotcheck','stockdb','reports','analytics','recipes','pricing','cashup','payroll','roster','leave','kpi','docs','auditlog'];
 const ROLE_COLORS = {owner:'#7a1528', investor:'#c8922a', manager:'#152438', employee:'#1a6e40'};
 
@@ -3240,6 +3415,11 @@ async function launchApp(){
   if(CU.role==='manager'){
     if(!CU.access.includes('cleaning')) CU.access = [...CU.access, 'cleaning'];
   }
+  // Every working staff member (not investors, who don't work shifts) always has Clock In/Out,
+  // regardless of when their login was created or what's stored in access_sections.
+  if(CU.role!=='investor'){
+    if(!CU.access.includes('clockin')) CU.access = [...CU.access, 'clockin'];
+  }
 
   // Stock employee mode: ensure orders access + hide full nav clutter
   if(isStockEmployee()){
@@ -3323,6 +3503,46 @@ function _payPaidKey(){const pp=getPayPeriod();return`payPaid_${pp.from||'cur'}_
 function loadPayPaid(){try{payPaid=JSON.parse(localStorage.getItem(_payPaidKey())||'{}')}catch(e){payPaid={};}}
 function savePayPaid(){try{localStorage.setItem(_payPaidKey(),JSON.stringify(payPaid));}catch(e){}}
 function togglePayPaid(name){payPaid[name]=!payPaid[name];savePayPaid();renderPayoutSummary();}
+
+// ── MANUAL PAYROLL OVERRIDES ───────────────────────────────────────────────
+// Every time the Payroll tab is opened it re-pulls hours from the roster and
+// clock-in records (syncRosterHoursToPayroll / syncAttendanceToPayroll). That
+// used to silently overwrite any hours/taxi/breakage a manager typed in by
+// hand. These fields are now flagged as "manually overridden" the moment they
+// are edited, and both auto-sync functions skip flagged fields. Persisted per
+// pay-period in localStorage so it survives tab switches and page refreshes.
+const PAY_GRP_TO_CID={mgr:'mgrPay',kit:'kitPay',bar:'barPay',waitph:'waitphPay'};
+let payManualOverrides={}; // {cId: {staffName: {field:true}}}
+function _payOverrideKey(){const pp=getPayPeriod();return`payOverrides_${pp.from||'cur'}_${pp.to||'cur'}`;}
+function loadPayOverrides(){try{payManualOverrides=JSON.parse(localStorage.getItem(_payOverrideKey())||'{}')}catch(e){payManualOverrides={};}}
+function savePayOverrides(){try{localStorage.setItem(_payOverrideKey(),JSON.stringify(payManualOverrides));}catch(e){}}
+function markPayOverride(cId,staffName,field){
+  if(!payManualOverrides[cId]) payManualOverrides[cId]={};
+  if(!payManualOverrides[cId][staffName]) payManualOverrides[cId][staffName]={};
+  payManualOverrides[cId][staffName][field]=true;
+  savePayOverrides();
+}
+function isPayOverridden(cId,staffName,field){
+  return !!(payManualOverrides[cId]&&payManualOverrides[cId][staffName]&&payManualOverrides[cId][staffName][field]);
+}
+function hasAnyPayOverride(cId,staffName){
+  const o=payManualOverrides[cId]&&payManualOverrides[cId][staffName];
+  return !!(o&&Object.keys(o).length);
+}
+function clearPayOverrides(cId,staffName){
+  if(payManualOverrides[cId]) delete payManualOverrides[cId][staffName];
+  savePayOverrides();
+}
+async function resetPayOverrides(cId,i){
+  const l=getPayList(cId);
+  const s=l[i]; if(!s) return;
+  if(!confirm(`Reset ${s.name}'s hours, taxi and breakage back to auto-calculated values from the roster and clock-in records?`)) return;
+  clearPayOverrides(cId,s.name);
+  await syncRosterHoursToPayroll();
+  await syncAttendanceToPayroll();
+  renderPay();
+  showToast(`${s.name} reset to auto-calculated ✓`);
+}
 let stC={}, dbCat='All', varF='all', rosterGroup='Kitchen', rosterWeekOf=getMonday(new Date());
 let yesterdayStock={}; // {item_id: qty} from most recent previous stocktake
 let anPeriodDays=30, anActiveTab='usage', anReorderFilt='all', anHistoryData=[], anVarianceData=[];
@@ -3436,7 +3656,7 @@ function go(id){
   document.getElementById('tbSub').textContent=TSUBS[id]||'';
 
   // Lazy-load: panels that fetch fresh data on every visit (time-sensitive)
-  const alwaysRefresh = ['roster','payroll','waiterlog','auditlog','reports','analytics'];
+  const alwaysRefresh = ['roster','payroll','waiterlog','auditlog','reports','analytics','clockin'];
   // Panels that only load once per session (data doesn't change minute-to-minute)
   const loadOnce = ['staff','invoices','recipes','pricing','orders','settings'];
 
@@ -3446,6 +3666,7 @@ function go(id){
   if(id==='dashboard') loadDashChart(dashChartDays);
   if(id==='spotcheck') renderSpotCheck();
   if(id==='cleaning') renderCleaningChecklist();
+  if(id==='clockin') initClockInScreen();
   if(id==='roster') initRosterPanel();
   if(id==='payroll'){ renderPaymentDate(); initPayPeriod(); loadPayrollForPeriod(); }
   if(id==='waiterlog'){ wlToday(); initLeaderboard(); initScheduling(); }
@@ -3468,6 +3689,8 @@ function go(id){
     if(mxSqlCard) mxSqlCard.style.display=CU?.role==='owner'?'block':'none';
     const attSqlCard=document.getElementById('attendanceSQL');
     if(attSqlCard) attSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    const nfcSqlCard=document.getElementById('nfcAttendanceSQL');
+    if(nfcSqlCard) nfcSqlCard.style.display=CU?.role==='owner'?'block':'none';
     const lvSqlCard=document.getElementById('leaveManagementSQL');
     if(lvSqlCard) lvSqlCard.style.display=CU?.role==='owner'?'block':'none';
     checkSectionColStatus();
@@ -3480,6 +3703,7 @@ function go(id){
 // ── Section tab bar ──────────────────────────────────────────────────────────
 const SEC_GROUPS = {
   operations:{tabs:[
+    {id:'clockin',label:'Clock In / Clock Out'},
     {id:'spotcheck',label:'Spot Check'},
     {id:'stocktake',label:'Stock Take'},
     {id:'stockdb',label:'Stock Database',r:'manager'},
@@ -3512,7 +3736,7 @@ const SEC_GROUPS = {
 };
 const SEC_GROUP_MAP = {
   dashboard:'overview',
-  spotcheck:'operations',stocktake:'operations',stockdb:'operations',pending:'operations',orders:'operations',cleaning:'operations',
+  clockin:'operations',spotcheck:'operations',stocktake:'operations',stockdb:'operations',pending:'operations',orders:'operations',cleaning:'operations',
   cashup:'finance',reports:'finance',analytics:'finance',micros:'finance',recipes:'finance',pricing:'finance',waiterlog:'finance',invoices:'finance',
   roster:'people',payroll:'people',staff:'people',leave:'people',kpi:'people',docs:'people',
   auditlog:'system',settings:'system',
@@ -7080,18 +7304,20 @@ async function syncRosterHoursToPayroll(){
       }
     });
 
-    // Apply hours to each payroll group
+    // Apply hours to each payroll group — but never clobber a field the
+    // manager has manually edited for this staff member this period.
     ['mgr','kit','bar','waitph'].forEach(grp=>{
+      const cId=PAY_GRP_TO_CID[grp];
       (payD[grp]||[]).forEach(s=>{
         const b=hoursByGroup[grp][s.name];
         if(b){
-          s.hrs    =parseFloat(b.reg.toFixed(1));
-          s.sun_hrs=parseFloat(b.sun.toFixed(1));
-          s.hol_hrs=parseFloat(b.hol.toFixed(1));
+          if(!isPayOverridden(cId,s.name,'hrs'))     s.hrs    =parseFloat(b.reg.toFixed(1));
+          if(!isPayOverridden(cId,s.name,'sun_hrs')) s.sun_hrs=parseFloat(b.sun.toFixed(1));
+          if(!isPayOverridden(cId,s.name,'hol_hrs')) s.hol_hrs=parseFloat(b.hol.toFixed(1));
         }
         if(grp==='kit'){
-          s.taxi=(eveningShiftsByStaff[s.name]||0)*25;
-          s.breakage=(totalShiftsByStaff[s.name]||0)*5;
+          if(!isPayOverridden(cId,s.name,'taxi'))     s.taxi=(eveningShiftsByStaff[s.name]||0)*25;
+          if(!isPayOverridden(cId,s.name,'breakage')) s.breakage=(totalShiftsByStaff[s.name]||0)*5;
         }
       });
     });
@@ -7151,14 +7377,15 @@ async function syncAttendanceToPayroll(){
     // Overlay onto payD — only update entries that have actual clock data
     let updated=0;
     ['mgr','kit','bar','waitph','waiters'].forEach(grp=>{
+      const cId=PAY_GRP_TO_CID[grp]||grp;
       (payD[grp]||[]).forEach(s=>{
         const nk=normN(s.name||'');
         if(!hourMap[nk]) return;
         const h=hourMap[nk];
         if(h.reg+h.sun+h.hol>0||h.incomplete.length){
-          s.hrs     =parseFloat(h.reg.toFixed(2));
-          s.sun_hrs =parseFloat(h.sun.toFixed(2));
-          s.hol_hrs =parseFloat(h.hol.toFixed(2));
+          if(!isPayOverridden(cId,s.name,'hrs'))     s.hrs     =parseFloat(h.reg.toFixed(2));
+          if(!isPayOverridden(cId,s.name,'sun_hrs')) s.sun_hrs =parseFloat(h.sun.toFixed(2));
+          if(!isPayOverridden(cId,s.name,'hol_hrs')) s.hol_hrs =parseFloat(h.hol.toFixed(2));
           s._attSource  =true;
           s._incomplete =h.incomplete;
           updated++;
@@ -7255,6 +7482,7 @@ function renderPaySec(list,cId,tId){
             <button onclick="editPayName('${cId}',${i},'${tId}')" style="background:none;border:none;cursor:pointer;font-size:0.75rem;color:var(--muted);padding:0.1rem 0.3rem;border-radius:4px" title="Edit name">✏️</button>
             ${s._attSource?`<span style="font-size:0.56rem;background:#1a6a42;color:#fff;padding:0.1rem 0.35rem;border-radius:20px;font-weight:700;white-space:nowrap" title="Hours auto-filled from clock-in/out records">⏱ Auto</span>`:''}
             ${s._incomplete?.length?`<span style="font-size:0.56rem;background:#c0392b;color:#fff;padding:0.1rem 0.35rem;border-radius:20px;font-weight:700;white-space:nowrap;cursor:help" title="Missing clock-out on: ${s._incomplete.join(', ')}">⚠ ${s._incomplete.length} missing</span>`:''}
+            ${hasAnyPayOverride(cId,s.name)?`<span style="font-size:0.56rem;background:#7c3aed;color:#fff;padding:0.1rem 0.35rem;border-radius:20px;font-weight:700;white-space:nowrap;cursor:help" title="Manually edited — auto-sync from roster/clock-in will not overwrite this">✏️ Manual</span><button onclick="resetPayOverrides('${cId}',${i})" style="background:none;border:none;cursor:pointer;font-size:0.7rem;color:var(--muted);padding:0.1rem 0.3rem;border-radius:4px" title="Reset to auto-calculated">↺</button>`:''}
           </div>
           <div class="prp">${s.pos}</div>
         </div>
@@ -7312,10 +7540,10 @@ function refreshRowNet(c,i){
     </div>`:'';
   }
 }
-function updH(c,i,v,t){const l=getPayList(c);l[i].hrs=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
-function updPayHrs(c,i,field,v,t){const l=getPayList(c);l[i][field]=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
+function updH(c,i,v,t){const l=getPayList(c);l[i].hrs=parseFloat(v)||0;markPayOverride(c,l[i].name,'hrs');refreshRowNet(c,i);updPTot(l,t);}
+function updPayHrs(c,i,field,v,t){const l=getPayList(c);l[i][field]=parseFloat(v)||0;markPayOverride(c,l[i].name,field);refreshRowNet(c,i);updPTot(l,t);}
 function updR(c,i,v,t){if(!canER())return;const l=getPayList(c);l[i].hourly_rate=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
-function updKitField(c,i,field,v,t){const l=getPayList(c);l[i][field]=parseFloat(v)||0;refreshRowNet(c,i);updPTot(l,t);}
+function updKitField(c,i,field,v,t){const l=getPayList(c);l[i][field]=parseFloat(v)||0;markPayOverride(c,l[i].name,field);refreshRowNet(c,i);updPTot(l,t);}
 // ── Garnish order helpers (per-staff, localStorage — court-ordered fixed deduction) ──
 function getGarnishMap(){try{return JSON.parse(localStorage.getItem('garnishOrders')||'{}')}catch(e){return{}}}
 function saveGarnishMap(m){localStorage.setItem('garnishOrders',JSON.stringify(m));}
@@ -9894,6 +10122,7 @@ async function savePins(){
 // ═══════════════════════════════════════════
 const ACCESS_OPTIONS = [
   {id:'dashboard',    label:'Dashboard'},
+  {id:'clockin',     label:'⏱ Clock In / Clock Out'},
   {id:'stocktake',   label:'Stock Take'},
   {id:'stockdb',     label:'Stock Database'},
   {id:'pending',     label:'Pending Submissions'},
@@ -9979,7 +10208,7 @@ function applyStaffTabAccess(){
   }
 }
 function switchStaffTab(tab, btn){
-  ['list','logins','qrcodes','attendance'].forEach(t=>{
+  ['list','logins','qrcodes','attendance','nfc'].forEach(t=>{
     const el=document.getElementById('staffTab'+t.charAt(0).toUpperCase()+t.slice(1));
     if(el) el.style.display=t===tab?'block':'none';
   });
@@ -9989,6 +10218,7 @@ function switchStaffTab(tab, btn){
   if(tab==='logins') loadStaffLogins();
   if(tab==='qrcodes') renderQRCodes();
   if(tab==='attendance'){ attSetToday(); loadAttendance(); }
+  if(tab==='nfc'){ renderNfcLiveBoard(); renderNfcFlaggedList(); renderNfcTagsList(); loadAttendanceSettings(); }
 }
 
 function openAddLogin(){
@@ -10147,7 +10377,7 @@ function auFilter(type,btn){
   loadAuditLog();
 }
 
-const AU_ICONS={login:'🔐',stock:'📦',cashup:'💰',approval:'✅',leave:'📅',roster:'📋',payroll:'💵',staff:'👤',order:'🛒',other:'📝'};
+const AU_ICONS={login:'🔐',stock:'📦',cashup:'💰',approval:'✅',leave:'📅',roster:'📋',payroll:'💵',staff:'👤',order:'🛒',attendance:'⏱️',other:'📝'};
 
 function renderAuditLog(data){
   const el=document.getElementById('auditList');
@@ -11660,7 +11890,7 @@ async function loadAnalytics(){
     document.getElementById('an-days').textContent=days.length;
     document.getElementById('an-stocktakes').textContent=stocktakes.length;
     document.getElementById('an-items').textContent=items.length;
-    document.getElementById('an-waste').textContent=totalWaste.toFixed(1);
+    document.getElementById('an-wasteKpi').textContent=totalWaste.toFixed(1);
   } catch(e){ console.error(e); }
 
   renderAnTab();
@@ -11869,28 +12099,12 @@ let recipeData = [];
 let microsData = {}; // {micros_name: qty_sold}
 let recipeCatFilter = 'All';
 
-// ── INGREDIENT COST MAP (from your Excel Voorraadlysresepte) ────────────
-// Cost per unit in Rands
-const INGR_COST = {
-  'egg':1.83,'eggs':1.83,'bacon':83.33,'sausage':4.07,'boerewors':4.07,
-  'tomato':1.5,'mushrooms':79,'toast':1.16,'chips':11.85,'wedges':0.77,
-  'avocado':27.92,'avo':27.92,'cream cheese':72.57,'mozzarella':99,
-  'cheddar':99,'feta':73.75,'halloumi':99,'smoked salmon':39.57,
-  'red onion':2,'capers':195.95,'ciabatta':78.25,'english muffin':2.34,
-  'hashbrown':0.77,'hash brown':0.77,'hollandaise':50,'chicken livers':76.19,
-  'chicken strips':76.19,'chicken breast':73.75,'beef strips':31.14,
-  'prego sauce':35.99,'pesto':201.22,'honey mustard':55,'sweet chili':51.21,
-  'panini':12.58,'wrap':4.77,'tramezzini':9.35,'rye bread':4.12,
-  'hickory ham':5.11,'biltong':196,'peppadew':0.78,'white sauce':20,
-  'cheese sauce':80,'bbq sauce':23.39,'smokey bbq':23.39,
-  'baked beans':19.99,'pork sausage':44,'banana':2.57,'milk':13,
-  'muesli':45,'yogurt':33.03,'honey':84,'fresh fruit':14.64,
-  'croissant':78.25,'lettuce':1.1,'cucumber':15.65,'carrot':0.4,
-  'green pepper':10,'onion':2,'spinach':2.17,'olives':88.91,
-  'waffle mix':2.33,'strawberry':5,'caramel':106.5,'chocolate sauce':106.5,
-  'vanilla':98.95,'cream':68.19,'ice cream':19.52,'flake':0.14,
-  'beef patty':25,'cheese russian':5.50,
-};
+// ── INGREDIENT COST MAP ───────────────────────────────────────────────────
+// Cleared at Zaviér's request — Recipe Costing starts with zero seeded
+// prices. Ingredient costs come only from live Stock Database matches, or
+// prices entered by hand in the Ingredient Prices tab. (This used to ship
+// pre-filled with ~90 hardcoded prices from an old spreadsheet.)
+const INGR_COST = {};
 
 function getIngCost(name, qty, unit) {
   const n = name.toLowerCase().trim();
@@ -12089,17 +12303,47 @@ async function loadRecipes(){
   try {
     const {data,error} = await SB.from('recipes').select('*').order('category').order('name');
     if(error) throw error;
-    if(data && data.length){
-      recipeData = data.map(r=>({...r, ingredients: typeof r.ingredients==='string'?JSON.parse(r.ingredients):r.ingredients}));
-    } else {
-      // First time — seed with presets
-      await seedRecipes();
-    }
+    // Start empty when there's no data yet — Zaviér is building the menu
+    // himself. (Auto-seeding the old preset menu used to run here; removed
+    // per his request so Recipe Costing only ever shows real, entered dishes.)
+    recipeData = (data||[]).map(r=>({...r, ingredients: typeof r.ingredients==='string'?JSON.parse(r.ingredients):r.ingredients}));
   } catch(e){
-    // Table doesn't exist yet — use presets in memory
-    recipeData = PRESET_RECIPES.map((r,i)=>({...r, id:i+1}));
+    recipeData = [];
   }
   renderRecipes();
+}
+
+// Wipes the entire menu (recipes table) and the ingredient price-change
+// history so Recipe Costing can be rebuilt from scratch with Zaviér's own
+// dishes and prices — no leftover preset/seed data. Owner-only, gated behind
+// a typed confirmation since this cannot be undone.
+async function eraseAllRecipes(){
+  if(CU?.role!=='owner'){ showToast('Only the owner can erase all recipes.', true); return; }
+  if(!recipeData.length){ showToast('Recipe Costing is already empty.', true); return; }
+  const typed=prompt(`This will permanently delete all ${recipeData.length} dishes from Recipe Costing and clear the ingredient price history.\n\nThis cannot be undone.\n\nType DELETE to confirm:`);
+  if(typed!=='DELETE'){ showToast('Cancelled — nothing was deleted.'); return; }
+  setSyncStatus('syncing');
+  try{
+    let error, attempts=0;
+    do{
+      ({error}=await SB.from('recipes').delete().gte('id',0));
+      if(error && /foreign key constraint.*on table "(\w+)"/i.test(error.message||'')){
+        const tbl=error.message.match(/on table "(\w+)"/i)[1];
+        await SB.from(tbl).delete().not('id','is',null);
+      }
+      attempts++;
+    } while(error && attempts<6);
+    if(error) throw new Error(error.message||'Delete failed');
+    await SB.from('price_changes').delete().not('id','is',null);
+    recipeData=[]; priceChanges=[]; ingredientDB={}; microsData={};
+    initIngredientDB();
+    renderRecipes(); renderIngPrices();
+    setSyncStatus('ok');
+    showToast('All recipes erased. Ready to build your menu from scratch ✓');
+  }catch(e){
+    setSyncStatus('err');
+    showToast('Error erasing recipes: '+e.message, true);
+  }
 }
 
 async function seedRecipes(){
@@ -12121,6 +12365,8 @@ const RECIPE_CATS = ['All','Breakfast','Omelettes','Bakery','Open Sandwiches','T
 
 function renderRecipes(){
   const q = (document.getElementById('recipeSearch')?.value||'').toLowerCase();
+  const delAllRecBtn=document.getElementById('delAllRecipesBtn');
+  if(delAllRecBtn) delAllRecBtn.style.display=CU?.role==='owner'?'inline-flex':'none';
   // Category tabs
   document.getElementById('recipeCatTabs').innerHTML = RECIPE_CATS.map(c=>
     `<button class="ct ${recipeCatFilter===c?'act':''}" onclick="recipeCatFilter='${c}';renderRecipes()">${c}</button>`).join('');
@@ -12506,7 +12752,7 @@ function initIngredientDB(){
     }
   });
   // Ensure every ingredient used in any recipe appears — even those missing from INGR_COST
-  const allRecipes = (recipeData && recipeData.length ? recipeData : PRESET_RECIPES);
+  const allRecipes = recipeData || []; // only real, entered recipes — no preset fallback
   allRecipes.forEach(r=>{
     (r.ingredients||[]).forEach(i=>{
       const key = i.name.toLowerCase().trim();
@@ -12515,6 +12761,18 @@ function initIngredientDB(){
         ingredientDB[key] = {name:key, price:INGR_COST[key]||0, ...meta};
       }
     });
+  });
+
+  // Prefer live Stock Database prices over the legacy hardcoded list, so this
+  // tab always matches what dish costing (getIngCost) actually uses and what
+  // Zaviér sees in the Stock Database. Without this, updating a stock item's
+  // price never showed up here, and this tab could silently show a stale price.
+  (typeof DB!=='undefined'?DB:[]).forEach(item=>{
+    const key=(item.name||'').toLowerCase().trim();
+    if(!key||!item.price) return;
+    if(!ingredientDB[key]) ingredientDB[key]={name:key,price:+item.price,unit:item.unit||'kg',cat:item.category||'Other',supplier:item.supplier||'Other'};
+    else ingredientDB[key].price=+item.price;
+    ingredientDB[key]._fromStock=true; // synced live from Stock Database
   });
 }
 
@@ -12735,6 +12993,8 @@ function openEditIngredient(name){
   }
 
   document.getElementById('ingDeleteBtn').style.display='none'; // can't delete built-in ingredients
+  const hintEl=document.getElementById('ingPriceStockHint');
+  if(hintEl) hintEl.style.display = ing._fromStock ? 'block' : 'none';
   openMo('moIngPrice');
 }
 
@@ -12748,6 +13008,8 @@ function openAddIngredient(){
   document.getElementById('ingPriceCat').value='Other';
   document.getElementById('ingImpactPreview').style.display='none';
   document.getElementById('ingDeleteBtn').style.display='none';
+  const hintEl2=document.getElementById('ingPriceStockHint');
+  if(hintEl2) hintEl2.style.display='none';
   const supSel=document.getElementById('ingPriceSupplier');
   supSel.innerHTML=Object.keys(SUPS).sort().map(s=>`<option>${s}</option>`).join('')+'<option>Other</option>';
   openMo('moIngPrice');
@@ -12764,11 +13026,24 @@ async function saveIngPrice(){
   if(!name){showToast('Enter ingredient name.',true);return;}
   if(isNaN(price)||price<0){showToast('Enter a valid price.',true);return;}
 
-  const oldPrice = INGR_COST[name] || 0;
+  const oldPrice = ingredientDB[name]?.price ?? (INGR_COST[name] || 0);
 
   // Update live prices
   INGR_COST[name] = price;
   ingredientDB[name] = {name, price, unit, cat, supplier};
+
+  // If this ingredient is also a live Stock Database item, push the price
+  // there too so Stock DB, Orders, Analytics and dish costing all agree —
+  // editing it here used to only touch a separate hardcoded price list that
+  // Stock Database never saw, and would get silently overwritten by the real
+  // stock price on next load.
+  const stockMatch = (typeof DB!=='undefined'?DB:[]).find(d=>(d.name||'').toLowerCase().trim()===name);
+  if(stockMatch){
+    setSyncStatus('syncing');
+    const {error} = await SB.from('stock').update({price,updated_at:new Date().toISOString()}).eq('id',stockMatch.id);
+    if(!error) stockMatch.price = price;
+    ingredientDB[name]._fromStock = true;
+  }
 
   // If price changed, save to price_changes for audit trail
   if(Math.abs(price - oldPrice) > 0.001 && oldPrice > 0){
@@ -12789,9 +13064,10 @@ async function saveIngPrice(){
   closeMo('moIngPrice');
   renderIngPrices();
   renderRecipes(); // update food cost % everywhere
+  if(typeof renderDB==='function') renderDB(); // reflect new price in Stock Database view too
   checkGPAlerts();
   setSyncStatus('ok');
-  showToast(`${name.charAt(0).toUpperCase()+name.slice(1)} updated — R${price} per ${unit} ✓`);
+  showToast(stockMatch?`${name.charAt(0).toUpperCase()+name.slice(1)} updated everywhere — R${price} per ${unit} ✓`:`${name.charAt(0).toUpperCase()+name.slice(1)} updated — R${price} per ${unit} ✓`);
 }
 
 function deleteIngredient(){
@@ -13683,6 +13959,7 @@ async function loadPayrollForPeriod(){
   if(!pp.from||!pp.to){showToast('Please select a From and To date first.',true);return;}
   if(pp.from>pp.to){showToast('Start date must be before end date.',true);return;}
   loadPayPaid(); // load paid state for this period before rendering
+  loadPayOverrides(); // load manual hour/taxi/breakage overrides for this period
   showToast('Loading payroll for selected period…');
   await syncRosterHoursToPayroll();
   await syncAttendanceToPayroll(); // overlay actual clock-in/out hours (overrides roster for clock-in staff)
@@ -13794,6 +14071,452 @@ function showError(context, err){
 // ═══════════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// NFC CLOCK IN / CLOCK OUT SYSTEM
+// ═══════════════════════════════════════════
+// Adds NFC-tap attendance on top of the EXISTING attendance_log table used by
+// the QR check-in system above and by payroll's syncAttendanceToPayroll() —
+// nothing about that existing flow changes. New rows are just tagged
+// method:'nfc' with extra validation columns (added via the Settings SQL box).
+//
+// Auth model note: like the rest of this app, "logged in" means CU (the
+// custom staff_logins record), not a Supabase Auth session — so "logged-in
+// staff account identifies the employee" below refers to CU.name.
+
+let nfcTags = [];                 // registered tags, loaded on demand
+let attendanceSettings = {geofence_radius_m:150, require_geofence:false};
+let nfcAbortController = null;    // lets Cancel stop an in-flight Web NFC scan
+let nfcPendingType = null;        // 'check-in' | 'check-out' currently being captured
+
+// ── Small helpers ──────────────────────────────────────────────────────────
+function uuidv4(){
+  if(window.crypto?.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+    const r=Math.random()*16|0, v=c==='x'?r:(r&0x3|0x8); return v.toString(16);
+  });
+}
+function haversineMeters(lat1,lng1,lat2,lng2){
+  const R=6371000, toRad=d=>d*Math.PI/180;
+  const dLat=toRad(lat2-lat1), dLng=toRad(lng2-lng1);
+  const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function bufToHex(buf){
+  try{ return Array.from(new Uint8Array(buf.buffer||buf)).map(b=>b.toString(16).padStart(2,'0')).join(''); }catch(e){ return ''; }
+}
+
+// ── Offline queue (localStorage) — same durability pattern the rest of the
+// app already uses for local-only settings (garnishOrders, clockInStaff…) ──
+function getNfcQueue(){ try{ return JSON.parse(localStorage.getItem('nfcOfflineQueue')||'[]'); }catch(e){ return []; } }
+function saveNfcQueue(q){ try{ localStorage.setItem('nfcOfflineQueue', JSON.stringify(q)); }catch(e){} }
+function queueNfcEvent(row){ const q=getNfcQueue(); q.push(row); saveNfcQueue(q); updateNfcOfflineBanner(); }
+function updateNfcOfflineBanner(){
+  const q=getNfcQueue();
+  const banner=document.getElementById('clockinOfflineBanner');
+  const countEl=document.getElementById('clockinOfflineCount');
+  if(!banner||!countEl) return;
+  if(q.length){ banner.style.display='flex'; countEl.textContent=q.length; }
+  else banner.style.display='none';
+}
+async function syncNfcOfflineQueue(showMsg){
+  const q=getNfcQueue();
+  if(!q.length){ if(showMsg) showToast('Nothing to sync — all clock events are saved.'); return; }
+  const remaining=[]; let synced=0;
+  for(const row of q){
+    try{
+      const {error}=await SB.from('attendance_log').upsert(row,{onConflict:'client_event_id'});
+      if(error) remaining.push(row); else synced++;
+    }catch(e){ remaining.push(row); }
+  }
+  saveNfcQueue(remaining);
+  updateNfcOfflineBanner();
+  if(synced) showToast(`Synced ${synced} offline clock event${synced!==1?'s':''} ✓`);
+  else if(showMsg) showToast('Still offline — will keep trying.', true);
+  if(document.getElementById('p-clockin')?.classList.contains('act')) renderClockinTodayList();
+}
+window.addEventListener('online', ()=>syncNfcOfflineQueue(false));
+
+// ── NFC reading — native Capacitor bridge preferred, then Web NFC ─────────
+// A minimal Android/Capacitor wrapper (see /capacitor-nfc-bridge in the repo)
+// can expose window.NativeNFC = { scan(timeoutMs) => Promise<{uid}>,
+// getWifiSSID() => Promise<string> } for the SUNMI V3 Mix if Web NFC proves
+// unreliable there. Until that exists, Web NFC (Chrome on Android) is used.
+function nfcReadSupported(){ return !!(window.NativeNFC?.scan || window.NDEFReader); }
+
+async function readNfcTagOnce(timeoutMs=15000){
+  if(window.NativeNFC?.scan) return await window.NativeNFC.scan(timeoutMs);
+  if(!window.NDEFReader) throw new Error('NFC_UNSUPPORTED');
+  const reader = new NDEFReader();
+  const ac = new AbortController();
+  nfcAbortController = ac;
+  await reader.scan({signal: ac.signal});
+  return await new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>{ ac.abort(); reject(new Error('NFC_TIMEOUT')); }, timeoutMs);
+    reader.onreading = (event)=>{
+      clearTimeout(timer);
+      let uid = event.serialNumber || '';
+      if(!uid){
+        try{ uid = 'ndef:' + bufToHex(event.message.records[0].data); }catch(e){ uid=''; }
+      }
+      resolve({uid});
+    };
+    reader.onreadingerror = ()=>{ clearTimeout(timer); reject(new Error('NFC_READ_ERROR')); };
+    ac.signal.addEventListener('abort', ()=>{ clearTimeout(timer); reject(new Error('NFC_CANCELLED')); });
+  });
+}
+
+function cancelNfcClockAction(){
+  if(nfcAbortController){ try{ nfcAbortController.abort(); }catch(e){} }
+  nfcPendingType=null;
+  document.getElementById('clockinPrompt').style.display='none';
+  document.getElementById('clockinIdle').style.display='block';
+}
+
+// ── Shift schedule cross-check (soft — informational flag only) ──────────
+async function hasScheduledShiftNow(staffName){
+  const now=new Date();
+  const wk=weekKey(getMonday(now));
+  const dayIdx=(now.getDay()+6)%7; // Mon=0 … Sun=6, matching roster's day_index convention
+  try{
+    const {data}=await SB.from('roster').select('*').eq('week_start',wk).eq('day_index',dayIdx).eq('staff_name',staffName);
+    if(!data||!data.length) return true; // no roster entry at all — don't falsely flag
+    return data.some(r=>{
+      if(!r.start_time||!r.end_time) return false;
+      const [sh,sm]=r.start_time.split(':').map(Number);
+      const [eh,em]=r.end_time.split(':').map(Number);
+      const nowMin=now.getHours()*60+now.getMinutes();
+      return nowMin >= (sh*60+sm)-60 && nowMin <= (eh*60+em)+60; // 1hr grace window
+    });
+  }catch(e){ return true; } // fail open — never block a real clock-in on a query error
+}
+
+// ── Tag / settings loaders ─────────────────────────────────────────────────
+async function ensureNfcTagsLoaded(force){
+  if(nfcTags.length && !force) return;
+  try{ const {data}=await SB.from('nfc_tags').select('*').order('created_at'); nfcTags=data||[]; }
+  catch(e){ nfcTags=[]; }
+}
+async function loadAttendanceSettingsQuiet(){
+  try{
+    const {data}=await SB.from('attendance_settings').select('*').eq('id',1).single();
+    if(data) attendanceSettings=data;
+  }catch(e){ /* table not set up yet — keep defaults, geofence stays optional/off */ }
+}
+
+// ── Staff-facing Clock In/Out screen ────────────────────────────────────────
+async function initClockInScreen(){
+  updateNfcOfflineBanner();
+  await loadAttendanceSettingsQuiet();
+  await refreshClockinStatus();
+  renderClockinTodayList();
+  document.getElementById('clockinUnsupportedNotice').style.display = nfcReadSupported() ? 'none' : 'block';
+  if(getNfcQueue().length && navigator.onLine) syncNfcOfflineQueue(false);
+}
+
+async function refreshClockinStatus(){
+  if(!CU) return;
+  const badge=document.getElementById('clockinStatusBadge');
+  const timeEl=document.getElementById('clockinStatusTime');
+  const btn=document.getElementById('clockinActionBtn');
+  const todayStr=new Date().toISOString().slice(0,10);
+  let last=null;
+  try{
+    const {data}=await SB.from('attendance_log').select('*').eq('staff_name',CU.name).eq('date',todayStr).order('logged_at',{ascending:false}).limit(1);
+    last=data?.[0]||null;
+  }catch(e){ /* offline — fall through to the local queue below */ }
+  const queued=getNfcQueue().filter(r=>r.staff_name===CU.name && r.date===todayStr).sort((a,b)=>a.logged_at<b.logged_at?1:-1);
+  if(queued.length && (!last || queued[0].logged_at>last.logged_at)) last=queued[0];
+
+  const isIn = !!(last && last.type==='check-in');
+  badge.textContent = isIn ? '🟢 Clocked In' : '⚪ Clocked Out';
+  badge.style.color = isIn ? 'var(--green)' : 'var(--muted)';
+  timeEl.textContent = last ? `Since ${new Date(last.logged_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'})}` : 'No activity yet today';
+  btn.textContent = isIn ? '⏱ Clock Out' : '⏱ Clock In';
+}
+
+function startNfcClockAction(){
+  if(!CU){ showToast('Please log in first.', true); return; }
+  const btn=document.getElementById('clockinActionBtn');
+  nfcPendingType = btn.textContent.includes('Out') ? 'check-out' : 'check-in';
+  if(!nfcReadSupported()){
+    showToast('NFC not supported on this browser/device.', true);
+    document.getElementById('clockinUnsupportedNotice').style.display='block';
+    return;
+  }
+  document.getElementById('clockinIdle').style.display='none';
+  document.getElementById('clockinResult').style.display='none';
+  document.getElementById('clockinPrompt').style.display='block';
+  document.getElementById('clockinPromptSub').textContent = `Ready to clock ${nfcPendingType==='check-in'?'in':'out'} — hold your device near the entrance tag.`;
+  runNfcCapture();
+}
+
+async function runNfcCapture(){
+  try{
+    const {uid} = await readNfcTagOnce(20000);
+    await handleNfcTagRead(uid, nfcPendingType);
+  }catch(e){
+    if(e.message==='NFC_CANCELLED') return; // Cancel button already reset the UI
+    document.getElementById('clockinPrompt').style.display='none';
+    document.getElementById('clockinIdle').style.display='block';
+    if(e.message==='NFC_TIMEOUT') showToast('No tag detected — try again.', true);
+    else if(e.message==='NFC_UNSUPPORTED') showToast('NFC not supported on this device.', true);
+    else showToast('Could not read NFC tag: '+e.message, true);
+  }
+}
+
+// The core validation pipeline: tag → geofence → wifi → duplicate-tap →
+// shift schedule → record (online, or queued offline).
+async function handleNfcTagRead(uid, type){
+  await ensureNfcTagsLoaded();
+  const tag = nfcTags.find(t=>t.tag_uid===uid && t.active);
+  if(!tag){
+    document.getElementById('clockinPrompt').style.display='none';
+    document.getElementById('clockinIdle').style.display='block';
+    showToast("That tag isn't a registered Die Akker entrance tag.", true);
+    return;
+  }
+
+  const flags=[]; // soft reasons — the event still records, a manager just reviews it
+
+  let lat=null,lng=null,gpsAcc=null;
+  if(attendanceSettings.require_geofence && navigator.geolocation){
+    try{
+      const pos = await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:8000,enableHighAccuracy:true}));
+      lat=pos.coords.latitude; lng=pos.coords.longitude; gpsAcc=pos.coords.accuracy;
+      if(attendanceSettings.geofence_lat!=null && attendanceSettings.geofence_lng!=null){
+        const dist=haversineMeters(lat,lng,attendanceSettings.geofence_lat,attendanceSettings.geofence_lng);
+        if(dist > (attendanceSettings.geofence_radius_m||150)) flags.push(`outside_geofence(${Math.round(dist)}m)`);
+      }
+    }catch(e){ flags.push('geofence_unavailable'); }
+  }
+
+  // Wi-Fi SSID can only ever be verified through a native bridge — browsers
+  // deliberately don't expose the connected network name to JS.
+  let wifiOk=null;
+  if(window.NativeNFC?.getWifiSSID && attendanceSettings.wifi_ssid_hint){
+    try{
+      const ssid = await window.NativeNFC.getWifiSSID();
+      wifiOk = ssid===attendanceSettings.wifi_ssid_hint;
+      if(!wifiOk) flags.push('wrong_wifi');
+    }catch(e){}
+  }
+
+  const todayStr=new Date().toISOString().slice(0,10);
+  let lastEvent=null;
+  try{
+    const {data}=await SB.from('attendance_log').select('*').eq('staff_name',CU.name).eq('date',todayStr).order('logged_at',{ascending:false}).limit(1);
+    lastEvent=data?.[0]||null;
+  }catch(e){}
+  if(lastEvent){
+    const mins=(Date.now()-new Date(lastEvent.logged_at).getTime())/60000;
+    if(lastEvent.type===type && mins<2) flags.push('duplicate_tap');
+    if(type==='check-out' && lastEvent.type==='check-in' && mins<2) flags.push('very_short_shift');
+  }
+
+  try{ if(!(await hasScheduledShiftNow(CU.name))) flags.push('no_scheduled_shift'); }catch(e){}
+
+  const now=new Date();
+  const row={
+    staff_name: CU.name, token: null, type, date: todayStr,
+    time_str: now.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'}),
+    logged_at: now.toISOString(),
+    method: 'nfc', tag_uid: uid, client_event_id: uuidv4(),
+    lat, lng, gps_accuracy_m: gpsAcc, wifi_ok: wifiOk,
+    flagged: flags.length>0, flag_reason: flags.join(', ')||null,
+  };
+  await recordClockEvent(row);
+}
+
+async function recordClockEvent(row){
+  let wasOffline=false;
+  try{
+    if(!navigator.onLine) throw new Error('OFFLINE');
+    const {error} = await SB.from('attendance_log').insert(row);
+    if(error) throw error;
+    await logAudit('attendance', row.type==='check-in'?'Clocked In (NFC)':'Clocked Out (NFC)', `${row.staff_name}${row.flagged?' — FLAGGED: '+row.flag_reason:''}`);
+  }catch(e){
+    wasOffline=true;
+    queueNfcEvent(row); // will retry automatically once back online
+  }
+  showClockResult(row, wasOffline);
+  await refreshClockinStatus();
+  renderClockinTodayList();
+}
+
+function showClockResult(row, wasOffline){
+  document.getElementById('clockinPrompt').style.display='none';
+  document.getElementById('clockinResult').style.display='block';
+  const isIn = row.type==='check-in';
+  document.getElementById('clockinResultIcon').textContent = isIn ? '✅' : '👋';
+  document.getElementById('clockinResultMsg').textContent = `${isIn?'Clocked in':'Clocked out'}${wasOffline?' (saved offline)':''}`;
+  document.getElementById('clockinResultTime').textContent = row.time_str;
+  const flagEl=document.getElementById('clockinResultFlag');
+  if(row.flagged){ flagEl.style.display='block'; flagEl.textContent='⚠️ Flagged for manager review: '+row.flag_reason; }
+  else flagEl.style.display='none';
+  showToast(wasOffline ? 'Saved offline — will sync when back online ✓' : `${isIn?'Clocked in':'Clocked out'} at ${row.time_str} ✓`, row.flagged?'warn':false);
+}
+
+function resetClockInScreen(){
+  document.getElementById('clockinResult').style.display='none';
+  document.getElementById('clockinIdle').style.display='block';
+  nfcPendingType=null;
+}
+
+async function renderClockinTodayList(){
+  const el=document.getElementById('clockinTodayList');
+  if(!el||!CU) return;
+  const todayStr=new Date().toISOString().slice(0,10);
+  let rows=[];
+  try{
+    const {data}=await SB.from('attendance_log').select('*').eq('staff_name',CU.name).eq('date',todayStr).order('logged_at',{ascending:false});
+    rows=data||[];
+  }catch(e){}
+  const queued=getNfcQueue().filter(r=>r.staff_name===CU.name && r.date===todayStr).map(r=>({...r,_pending:true}));
+  rows=[...queued, ...rows];
+  if(!rows.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:0.6rem">No activity yet today.</div>'; return; }
+  el.innerHTML = rows.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid var(--surface)">
+    <div>
+      <div style="font-weight:600;font-size:0.85rem">${r.type==='check-in'?'✅ Clocked In':'👋 Clocked Out'}</div>
+      <div style="font-size:0.68rem;color:var(--muted)">${r.method==='nfc'?'📡 NFC':r.method==='manual'?'✋ Manual':'📷 QR'}${r._pending?' · ⏳ pending sync':''}${r.flagged?' · 🚩 flagged':''}</div>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--muted)">${r.time_str||''}</div>
+  </div>`).join('');
+}
+
+// ── Manager-facing: Staff → 📡 NFC & Live ──────────────────────────────────
+async function renderNfcTagsList(){
+  await ensureNfcTagsLoaded(true);
+  const el=document.getElementById('nfcTagsList');
+  if(!el) return;
+  if(!nfcTags.length){ el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem 0">No NFC tags registered yet — register the fixed entrance tag below.</div>'; return; }
+  el.innerHTML = nfcTags.map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--surface)">
+    <div>
+      <div style="font-weight:600;font-size:0.85rem">${t.active?'📡':'⛔'} ${t.label}</div>
+      <div style="font-size:0.65rem;color:var(--muted);font-family:'DM Mono',monospace">${t.tag_uid}</div>
+    </div>
+    <button class="btn bs bsm" onclick="toggleNfcTag('${t.id}',${t.active})">${t.active?'Disable':'Enable'}</button>
+  </div>`).join('');
+}
+
+async function toggleNfcTag(id, active){
+  await SB.from('nfc_tags').update({active:!active}).eq('id',id);
+  await logAudit('attendance', 'NFC Tag '+(!active?'Enabled':'Disabled'), 'Tag id '+id);
+  renderNfcTagsList();
+}
+
+async function registerNfcTag(){
+  if(CU?.role!=='owner' && CU?.role!=='manager'){ showToast('Only managers/owner can register tags.', true); return; }
+  if(!nfcReadSupported()){ showToast('NFC not supported on this device/browser.', true); return; }
+  const label = prompt('Label for this tag (e.g. "Staff Entrance"):', 'Staff Entrance');
+  if(label===null) return;
+  showToast('Hold the tag near this device now…');
+  try{
+    const {uid} = await readNfcTagOnce(20000);
+    const existing = nfcTags.find(t=>t.tag_uid===uid);
+    if(existing){ showToast(`This tag is already registered as "${existing.label}".`, true); return; }
+    const {error} = await SB.from('nfc_tags').insert({tag_uid:uid, label: label||'Staff Entrance', registered_by: CU.name});
+    if(error) throw error;
+    await logAudit('attendance','NFC Tag Registered', `${label} (${uid})`);
+    showToast('Tag registered ✓');
+    renderNfcTagsList();
+  }catch(e){ showToast('Could not read tag: '+(e.message||'unknown error'), true); }
+}
+
+async function renderNfcLiveBoard(){
+  const el=document.getElementById('nfcLiveBoard');
+  if(!el) return;
+  el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:0.8rem">Loading…</div>';
+  const todayStr=new Date().toISOString().slice(0,10);
+  try{
+    const {data}=await SB.from('attendance_log').select('*').eq('date',todayStr).order('logged_at',{ascending:true});
+    const byStaff={};
+    (data||[]).forEach(r=>{ byStaff[r.staff_name]=r; }); // ascending order → last write per staff wins
+    const clockedIn = Object.values(byStaff).filter(r=>r.type==='check-in');
+    if(!clockedIn.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:0.8rem">No one is currently clocked in.</div>'; return; }
+    el.innerHTML = clockedIn.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:0.45rem 0;border-bottom:1px solid var(--surface)">
+      <div style="font-weight:600;font-size:0.85rem">🟢 ${r.staff_name}</div>
+      <div style="font-size:0.75rem;color:var(--muted)">since ${r.time_str||''} · ${r.method==='nfc'?'📡':r.method==='manual'?'✋':'📷'}${r.flagged?' 🚩':''}</div>
+    </div>`).join('');
+  }catch(e){ el.innerHTML='<div style="text-align:center;color:var(--red);font-size:0.82rem;padding:0.8rem">Could not load — run the NFC setup SQL in Settings first.</div>'; }
+}
+
+async function renderNfcFlaggedList(){
+  const el=document.getElementById('nfcFlaggedList');
+  if(!el) return;
+  el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:0.8rem">Loading…</div>';
+  try{
+    const {data}=await SB.from('attendance_log').select('*').eq('flagged',true).eq('reviewed',false).order('logged_at',{ascending:false}).limit(50);
+    if(!data||!data.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:0.8rem">✅ Nothing flagged.</div>'; return; }
+    el.innerHTML = data.map(r=>`<div style="padding:0.55rem 0;border-bottom:1px solid var(--surface)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem">
+        <div>
+          <div style="font-weight:600;font-size:0.85rem">${r.staff_name} — ${r.type==='check-in'?'Clock In':'Clock Out'}</div>
+          <div style="font-size:0.7rem;color:var(--muted)">${new Date(r.logged_at).toLocaleString('en-ZA')}</div>
+          <div style="font-size:0.72rem;color:#b25e00;margin-top:0.15rem">🚩 ${r.flag_reason||'Flagged'}</div>
+        </div>
+        <div class="brow" style="gap:0.3rem">
+          <button class="btn bp bsm" onclick="reviewFlaggedEvent('${r.id}')">✓ Clear</button>
+          <button class="btn bs bsm" onclick="deleteFlaggedEvent('${r.id}')" style="color:var(--red);border-color:var(--red-b)">🗑</button>
+        </div>
+      </div>
+    </div>`).join('');
+  }catch(e){ el.innerHTML='<div style="text-align:center;color:var(--red);font-size:0.82rem;padding:0.8rem">Could not load flagged events.</div>'; }
+}
+
+async function reviewFlaggedEvent(id){
+  await SB.from('attendance_log').update({reviewed:true, reviewed_by:CU.name, reviewed_at:new Date().toISOString()}).eq('id',id);
+  await logAudit('attendance','Flagged Event Cleared', 'Event id '+id);
+  showToast('Cleared ✓');
+  renderNfcFlaggedList();
+}
+async function deleteFlaggedEvent(id){
+  if(!confirm('Delete this attendance event? This cannot be undone.')) return;
+  await SB.from('attendance_log').delete().eq('id',id);
+  await logAudit('attendance','Flagged Event Deleted', 'Event id '+id);
+  showToast('Deleted.');
+  renderNfcFlaggedList();
+  renderNfcLiveBoard();
+}
+
+async function loadAttendanceSettings(){
+  await loadAttendanceSettingsQuiet();
+  const s=attendanceSettings, el=id=>document.getElementById(id);
+  if(el('nfcReqGeofence')) el('nfcReqGeofence').checked = !!s.require_geofence;
+  if(el('nfcGeoLat')) el('nfcGeoLat').value = s.geofence_lat ?? '';
+  if(el('nfcGeoLng')) el('nfcGeoLng').value = s.geofence_lng ?? '';
+  if(el('nfcGeoRadius')) el('nfcGeoRadius').value = s.geofence_radius_m ?? 150;
+  if(el('nfcWifiHint')) el('nfcWifiHint').value = s.wifi_ssid_hint ?? '';
+}
+
+async function saveAttendanceSettings(){
+  if(CU?.role!=='owner' && CU?.role!=='manager'){ showToast('Only managers/owner can change validation settings.', true); return; }
+  const row={
+    id:1,
+    require_geofence: document.getElementById('nfcReqGeofence').checked,
+    geofence_lat: parseFloat(document.getElementById('nfcGeoLat').value)||null,
+    geofence_lng: parseFloat(document.getElementById('nfcGeoLng').value)||null,
+    geofence_radius_m: parseFloat(document.getElementById('nfcGeoRadius').value)||150,
+    wifi_ssid_hint: document.getElementById('nfcWifiHint').value.trim()||null,
+    updated_at: new Date().toISOString(),
+  };
+  try{
+    const {error} = await SB.from('attendance_settings').upsert(row,{onConflict:'id'});
+    if(error) throw error;
+    attendanceSettings = row;
+    showToast('Attendance settings saved ✓');
+  }catch(e){ showToast('Could not save — run the NFC setup SQL in Settings first.', true); }
+}
+
+function useCurrentLocationForGeofence(){
+  if(!navigator.geolocation){ showToast('Location not available on this device.', true); return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    document.getElementById('nfcGeoLat').value = pos.coords.latitude.toFixed(6);
+    document.getElementById('nfcGeoLng').value = pos.coords.longitude.toFixed(6);
+    showToast('Location captured — remember to Save Settings ✓');
+  }, err=>{ showToast('Could not get location: '+err.message, true); }, {timeout:8000,enableHighAccuracy:true});
+}
+
+
 // ═══════════════════════════════════════════
 // QR CODE CHECK-IN / CHECK-OUT SYSTEM
 // ═══════════════════════════════════════════
