@@ -2820,6 +2820,24 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
   </div>
 </div>
 
+<div class="mo" id="moMicros">
+  <div class="md">
+    <button class="md-close" onclick="closeMo('moMicros')">✕</button>
+    <div class="md-title">Upload Micros CSV</div>
+    <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.8rem">Loads today's sold quantities from a Micros 3700 export so Recipe Costing can show "Sold Today" and theoretical usage per dish.</div>
+    <div class="fg"><label>Date</label><input type="date" id="microsDate"></div>
+    <div class="fg">
+      <label>CSV File</label>
+      <input type="file" accept=".csv,text/csv" onchange="previewMicros(this)">
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem" id="microsFileName">No file selected</div>
+    </div>
+    <pre id="microsPreview" style="display:none;background:var(--surface);border-radius:8px;padding:0.6rem 0.8rem;font-size:0.7rem;max-height:160px;overflow:auto;white-space:pre-wrap;color:var(--text)"></pre>
+    <div class="brow" style="margin-top:0.7rem">
+      <button class="btn bp" onclick="processMicros()" style="flex:1">Load Data</button>
+    </div>
+  </div>
+</div>
+
 <div class="mo" id="moOrder">
   <div class="md" style="max-width:560px">
     <button class="md-close" onclick="closeMo('moOrder')">✕</button>
