@@ -517,15 +517,6 @@ select option{background:var(--white);color:var(--ink);}
 .recipe-ing-row input[type=number]{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.5rem;font-family:'DM Mono',monospace;font-size:0.85rem;background:var(--surface);color:var(--ink);outline:none;text-align:center;}
 .recipe-ing-row select{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:0.4rem 0.5rem;font-family:'DM Sans',sans-serif;font-size:0.82rem;background:var(--surface);color:var(--ink);outline:none;}
 
-/* ── ANALYTICS ── */
-.an-bar-wrap{margin-bottom:0.65rem;}
-.an-bar-label{display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:0.22rem;}
-.an-bar-label span:first-child{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%;}
-.an-bar-label span:last-child{color:var(--muted);flex-shrink:0;}
-.an-bar-track{height:9px;background:var(--surface);border-radius:5px;overflow:hidden;}
-.an-bar-fill{height:100%;border-radius:5px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1);}
-.an-reorder-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.72rem 1rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.8rem;}
-.an-days-pill{font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:500;min-width:50px;text-align:right;}
 .sti-yesterday{font-size:0.67rem;color:var(--muted);margin-top:0.1rem;}
 .sti-usage{font-size:0.63rem;font-weight:700;padding:0.1rem 0.4rem;border-radius:5px;}
 .sti-usage.up{background:var(--red-l);color:var(--red);}
@@ -956,16 +947,6 @@ select option{background:var(--white);color:var(--ink);}
             <div class="mod-sub">Theoretical vs actual</div>
             <div class="mod-bdg" id="mod-bdg-pricing" style="display:none">!</div>
           </div>
-          <div class="mod-card mod-fin" onclick="go('micros');closeSb()">
-            <div class="mod-ic">🖥️</div>
-            <div class="mod-title">Micros Reports</div>
-            <div class="mod-sub">Upload & analyse POS data</div>
-          </div>
-          <div class="mod-card mod-fin" onclick="go('analytics');closeSb()">
-            <div class="mod-ic">🔍</div>
-            <div class="mod-title">Analytics</div>
-            <div class="mod-sub">Usage &amp; reorder AI</div>
-          </div>
           <div class="mod-card mod-fin" onclick="go('reports');closeSb()">
             <div class="mod-ic">📄</div>
             <div class="mod-title">Income Statement</div>
@@ -1383,63 +1364,6 @@ select option{background:var(--white);color:var(--ink);}
         </div>
       </div>
 
-      <!-- MICROS REPORTS -->
-      <div class="pnl" id="p-micros">
-        <!-- Tab bar -->
-        <div class="ctabs" style="margin-bottom:1rem">
-          <button class="ct act" id="mxTab-upload" onclick="mxSwitchTab('upload',this)">📤 Upload Report</button>
-          <button class="ct" id="mxTab-history" onclick="mxSwitchTab('history',this)">📋 History</button>
-        </div>
-
-        <!-- UPLOAD PANE -->
-        <div id="mxUploadPane">
-          <!-- How-to guide -->
-          <div class="card" style="padding:0.9rem 1rem;margin-bottom:0.9rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.3)">
-            <div style="font-weight:700;font-size:0.85rem;color:#9A7020;margin-bottom:0.5rem">📋 How to export from Micros 3700</div>
-            <ol style="margin:0;padding-left:1.2rem;font-size:0.8rem;color:var(--ink);line-height:1.8">
-              <li>Open <strong>Manager Procedures</strong> on the Micros terminal</li>
-              <li>Go to <strong>Reports → Menu Item → Sales by Menu Item</strong></li>
-              <li>Set your date range and Revenue Center to <strong>All</strong></li>
-              <li>Click <strong>Print → Save to File</strong> or export to <strong>Excel (.xlsx)</strong></li>
-              <li>Upload that file here</li>
-            </ol>
-          </div>
-
-          <!-- Upload zone -->
-          <div id="mxDropZone" class="card" style="padding:2rem 1rem;text-align:center;border:2px dashed var(--border);cursor:pointer;transition:all 0.2s"
-            onclick="document.getElementById('mxFileInput').click()"
-            ondragover="event.preventDefault();this.style.borderColor='var(--burg)';this.style.background='var(--burg-l)'"
-            ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
-            ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';mxHandleFile(event.dataTransfer.files[0])">
-            <div style="font-size:2rem;margin-bottom:0.5rem">🖥️</div>
-            <div style="font-weight:700;font-size:0.95rem;color:var(--burg);margin-bottom:0.25rem">Drop your Micros Excel file here</div>
-            <div style="font-size:0.78rem;color:var(--muted)">or tap to browse · .xlsx or .xls accepted</div>
-            <input type="file" id="mxFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="mxHandleFile(this.files[0])">
-          </div>
-
-          <!-- Date & label inputs -->
-          <div class="card" style="padding:0.85rem 1rem;margin-top:0.8rem">
-            <div class="fg2">
-              <div class="fg" style="margin:0"><label>Report Date</label><input type="date" id="mxDate" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none"></div>
-              <div class="fg" style="margin:0"><label>Shift / Label</label>
-                <select id="mxShift" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none">
-                  <option>Full Day</option><option>Morning</option><option>Afternoon</option><option>Evening</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Parse preview -->
-          <div id="mxPreview" style="display:none;margin-top:0.8rem"></div>
-          <button id="mxSaveBtn" style="display:none;width:100%;margin-top:0.8rem" class="btn bp" onclick="mxSaveReport()">💾 Save to Die Akker OS</button>
-        </div>
-
-        <!-- HISTORY PANE -->
-        <div id="mxHistoryPane" style="display:none">
-          <div id="mxHistoryList"><div class="skel-card"><div class="skel skel-title"></div><div class="skel skel-line w80"></div><div class="skel skel-line w60 sm"></div></div></div>
-        </div>
-      </div>
-
       <!-- REPORTS -->
       <div class="pnl" id="p-reports">
         <!-- Period selector -->
@@ -1549,99 +1473,6 @@ select option{background:var(--white);color:var(--ink);}
         <!-- SALES TAB (Reports) -->
         <div id="rp-sales" style="display:none">
           <div id="rpSalesChartWrap"></div>
-        </div>
-
-      </div>
-
-      <!-- ANALYTICS -->
-      <div class="pnl" id="p-analytics">
-        <!-- Period selector -->
-        <div class="card" style="padding:0.7rem 1rem;margin-bottom:0.8rem">
-          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
-            <button class="btn bs bsm" id="anPd7" onclick="anSetPeriod(7,this)">7 Days</button>
-            <button class="btn bp bsm" id="anPd30" onclick="anSetPeriod(30,this)">30 Days</button>
-            <button class="btn bs bsm" id="anPd90" onclick="anSetPeriod(90,this)">90 Days</button>
-            <button class="btn bs bsm" id="anPdYr" onclick="anSetPeriod(365,this)">1 Year</button>
-            <div style="margin-left:auto;font-size:0.72rem;color:var(--muted)" id="anDateRange"></div>
-          </div>
-        </div>
-
-        <!-- KPI cards -->
-        <div class="sgrid" style="margin-bottom:0.8rem" id="anKpis">
-          <div class="stat cb"><div class="snum nb" id="an-days">—</div><div class="slbl">Days of Data</div></div>
-          <div class="stat cg"><div class="snum ng" id="an-stocktakes">—</div><div class="slbl">Stocktakes Done</div></div>
-          <div class="stat co"><div class="snum no" id="an-items">—</div><div class="slbl">Items Tracked</div></div>
-          <div class="stat cr"><div class="snum nr" id="an-wasteKpi">—</div><div class="slbl">Total Waste Units</div></div>
-        </div>
-
-        <!-- Chart tabs -->
-        <div class="ctabs" id="anTabs">
-          <button class="ct act" onclick="anSwitch('usage',this)">📦 Usage</button>
-          <button class="ct" onclick="anSwitch('waste',this)">🔴 Waste</button>
-          <button class="ct" onclick="anSwitch('value',this)">💰 Stock Value</button>
-          <button class="ct" onclick="anSwitch('reorder',this)">⏰ Reorder</button>
-          <button class="ct" onclick="anSwitch('compare',this)">📅 Day Compare</button>
-          <button class="ct" onclick="anSwitch('sales',this)">💵 Sales</button>
-        </div>
-
-        <!-- USAGE CHART -->
-        <div id="an-usage">
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">Top items by total units consumed in this period.</div>
-          <div class="fg" style="margin-bottom:0.8rem">
-            <label>Filter by Category</label>
-            <select id="anUsageCat" onchange="renderAnUsage()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
-              <option value="all">All Categories</option>
-              <option>Meat</option><option>Dairy</option><option>Produce</option>
-              <option>Dry Goods</option><option>Bar</option><option>Bakery</option><option>Freezer</option><option>Cleaning</option>
-            </select>
-          </div>
-          <div id="anUsageChart"></div>
-        </div>
-
-        <!-- WASTE CHART -->
-        <div id="an-waste" style="display:none">
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">Items with negative variance — showing loss, waste or theft over time.</div>
-          <div id="anWasteChart"></div>
-          <div class="stitle">Waste Trend Over Time</div>
-          <div id="anWasteTrend"></div>
-        </div>
-
-        <!-- STOCK VALUE -->
-        <div id="an-value" style="display:none">
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">Estimated total stock value on hand each day (based on category averages).</div>
-          <div class="card" style="padding:1rem">
-            <div style="font-weight:700;font-size:0.82rem;margin-bottom:0.8rem;color:var(--burg)">Stock Value by Category</div>
-            <div id="anValueChart"></div>
-          </div>
-          <div class="stitle">Category Breakdown</div>
-          <div id="anCatBreakdown"></div>
-        </div>
-
-        <!-- REORDER PREDICTION -->
-        <div id="an-reorder" style="display:none">
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">Based on average daily usage — how many days of stock remain per item.</div>
-          <div style="display:flex;gap:0.5rem;margin-bottom:0.8rem">
-            <button class="ct act" onclick="anReorderFilter('all',this)">All</button>
-            <button class="ct" onclick="anReorderFilter('critical',this)">🔴 Order Today</button>
-            <button class="ct" onclick="anReorderFilter('soon',this)">🟡 Order This Week</button>
-            <button class="ct" onclick="anReorderFilter('ok',this)">🟢 OK</button>
-          </div>
-          <div id="anReorderList"></div>
-        </div>
-
-        <!-- DAY COMPARISON -->
-        <div id="an-compare" style="display:none">
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">Compare stock levels between any two days.</div>
-          <div class="fg2" style="margin-bottom:0.8rem">
-            <div class="fg"><label>Day A</label><input type="date" id="anCmpA" onchange="renderAnCompare()"></div>
-            <div class="fg"><label>Day B</label><input type="date" id="anCmpB" onchange="renderAnCompare()"></div>
-          </div>
-          <div id="anCompareTable"></div>
-        </div>
-
-        <!-- SALES TAB (Analytics) -->
-        <div id="an-sales" style="display:none">
-          <div id="anSalesChartWrap"></div>
         </div>
 
       </div>
@@ -2335,34 +2166,6 @@ select option{background:var(--white);color:var(--ink);}
         </div>
       </div>
 
-      <!-- TAX INVOICES -->
-      <div class="pnl" id="p-invoices">
-        <!-- Xero connection banner -->
-        <div id="xeroConnBanner" style="display:none;background:var(--green-l);border:1px solid var(--green-b);border-radius:12px;padding:0.9rem 1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap">
-          <div style="font-size:1.4rem">✅</div>
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:0.88rem;color:var(--green)">Connected to Xero</div>
-            <div style="font-size:0.72rem;color:var(--muted)" id="xeroOrgName">Organisation loading...</div>
-          </div>
-          <button class="btn bs bsm" onclick="xeroSyncContacts()" id="xeroSyncBtn">🔄 Sync Contacts</button>
-        </div>
-        <div id="xeroDisconnBanner" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.9rem 1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap">
-          <div style="font-size:1.4rem">🔗</div>
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:0.88rem">Connect to Xero</div>
-            <div style="font-size:0.72rem;color:var(--muted)">Link your Xero account to upload invoices directly. Configure in Settings → Xero.</div>
-          </div>
-          <button class="btn bp bsm" onclick="go('settings')">⚙️ Set Up</button>
-        </div>
-        <!-- Actions -->
-        <div class="brow" style="margin-bottom:1rem">
-          <button class="btn bp" onclick="openInvoiceScanner()" style="flex:1">📸 Scan Tax Invoice</button>
-          <button class="btn bs" onclick="loadXeroInvoices()" id="xeroLoadBtn">🔄 Load from Xero</button>
-        </div>
-        <!-- Invoice list -->
-        <div id="invoiceList"><div style="text-align:center;padding:2rem;color:var(--muted)">No invoices loaded yet. Scan a photo or load from Xero.</div></div>
-      </div>
-
       <!-- SETTINGS -->
       <div class="pnl" id="p-settings">
         <div class="card">
@@ -2505,25 +2308,6 @@ ALTER TABLE attendance_settings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "allow_all" ON attendance_settings;
 CREATE POLICY "allow_all" ON attendance_settings FOR ALL USING (true) WITH CHECK (true);</pre>
           <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('nfcAttendanceSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
-        </div>
-        <div class="card" id="microsSQL" style="display:none">
-          <div class="card-title">Micros Imports Table Setup</div>
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL once in your Supabase SQL editor to enable Micros report uploads:</div>
-          <pre style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">CREATE TABLE IF NOT EXISTS micros_imports (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  date date NOT NULL,
-  shift text NOT NULL DEFAULT 'Full Day',
-  items jsonb,
-  total_sales numeric DEFAULT 0,
-  total_qty int DEFAULT 0,
-  total_voids int DEFAULT 0,
-  uploaded_by text,
-  uploaded_at timestamptz DEFAULT now(),
-  UNIQUE(date, shift)
-);
-ALTER TABLE micros_imports ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "allow_all" ON micros_imports FOR ALL USING (true) WITH CHECK (true);</pre>
-          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('microsSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
         <div class="card" id="spotCheckSQL" style="display:none">
           <div class="card-title">Spot Check Table Setup</div>
@@ -2920,60 +2704,6 @@ UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (secti
           </div>
         </div>
 
-        <!-- XERO SETTINGS -->
-        <div class="card" id="xeroSettingsCard">
-          <div class="card-title">🔗 Xero Accounting Integration</div>
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Connect Die Akker to Xero to automatically upload scanned tax invoices as supplier bills.</div>
-
-          <!-- Step-by-step setup guide -->
-          <div style="background:var(--surface);border-radius:10px;padding:0.9rem;margin-bottom:1rem;font-size:0.78rem;color:var(--text)">
-            <div style="font-weight:700;margin-bottom:0.5rem;font-size:0.8rem">📋 One-time setup (5 min):</div>
-            <div style="display:flex;flex-direction:column;gap:0.4rem">
-              <div>1. Go to <strong>developer.xero.com</strong> → My Apps → New App</div>
-              <div>2. Choose <strong>Web app</strong> — name it "Die Akker"</div>
-              <div>3. Set Redirect URI to the URL of this page (shown below)</div>
-              <div>4. Copy the <strong>Client ID</strong> and <strong>Client Secret</strong> here</div>
-              <div>5. Click <strong>Connect to Xero</strong> and approve access</div>
-            </div>
-          </div>
-
-          <div class="fg2">
-            <div class="fg">
-              <label>Client ID</label>
-              <input type="text" id="xeroClientId" placeholder="ABC123..." autocomplete="off"
-                style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
-            </div>
-            <div class="fg">
-              <label>Client Secret</label>
-              <input type="password" id="xeroClientSecret" placeholder="••••••••"
-                style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
-            </div>
-          </div>
-          <div class="fg" style="margin-top:0.5rem">
-            <label>Redirect URI <span style="font-size:0.7rem;color:var(--muted);font-weight:400">(copy this exactly into Xero developer portal)</span></label>
-            <div style="display:flex;gap:0.5rem;align-items:center">
-              <input type="text" id="xeroRedirectUri" readonly
-                style="flex:1;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.78rem;background:var(--surface);outline:none;color:var(--muted);box-sizing:border-box">
-              <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('xeroRedirectUri').value).then(()=>showToast('Copied ✓'))">📋</button>
-            </div>
-          </div>
-
-          <!-- Default purchase account code -->
-          <div class="fg" style="margin-top:0.5rem">
-            <label>Default Purchase Account Code <span style="font-size:0.7rem;color:var(--muted);font-weight:400">(from your Xero chart of accounts)</span></label>
-            <input type="text" id="xeroAccountCode" placeholder="e.g. 310"
-              style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:var(--cream);outline:none;box-sizing:border-box">
-            <div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem">In Xero: Accounting → Chart of Accounts → find your "Food Purchases" or "Cost of Sales" account code</div>
-          </div>
-
-          <div id="xeroStatusMsg" style="font-size:0.78rem;padding:0.5rem 0.7rem;border-radius:8px;margin-top:0.7rem;display:none"></div>
-
-          <div style="display:flex;gap:0.5rem;margin-top:0.8rem;flex-wrap:wrap">
-            <button class="btn bp bsm" onclick="xeroSaveSettings()" style="flex:1">💾 Save Settings</button>
-            <button class="btn bs bsm" id="xeroConnectBtn" onclick="xeroConnect()" style="flex:1">🔗 Connect to Xero</button>
-            <button class="btn bs bsm" id="xeroDisconnectBtn" onclick="xeroDisconnect()" style="color:var(--red);border-color:var(--red-b);display:none">✕ Disconnect</button>
-          </div>
-        </div>
       </div>
 
     </div></div>
@@ -3337,18 +3067,18 @@ const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // AUTH
 // ═══════════════════════════════════════════
 // All sections available
-const ALL_SECTIONS = ['dashboard','modules','clockin','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','analytics','micros','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices','auditlog','settings'];
-const SECTION_LABELS = {dashboard:'Dashboard',clockin:'Clock In / Clock Out',spotcheck:'Daily Spot Check',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',cleaning:'Cleaning Checklist',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
+const ALL_SECTIONS = ['dashboard','modules','clockin','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','recipes','pricing','waiterlog','roster','payroll','staff','leave','kpi','docs','auditlog','settings'];
+const SECTION_LABELS = {dashboard:'Dashboard',clockin:'Clock In / Clock Out',spotcheck:'Daily Spot Check',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',cleaning:'Cleaning Checklist',reports:'Reports & Variance',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',auditlog:'Audit Log',settings:'Settings'};
 
 // Owner always has full access (hardcoded, cannot be removed)
 const ACCESS = {
   owner:   ALL_SECTIONS,
-  manager: ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','micros','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices'],
+  manager: ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','waiterlog','roster','payroll','staff','leave','kpi','docs'],
   employee:['dashboard','modules','spotcheck','stocktake'],
 };
-const TTLS = {dashboard:'Dashboard',modules:'Modules',clockin:'Clock In / Clock Out',spotcheck:'Daily Spot Check',stocktake:'Stock Take',micros:'Micros Reports',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',cleaning:'Cleaning Checklist',reports:'Reports & Variance',analytics:'Analytics',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',invoices:'Tax Invoices',auditlog:'Audit Log',settings:'Settings'};
-const TSUBS = {dashboard:'Overview of all operations',modules:'All features in one place',clockin:'Tap the NFC tag at the entrance to clock in or out',spotcheck:'15 random items · different every day',micros:'Upload & analyse Micros 3700 sales reports',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',cleaning:'End-of-day closing tasks',reports:'Variance, trends and stock analysis',analytics:'Stock usage and reorder insights',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',invoices:'Scan & upload supplier tax invoices to Xero',auditlog:'System activity and change history',settings:'System configuration and preferences'};
-const INVESTOR_SECTIONS = ['dashboard','modules','spotcheck','stockdb','reports','analytics','recipes','pricing','cashup','payroll','roster','leave','kpi','docs','auditlog'];
+const TTLS = {dashboard:'Dashboard',modules:'Modules',clockin:'Clock In / Clock Out',spotcheck:'Daily Spot Check',stocktake:'Stock Take',stockdb:'Stock Database',pending:'Pending Submissions',orders:'Supplier Orders',cashup:'Daily Cash Up',cleaning:'Cleaning Checklist',reports:'Reports & Variance',recipes:'Recipe Costing',pricing:'Price Alerts & GP',waiterlog:'Waiter Accountability',roster:'Shift Roster',payroll:'Payroll',staff:'Staff Management',leave:'Leave Management',kpi:'KPI Reviews',docs:'Staff Documents',auditlog:'Audit Log',settings:'Settings'};
+const TSUBS = {dashboard:'Overview of all operations',modules:'All features in one place',clockin:'Tap the NFC tag at the entrance to clock in or out',spotcheck:'15 random items · different every day',stocktake:'Count and record daily stock levels',stockdb:'Manage stock items and pricing',pending:'Review incoming stock deliveries',orders:'Manage supplier purchase orders',cashup:'Enter and review shift cash-ups',cleaning:'End-of-day closing tasks',reports:'Variance, trends and stock analysis',recipes:'Ingredient costings and menu margins',pricing:'Monitor supplier price movements',waiterlog:'Track waiter performance and accountability',roster:'Manage staff shifts and weekly hours',payroll:'Calculate and review monthly pay',staff:'Manage staff profiles and system access',leave:'Record and track staff leave',kpi:'Performance reviews and scoring',docs:'Staff document tracking',auditlog:'System activity and change history',settings:'System configuration and preferences'};
+const INVESTOR_SECTIONS = ['dashboard','modules','spotcheck','stockdb','reports','recipes','pricing','cashup','payroll','roster','leave','kpi','docs','auditlog'];
 const ROLE_COLORS = {owner:'#7a1528', investor:'#c8922a', manager:'#152438', employee:'#1a6e40'};
 
 let CU = null, appLogins = [];
@@ -3675,9 +3405,9 @@ function go(id){
   document.getElementById('tbSub').textContent=TSUBS[id]||'';
 
   // Lazy-load: panels that fetch fresh data on every visit (time-sensitive)
-  const alwaysRefresh = ['roster','payroll','waiterlog','auditlog','reports','analytics','clockin'];
+  const alwaysRefresh = ['roster','payroll','waiterlog','auditlog','reports','clockin'];
   // Panels that only load once per session (data doesn't change minute-to-minute)
-  const loadOnce = ['staff','invoices','recipes','pricing','orders','settings'];
+  const loadOnce = ['staff','recipes','pricing','orders','settings'];
 
   const firstVisit = !_panelLoaded[id];
   if(firstVisit) _panelLoaded[id] = true;
@@ -3690,10 +3420,8 @@ function go(id){
   if(id==='payroll'){ renderPaymentDate(); initPayPeriod(); loadPayrollForPeriod(); }
   if(id==='waiterlog'){ wlToday(); initLeaderboard(); initScheduling(); }
   if(id==='auditlog') loadAuditLog();
-  if(id==='invoices' && firstVisit) initInvoicesPanel();
   if(id==='staff'){ if(firstVisit) loadStaffLogins(); applyStaffTabAccess(); }
   if(id==='reports'){ initReportDates(); loadReports(); }
-  if(id==='analytics'){ initAnalytics(); loadAnalytics(); }
   if(id==='recipes' && firstVisit) renderRecipes();
   if(id==='pricing' && firstVisit){ renderPricingPanel(); }
   if(id==='orders'){ renderSups(); ordUpdateReceivedBadge(); }
@@ -3704,8 +3432,6 @@ function go(id){
     if(scSqlCard) scSqlCard.style.display=CU?.role==='owner'?'block':'none';
     const ccSqlCard=document.getElementById('cleaningChecklistSQL');
     if(ccSqlCard) ccSqlCard.style.display=CU?.role==='owner'?'block':'none';
-    const mxSqlCard=document.getElementById('microsSQL');
-    if(mxSqlCard) mxSqlCard.style.display=CU?.role==='owner'?'block':'none';
     const attSqlCard=document.getElementById('attendanceSQL');
     if(attSqlCard) attSqlCard.style.display=CU?.role==='owner'?'block':'none';
     const nfcSqlCard=document.getElementById('nfcAttendanceSQL');
@@ -3713,7 +3439,6 @@ function go(id){
     const lvSqlCard=document.getElementById('leaveManagementSQL');
     if(lvSqlCard) lvSqlCard.style.display=CU?.role==='owner'?'block':'none';
     checkSectionColStatus();
-    xeroLoadSettings();
   }
   updateSectionTabBar(id);
   closeSb();
@@ -3733,12 +3458,9 @@ const SEC_GROUPS = {
   finance:{tabs:[
     {id:'cashup',label:'Cash Up',r:'manager'},
     {id:'reports',label:'Reports',r:'manager'},
-    {id:'analytics',label:'Analytics',r:'manager'},
-    {id:'micros',label:'Micros',r:'manager'},
     {id:'recipes',label:'Recipe Costing',r:'manager'},
     {id:'pricing',label:'Price Alerts',r:'manager'},
     {id:'waiterlog',label:'Waiter Log',r:'manager'},
-    {id:'invoices',label:'Tax Invoices',r:'manager'},
   ]},
   people:{tabs:[
     {id:'roster',label:'Roster',r:'manager'},
@@ -3756,7 +3478,7 @@ const SEC_GROUPS = {
 const SEC_GROUP_MAP = {
   dashboard:'overview',
   clockin:'operations',spotcheck:'operations',stocktake:'operations',stockdb:'operations',pending:'operations',orders:'operations',cleaning:'operations',
-  cashup:'finance',reports:'finance',analytics:'finance',micros:'finance',recipes:'finance',pricing:'finance',waiterlog:'finance',invoices:'finance',
+  cashup:'finance',reports:'finance',recipes:'finance',pricing:'finance',waiterlog:'finance',
   roster:'people',payroll:'people',staff:'people',leave:'people',kpi:'people',docs:'people',
   auditlog:'system',settings:'system',
 };
@@ -3903,214 +3625,6 @@ function renderDash(){
       });
       act.innerHTML='<div class="tw"><table class="tbl"><thead><tr><th>Time</th><th>Action</th><th>By</th><th>Status</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
     }).catch(()=>{}); // Silently fail if table doesn't exist yet
-}
-
-// ═══════════════════════════════════════════
-// MICROS 3700 REPORT IMPORT
-// ═══════════════════════════════════════════
-let mxParsedData = null; // holds parsed items before save
-
-function mxSwitchTab(tab, btn){
-  document.querySelectorAll('#p-micros .ct').forEach(b=>b.classList.remove('act'));
-  btn.classList.add('act');
-  document.getElementById('mxUploadPane').style.display  = tab==='upload'  ? '' : 'none';
-  document.getElementById('mxHistoryPane').style.display = tab==='history' ? '' : 'none';
-  if(tab==='history') mxLoadHistory();
-}
-
-function mxHandleFile(file){
-  if(!file) return;
-  if(!window.XLSX){ showToast('Excel parser not loaded — refresh and try again.','err'); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    try{
-      const wb = XLSX.read(e.target.result, {type:'array'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-      mxParseRows(rows, file.name);
-    }catch(err){
-      showToast('Could not read file — make sure it is an Excel file.','err');
-    }
-  };
-  reader.readAsArrayBuffer(file);
-  // Set today's date if blank
-  if(!document.getElementById('mxDate').value)
-    document.getElementById('mxDate').value = new Date().toISOString().slice(0,10);
-}
-
-function mxParseRows(rows, filename){
-  // Flexible Micros 3700 parser
-  // Strategy: find header row containing "item" and "qty"/"count"/"sold" columns
-  let headerIdx = -1;
-  let colItem=-1, colQty=-1, colSales=-1, colVoids=-1, colCategory=-1;
-
-  const norm = s => String(s||'').toLowerCase().replace(/[^a-z0-9]/g,' ').trim();
-
-  for(let i=0;i<Math.min(rows.length,25);i++){
-    const row = rows[i].map(norm);
-    // Look for column headers
-    const iItem     = row.findIndex(c=>c.includes('item')||c.includes('description')||c.includes('menu'));
-    const iQty      = row.findIndex(c=>c==='qty'||c==='count'||c==='sold'||c.includes('quantity'));
-    const iSales    = row.findIndex(c=>c.includes('sales')||c.includes('amount')||c.includes('revenue')||c.includes('net'));
-    const iVoids    = row.findIndex(c=>c.includes('void')||c.includes('comp')||c.includes('discount'));
-    const iCategory = row.findIndex(c=>c.includes('major')||c.includes('group')||c.includes('category')||c.includes('family'));
-    if(iItem>=0 && (iQty>=0||iSales>=0)){
-      headerIdx=i; colItem=iItem; colQty=iQty; colSales=iSales; colVoids=iVoids; colCategory=iCategory;
-      break;
-    }
-  }
-
-  // Fallback: if still not found, try positional guess (col 0=name, col 1=qty, col 2=sales)
-  if(headerIdx===-1){
-    for(let i=0;i<Math.min(rows.length,30);i++){
-      const row=rows[i];
-      if(row.length>=2 && row[0] && !norm(row[0]).includes('report') && !norm(row[0]).includes('date') && !norm(row[0]).includes('page')){
-        const v1=parseFloat(String(row[1]||'').replace(/[R,\s]/g,''));
-        if(!isNaN(v1)&&v1>0){ headerIdx=i-1; colItem=0; colQty=1; colSales=2>=row.length?-1:2; break; }
-      }
-    }
-  }
-
-  if(headerIdx===-1){
-    showToast('Could not detect columns — see format guide above.','err');
-    return;
-  }
-
-  const items = [];
-  for(let i=headerIdx+1; i<rows.length; i++){
-    const row = rows[i];
-    const name = String(row[colItem]||'').trim();
-    if(!name || name.toLowerCase().includes('total') || name.toLowerCase().includes('grand')) continue;
-    // Skip rows that look like section headers (no numbers)
-    const qty   = colQty>=0   ? parseFloat(String(row[colQty]  ||'').replace(/[R,\s]/g,''))||0 : 0;
-    const sales = colSales>=0 ? parseFloat(String(row[colSales]||'').replace(/[R,\s]/g,''))||0 : 0;
-    const voids = colVoids>=0 ? parseFloat(String(row[colVoids]||'').replace(/[R,\s]/g,''))||0 : 0;
-    const cat   = colCategory>=0 ? String(row[colCategory]||'').trim() : '';
-    if(qty===0 && sales===0) continue;
-    items.push({name, qty, sales, voids, category:cat});
-  }
-
-  if(!items.length){
-    showToast('No item rows found — check the file format.','err');
-    return;
-  }
-
-  mxParsedData = items;
-  mxRenderPreview(items, filename);
-}
-
-function mxRenderPreview(items, filename){
-  const totalSales  = items.reduce((s,i)=>s+i.sales,0);
-  const totalQty    = items.reduce((s,i)=>s+i.qty,0);
-  const totalVoids  = items.reduce((s,i)=>s+i.voids,0);
-
-  // Group by category
-  const cats = {};
-  items.forEach(it=>{
-    const c = it.category||'Uncategorised';
-    if(!cats[c]) cats[c]={qty:0,sales:0};
-    cats[c].qty += it.qty; cats[c].sales += it.sales;
-  });
-  const catRows = Object.entries(cats).sort((a,b)=>b[1].sales-a[1].sales).map(([c,v])=>
-    `<tr><td>${c||'—'}</td><td class="r">${v.qty}</td><td class="r"><strong>R ${v.sales.toFixed(2)}</strong></td><td class="r">${totalSales>0?(v.sales/totalSales*100).toFixed(1)+'%':'—'}</td></tr>`
-  ).join('');
-
-  // Top 10 items
-  const topItems = [...items].sort((a,b)=>b.sales-a.sales).slice(0,10).map(it=>
-    `<tr><td>${it.name}</td><td class="r">${it.qty}</td><td class="r">R ${it.sales.toFixed(2)}</td>${it.voids>0?`<td class="r" style="color:var(--red);font-weight:700">⚠ ${it.voids}</td>`:'<td class="r" style="color:var(--muted)">—</td>'}</tr>`
-  ).join('');
-
-  // Void flags
-  const voidItems = items.filter(i=>i.voids>0).sort((a,b)=>b.voids-a.voids);
-  const voidHtml = voidItems.length ? `
-    <div class="stitle" style="color:var(--red)">⚠️ Voids & Comps (${voidItems.length} items)</div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <div class="tw"><table class="tbl"><thead><tr><th>Item</th><th>Qty Sold</th><th>Sales</th><th style="color:var(--red)">Voids</th></tr></thead><tbody>
-        ${voidItems.map(it=>`<tr><td>${it.name}</td><td class="r">${it.qty}</td><td class="r">R ${it.sales.toFixed(2)}</td><td class="r" style="color:var(--red);font-weight:700">${it.voids}</td></tr>`).join('')}
-      </tbody></table></div>
-    </div>` : '';
-
-  const prev = document.getElementById('mxPreview');
-  prev.style.display = '';
-  prev.innerHTML = `
-    <div style="display:flex;gap:0.5rem;margin-bottom:0.8rem;flex-wrap:wrap">
-      <div class="stat cb" style="flex:1;min-width:90px"><div class="snum nb" style="font-size:1.4rem">R ${totalSales>=1000?(totalSales/1000).toFixed(1)+'k':totalSales.toFixed(0)}</div><div class="slbl">Total Sales</div></div>
-      <div class="stat cg" style="flex:1;min-width:90px"><div class="snum ng" style="font-size:1.4rem">${totalQty}</div><div class="slbl">Items Sold</div></div>
-      <div class="stat co" style="flex:1;min-width:90px"><div class="snum no" style="font-size:1.4rem">${items.length}</div><div class="slbl">Menu Lines</div></div>
-      ${totalVoids>0?`<div class="stat cr" style="flex:1;min-width:90px"><div class="snum nr" style="font-size:1.4rem">${totalVoids}</div><div class="slbl">Total Voids</div></div>`:''}
-    </div>
-    <div class="stitle">Sales by Category</div>
-    <div class="card" style="padding:0;overflow:hidden"><div class="tw"><table class="tbl">
-      <thead><tr><th>Category</th><th>Qty</th><th>Sales</th><th>% Mix</th></tr></thead>
-      <tbody>${catRows}</tbody>
-    </table></div></div>
-    <div class="stitle">Top 10 Menu Items</div>
-    <div class="card" style="padding:0;overflow:hidden"><div class="tw"><table class="tbl">
-      <thead><tr><th>Item</th><th>Qty</th><th>Sales</th><th>Voids</th></tr></thead>
-      <tbody>${topItems}</tbody>
-    </table></div></div>
-    ${voidHtml}
-    <div style="font-size:0.72rem;color:var(--muted);margin-top:0.5rem">📄 ${filename} · ${items.length} items parsed · review above then save</div>`;
-
-  document.getElementById('mxSaveBtn').style.display = '';
-}
-
-async function mxSaveReport(){
-  if(!mxParsedData) return;
-  const date  = document.getElementById('mxDate').value || new Date().toISOString().slice(0,10);
-  const shift = document.getElementById('mxShift').value || 'Full Day';
-  const total = mxParsedData.reduce((s,i)=>s+i.sales,0);
-  const rec = {
-    date, shift,
-    items: mxParsedData,
-    total_sales: total,
-    total_qty: mxParsedData.reduce((s,i)=>s+i.qty,0),
-    total_voids: mxParsedData.reduce((s,i)=>s+i.voids,0),
-    uploaded_by: CU?.name||CU?.username||'owner',
-    uploaded_at: new Date().toISOString(),
-  };
-  setSyncStatus('syncing');
-  const {error} = await SB.from('micros_imports').upsert(rec, {onConflict:'date,shift'});
-  setSyncStatus(error?'err':'ok');
-  if(error){ showToast('Error saving report. Run the SQL setup in Settings.','err'); return; }
-  showToast(`Micros report saved ✓ · R ${total.toFixed(2)} for ${date} (${shift})`);
-  await logAudit('micros','Report Uploaded',`${date} ${shift} · R${total.toFixed(2)} · ${mxParsedData.length} items`);
-  mxParsedData = null;
-  document.getElementById('mxPreview').style.display = 'none';
-  document.getElementById('mxSaveBtn').style.display = 'none';
-  document.getElementById('mxFileInput').value = '';
-}
-
-async function mxLoadHistory(){
-  const el = document.getElementById('mxHistoryList');
-  el.innerHTML = '<div class="skel-card"><div class="skel skel-title"></div><div class="skel skel-line w80"></div></div>';
-  try{
-    const {data} = await SB.from('micros_imports').select('*').order('date',{ascending:false}).limit(30);
-    if(!data?.length){
-      el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No Micros reports uploaded yet.</div>';
-      return;
-    }
-    el.innerHTML = data.map(r=>{
-      const dt = new Date(r.date+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-      const topItems = (r.items||[]).sort((a,b)=>b.sales-a.sales).slice(0,3).map(i=>i.name).join(' · ');
-      const hasVoids = (r.total_voids||0)>0;
-      return `<div class="card" style="padding:0.85rem 1rem;margin-bottom:0.65rem">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;flex-wrap:wrap">
-          <div>
-            <div style="font-weight:700;font-size:0.92rem">${dt} <span style="font-size:0.72rem;color:var(--muted);font-weight:400">· ${r.shift}</span></div>
-            <div style="font-size:0.72rem;color:var(--muted);margin-top:0.1rem">By ${r.uploaded_by} · ${r.items?.length||0} items</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:1.1rem;color:var(--burg)">R ${(r.total_sales||0).toFixed(2)}</div>
-            ${hasVoids?`<div style="font-size:0.7rem;color:var(--red);font-weight:700">⚠ ${r.total_voids} voids</div>`:''}
-          </div>
-        </div>
-        ${topItems?`<div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem;border-top:1px solid var(--border-s);padding-top:0.4rem">Top: ${topItems}</div>`:''}
-      </div>`;
-    }).join('');
-  }catch(e){
-    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--red)">Error loading history — run SQL setup in Settings.</div>';
-  }
 }
 
 // ═══════════════════════════════════════════
@@ -10148,7 +9662,6 @@ const ACCESS_OPTIONS = [
   {id:'orders',      label:'Supplier Orders'},
   {id:'cashup',      label:'Daily Cash Up'},
   {id:'reports',     label:'Reports & Variance'},
-  {id:'analytics',   label:'📊 Analytics'},
   {id:'recipes',     label:'🍳 Recipe Costing'},
   {id:'pricing',     label:'💸 Price Alerts & GP'},
   {id:'waiterlog',   label:'Waiter Accountability'},
@@ -10165,7 +9678,7 @@ const ACCESS_OPTIONS = [
 const PRESETS = {
   owner:    ALL_SECTIONS,
   investor: INVESTOR_SECTIONS,
-  manager:  ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','micros','waiterlog','roster','payroll','staff','leave','kpi','docs','invoices'],
+  manager:  ['dashboard','modules','spotcheck','stocktake','stockdb','pending','orders','cashup','cleaning','reports','waiterlog','roster','payroll','staff','leave','kpi','docs'],
   staff:    ['dashboard','modules','spotcheck','stocktake'],
 };
 
@@ -10673,502 +10186,6 @@ function updateAiKeyStatus(key){
 }
 
 // ═══════════════════════════════════════════
-// XERO ACCOUNTING INTEGRATION
-// ═══════════════════════════════════════════
-let xeroContacts = []; // cached Xero contacts (suppliers)
-let invPhotos = [];    // invoice scan photos
-let invLineData = [];  // extracted line items
-
-// ── PKCE helpers ─────────────────────────────────────────────────────────
-function xeroRandStr(len){
-  const arr=new Uint8Array(len);
-  crypto.getRandomValues(arr);
-  return btoa(String.fromCharCode(...arr)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-}
-async function xeroChallenge(verifier){
-  const data=new TextEncoder().encode(verifier);
-  const hash=await crypto.subtle.digest('SHA-256',data);
-  return btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-}
-
-// ── Settings persistence ──────────────────────────────────────────────────
-function xeroSaveSettings(){
-  const id=document.getElementById('xeroClientId').value.trim();
-  const sec=document.getElementById('xeroClientSecret').value.trim();
-  const acc=document.getElementById('xeroAccountCode').value.trim();
-  if(!id){showToast('Enter your Xero Client ID.',true);return;}
-  localStorage.setItem('xeroClientId',id);
-  if(sec) localStorage.setItem('xeroClientSecret',sec);
-  if(acc) localStorage.setItem('xeroAccountCode',acc);
-  showToast('Xero settings saved ✓');
-  updateXeroStatus();
-}
-
-function xeroLoadSettings(){
-  const id=localStorage.getItem('xeroClientId')||'';
-  const sec=localStorage.getItem('xeroClientSecret')||'';
-  const acc=localStorage.getItem('xeroAccountCode')||'';
-  const rd=document.getElementById('xeroRedirectUri');
-  if(rd) rd.value=window.location.href.split('?')[0].split('#')[0];
-  const eli=document.getElementById('xeroClientId');     if(eli) eli.value=id;
-  const els=document.getElementById('xeroClientSecret'); if(els) els.value=sec?'••••••••':'';
-  const ela=document.getElementById('xeroAccountCode');  if(ela) ela.value=acc;
-  updateXeroStatus();
-}
-
-function updateXeroStatus(){
-  const tok=localStorage.getItem('xeroAccessToken');
-  const exp=parseInt(localStorage.getItem('xeroTokenExpiry')||'0');
-  const connected=tok&&Date.now()<exp;
-  const org=localStorage.getItem('xeroOrgName')||'Connected';
-  // Settings card status
-  const msg=document.getElementById('xeroStatusMsg');
-  if(msg){
-    msg.style.display='block';
-    if(connected){
-      msg.style.background='var(--green-l)';msg.style.color='var(--green)';msg.style.border='1px solid var(--green-b)';
-      msg.textContent=`✅ Connected — ${org}`;
-    } else if(localStorage.getItem('xeroClientId')){
-      msg.style.background='var(--surface)';msg.style.color='var(--muted)';msg.style.border='1px solid var(--border)';
-      msg.textContent='Not connected yet — click "Connect to Xero" to authorise';
-    } else {
-      msg.style.display='none';
-    }
-  }
-  const discBtn=document.getElementById('xeroDisconnectBtn');
-  if(discBtn) discBtn.style.display=connected?'inline-flex':'none';
-  // Invoices panel banners
-  const cb=document.getElementById('xeroConnBanner');
-  const db=document.getElementById('xeroDisconnBanner');
-  if(cb) cb.style.display=connected?'flex':'none';
-  if(db) db.style.display=connected?'none':'flex';
-  const orgEl=document.getElementById('xeroOrgName');
-  if(orgEl&&connected) orgEl.textContent=org;
-  // Nav badge
-  const bdg=document.getElementById('xeroBadge');
-  if(bdg) bdg.style.display=connected?'inline-flex':'none';
-}
-
-// ── OAuth PKCE connect ────────────────────────────────────────────────────
-async function xeroConnect(){
-  const clientId=localStorage.getItem('xeroClientId');
-  if(!clientId){showToast('Save your Client ID in Settings → Xero first.',true);return;}
-  const redirectUri=window.location.href.split('?')[0].split('#')[0];
-  const verifier=xeroRandStr(64);
-  const challenge=await xeroChallenge(verifier);
-  sessionStorage.setItem('xeroPKCEVerifier',verifier);
-  const scopes='openid profile email offline_access accounting.invoices accounting.contacts accounting.settings.read';
-  const params=new URLSearchParams({
-    response_type:'code',client_id:clientId,redirect_uri:redirectUri,
-    scope:scopes,state:'xeroauth',code_challenge:challenge,code_challenge_method:'S256'
-  });
-  window.location.href=`https://login.xero.com/identity/connect/authorize?${params}`;
-}
-
-async function xeroHandleCallback(){
-  const params=new URLSearchParams(window.location.search);
-  if(params.get('state')!=='xeroauth'||!params.get('code')) return;
-  const code=params.get('code');
-  history.replaceState({},'',window.location.pathname);
-  const clientId=localStorage.getItem('xeroClientId');
-  const clientSecret=localStorage.getItem('xeroClientSecret');
-  const redirectUri=window.location.href.split('?')[0].split('#')[0];
-  const verifier=sessionStorage.getItem('xeroPKCEVerifier');
-  const body=new URLSearchParams({
-    grant_type:'authorization_code',code,
-    redirect_uri:redirectUri,code_verifier:verifier
-  });
-  const hdrs={'Content-Type':'application/x-www-form-urlencoded'};
-  if(clientSecret){
-    hdrs['Authorization']='Basic '+btoa(unescape(encodeURIComponent(clientId+':'+clientSecret)));
-  } else {
-    body.append('client_id',clientId);
-  }
-  try{
-    const resp=await fetch('/xero-token',{
-      method:'POST',headers:hdrs,body:body.toString()
-    });
-    const data=await resp.json();
-    if(!data.access_token) throw new Error(data.error_description||'Auth failed');
-    localStorage.setItem('xeroAccessToken',data.access_token);
-    localStorage.setItem('xeroRefreshToken',data.refresh_token||'');
-    localStorage.setItem('xeroTokenExpiry',Date.now()+(data.expires_in||1800)*1000);
-    await xeroGetTenants();
-    showToast('Connected to Xero ✓ — syncing contacts...');
-    await xeroSyncContacts();
-    updateXeroStatus();
-  }catch(e){
-    showToast('Xero auth failed: '+e.message,true);
-  }
-}
-
-async function xeroRefreshIfNeeded(){
-  const exp=parseInt(localStorage.getItem('xeroTokenExpiry')||'0');
-  if(Date.now()<exp-60000) return true; // still valid (>1 min left)
-  const refresh=localStorage.getItem('xeroRefreshToken');
-  if(!refresh) return false;
-  const clientId=localStorage.getItem('xeroClientId');
-  const clientSecret=localStorage.getItem('xeroClientSecret');
-  const body=new URLSearchParams({grant_type:'refresh_token',refresh_token:refresh});
-  const hdrs={'Content-Type':'application/x-www-form-urlencoded'};
-  if(clientSecret){
-    hdrs['Authorization']='Basic '+btoa(unescape(encodeURIComponent(clientId+':'+clientSecret)));
-  } else {
-    body.append('client_id',clientId);
-  }
-  try{
-    const resp=await fetch('/xero-token',{
-      method:'POST',headers:hdrs,body:body.toString()
-    });
-    const data=await resp.json();
-    if(!data.access_token) return false;
-    localStorage.setItem('xeroAccessToken',data.access_token);
-    if(data.refresh_token) localStorage.setItem('xeroRefreshToken',data.refresh_token);
-    localStorage.setItem('xeroTokenExpiry',Date.now()+(data.expires_in||1800)*1000);
-    return true;
-  }catch(e){ return false; }
-}
-
-function xeroDisconnect(){
-  ['xeroAccessToken','xeroRefreshToken','xeroTokenExpiry','xeroTenantId','xeroOrgName'].forEach(k=>localStorage.removeItem(k));
-  xeroContacts=[];
-  updateXeroStatus();
-  showToast('Disconnected from Xero');
-}
-
-// ── Tenant / org ──────────────────────────────────────────────────────────
-async function xeroGetTenants(){
-  const tok=localStorage.getItem('xeroAccessToken');
-  const resp=await fetch('https://api.xero.com/connections',{
-    headers:{Authorization:`Bearer ${tok}`,Accept:'application/json'}
-  });
-  const tenants=await resp.json();
-  if(tenants&&tenants.length){
-    localStorage.setItem('xeroTenantId',tenants[0].tenantId);
-    localStorage.setItem('xeroOrgName',tenants[0].tenantName||'Xero Org');
-  }
-}
-
-// ── API helper ────────────────────────────────────────────────────────────
-async function xeroAPI(path,method='GET',body=null){
-  if(!await xeroRefreshIfNeeded()){showToast('Xero session expired — reconnect in Settings.',true);return null;}
-  const tok=localStorage.getItem('xeroAccessToken');
-  const tid=localStorage.getItem('xeroTenantId');
-  const opts={method,headers:{Authorization:`Bearer ${tok}`,'Xero-tenant-id':tid,Accept:'application/json'}};
-  if(body){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(body);}
-  const resp=await fetch(`https://api.xero.com/api.xro/2.0/${path}`,opts);
-  if(!resp.ok){const err=await resp.text();throw new Error(err);}
-  return resp.json();
-}
-
-// ── Contacts (suppliers) sync ─────────────────────────────────────────────
-async function xeroSyncContacts(){
-  const btn=document.getElementById('xeroSyncBtn');
-  if(btn){btn.disabled=true;btn.textContent='Syncing...';}
-  try{
-    const data=await xeroAPI('Contacts?where=IsSupplier%3D%3Dtrue&summaryOnly=true');
-    xeroContacts=(data?.Contacts||[]).map(c=>({id:c.ContactID,name:c.Name,email:c.EmailAddress||''}));
-    localStorage.setItem('xeroContactsCache',JSON.stringify(xeroContacts));
-    showToast(`✓ ${xeroContacts.length} Xero supplier contacts synced`);
-    populateXeroSupplierDropdown();
-  }catch(e){
-    showToast('Could not sync contacts: '+e.message,true);
-  }
-  if(btn){btn.disabled=false;btn.textContent='🔄 Sync Contacts';}
-}
-
-function populateXeroSupplierDropdown(){
-  const sel=document.getElementById('invSupplierSel');
-  if(!sel) return;
-  const contacts=xeroContacts.length?xeroContacts:JSON.parse(localStorage.getItem('xeroContactsCache')||'[]');
-  sel.innerHTML='<option value="">— Select Xero contact —</option>'+
-    contacts.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-}
-
-// ── Load invoices from Xero ───────────────────────────────────────────────
-async function loadXeroInvoices(){
-  if(!localStorage.getItem('xeroAccessToken')){showToast('Connect to Xero first.',true);return;}
-  const el=document.getElementById('invoiceList');
-  el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted)">Loading from Xero...</div>';
-  try{
-    const data=await xeroAPI('Invoices?where=Type%3D%3D%22ACCPAY%22&order=Date DESC&page=1');
-    const invs=data?.Invoices||[];
-    if(!invs.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">No supplier bills found in Xero.</div>';return;}
-    el.innerHTML=invs.map(inv=>{
-      const total=inv.Total||0;
-      const status=inv.Status||'';
-      const statusCol=status==='PAID'?'var(--green)':status==='AUTHORISED'?'var(--blue)':'var(--gold)';
-      return `<div class="card" style="padding:0.8rem 1rem;margin-bottom:0.6rem">
-        <div style="display:flex;align-items:center;gap:0.8rem">
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:0.9rem">${inv.Contact?.Name||'Unknown supplier'}</div>
-            <div style="font-size:0.72rem;color:var(--muted)">${inv.InvoiceNumber||'No ref'} · ${(inv.Date||'').slice(6,10)+'-'+(inv.Date||'').slice(4,6)+'-'+(inv.Date||'').slice(0,4)||'No date'}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-family:'DM Mono',monospace;font-weight:500;font-size:1rem;color:var(--burg)">R ${total.toFixed(2)}</div>
-            <span class="bdg" style="background:${statusCol}22;color:${statusCol};border:1px solid ${statusCol}44;font-size:0.55rem">${status}</span>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-  }catch(e){
-    el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--red)">Error loading invoices: '+e.message+'</div>';
-  }
-}
-
-// ── Invoice scanner ───────────────────────────────────────────────────────
-const MAX_INV_PHOTOS=5;
-
-function initInvoicesPanel(){
-  updateXeroStatus();
-  // Restore cached contacts
-  const cached=localStorage.getItem('xeroContactsCache');
-  if(cached) xeroContacts=JSON.parse(cached);
-}
-
-function openInvoiceScanner(){
-  invPhotos=[]; invLineData=[];
-  document.getElementById('invStep1').style.display='block';
-  document.getElementById('invStep2').style.display='none';
-  document.getElementById('invScanStatus').style.display='none';
-  document.getElementById('invPhotoCamera').value='';
-  document.getElementById('invPhotoGallery').value='';
-  renderInvPhotoSlots();
-  populateXeroSupplierDropdown();
-  openMo('moInvoiceScan');
-}
-
-function renderInvPhotoSlots(){
-  const el=document.getElementById('invPhotoSlots'); if(!el) return;
-  let html=invPhotos.map((p,i)=>`
-    <div style="position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--surface)">
-      <img src="${p.thumb}" style="width:100%;height:100%;object-fit:cover">
-      <button onclick="removeInvPhoto(${i})" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.6);border:none;border-radius:50%;width:22px;height:22px;color:#fff;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
-    </div>`).join('');
-  if(invPhotos.length<MAX_INV_PHOTOS) html+=`<div style="border:2px dashed var(--border);border-radius:8px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:1.5rem;cursor:pointer" onclick="document.getElementById('invPhotoGallery').click()">+</div>`;
-  el.innerHTML=html;
-  const btn=document.getElementById('invScanBtn');
-  if(btn) btn.textContent=invPhotos.length>0?`🤖 Read ${invPhotos.length} Photo${invPhotos.length>1?'s':''} with AI`:'🤖 Read Invoice with AI';
-}
-
-function removeInvPhoto(i){ invPhotos.splice(i,1); renderInvPhotoSlots(); }
-
-function addInvPhoto(input){ if(!input.files||!input.files[0]) return; readInvFile(input.files[0]); input.value=''; }
-function addInvPhotos(input){
-  if(!input.files||!input.files.length) return;
-  Array.from(input.files).slice(0,MAX_INV_PHOTOS-invPhotos.length).forEach(f=>readInvFile(f));
-  input.value='';
-}
-function readInvFile(file){
-  if(invPhotos.length>=MAX_INV_PHOTOS){showToast(`Max ${MAX_INV_PHOTOS} photos.`,true);return;}
-  const reader=new FileReader();
-  reader.onload=e=>{
-    invPhotos.push({base64:e.target.result.split(',')[1],mediaType:e.target.result.split(';')[0].split(':')[1],thumb:e.target.result});
-    renderInvPhotoSlots();
-  };
-  reader.readAsDataURL(file);
-}
-
-function invRescan(){ invPhotos=[]; invLineData=[]; document.getElementById('invStep1').style.display='block'; document.getElementById('invStep2').style.display='none'; renderInvPhotoSlots(); }
-
-async function scanInvoice(){
-  if(!invPhotos.length){showToast('Add at least one photo of the invoice.','err');return;}
-  const btn=document.getElementById('invScanBtn');
-  const status=document.getElementById('invScanStatus');
-  btn.disabled=true; status.style.display='block'; status.textContent=`Reading invoice${invPhotos.length>1?' ('+invPhotos.length+' pages)':''}...`;
-
-  const content=[];
-  invPhotos.forEach((p,i)=>{
-    content.push({type:'image',source:{type:'base64',media_type:p.mediaType,data:p.base64}});
-    if(invPhotos.length>1) content.push({type:'text',text:`Page ${i+1} of ${invPhotos.length}.`});
-  });
-  content.push({type:'text',text:`This is a South African supplier tax invoice. Extract all information and return ONLY valid JSON — no explanation, no markdown, no code fences.
-
-Return this exact structure:
-{
-  "supplier_name": "Name on invoice",
-  "invoice_number": "INV-XXX or reference number",
-  "invoice_date": "YYYY-MM-DD",
-  "due_date": "YYYY-MM-DD or null",
-  "line_items": [
-    {"description": "item description", "quantity": 1, "unit_price": 0.00, "amount": 0.00, "vat_amount": 0.00}
-  ],
-  "subtotal_excl_vat": 0.00,
-  "vat_total": 0.00,
-  "total_incl_vat": 0.00
-}
-
-Rules:
-- Amounts are in South African Rand (ZAR)
-- VAT is 15% in South Africa
-- If due date not shown, set to null
-- Include every line item visible
-- "amount" = quantity × unit_price (excl VAT)
-- If prices shown incl VAT, back-calculate excl VAT amounts`});
-
-  try{
-    const resp=await fetch('/ai-proxy',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:3000,messages:[{role:'user',content}]})
-    });
-    const data=await resp.json();
-    const text=data.content?.find(b=>b.type==='text')?.text||'';
-    const jsonMatch=text.match(/\{[\s\S]*\}/);
-    if(!jsonMatch) throw new Error('Could not read invoice data — try a clearer photo');
-    const parsed=JSON.parse(jsonMatch[0]);
-    showInvoiceReview(parsed);
-  }catch(err){
-    showToast('Could not read invoice: '+err.message+'. Try better lighting or a closer shot.',true);
-    status.style.display='none';
-  }
-  btn.disabled=false;
-}
-
-function showInvoiceReview(parsed){
-  // Populate header fields
-  document.getElementById('invNumber').value=parsed.invoice_number||'';
-  document.getElementById('invDate').value=parsed.invoice_date||new Date().toISOString().slice(0,10);
-  document.getElementById('invDueDate').value=parsed.due_date||'';
-
-  // Try to match supplier to Xero contact
-  const contacts=xeroContacts.length?xeroContacts:JSON.parse(localStorage.getItem('xeroContactsCache')||'[]');
-  const supName=(parsed.supplier_name||'').toLowerCase();
-  const matched=contacts.find(c=>c.name.toLowerCase().includes(supName)||supName.includes(c.name.toLowerCase()));
-  const sel=document.getElementById('invSupplierSel');
-  if(sel&&matched) sel.value=matched.id;
-
-  // Build line items
-  invLineData=(parsed.line_items||[]).map(l=>({
-    description:l.description||'',
-    quantity:parseFloat(l.quantity)||1,
-    unit_price:parseFloat(l.unit_price)||0,
-    amount:parseFloat(l.amount)||0,
-    vat_amount:parseFloat(l.vat_amount)||0
-  }));
-
-  renderInvLineItems();
-  document.getElementById('invScanSummary').textContent=`✓ Read from invoice — ${invLineData.length} line item${invLineData.length!==1?'s':''}${parsed.supplier_name?` · ${parsed.supplier_name}`:''}`;
-  document.getElementById('invStep1').style.display='none';
-  document.getElementById('invStep2').style.display='block';
-}
-
-function renderInvLineItems(){
-  const el=document.getElementById('invLineItems'); if(!el) return;
-  if(!invLineData.length){el.innerHTML='<div style="padding:1rem;text-align:center;color:var(--muted);font-size:0.82rem">No line items</div>';return;}
-  el.innerHTML=invLineData.map((l,i)=>`
-    <div style="padding:0.6rem 0.8rem;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 70px 80px 70px 24px;gap:0.4rem;align-items:center;font-size:0.8rem">
-      <input value="${l.description}" placeholder="Description"
-        style="border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.5rem;font-family:'DM Sans',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;width:100%;box-sizing:border-box"
-        oninput="invLineData[${i}].description=this.value">
-      <input type="number" value="${l.quantity}" min="0" step="0.001" placeholder="Qty"
-        style="border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.4rem;font-family:'DM Sans',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;text-align:center;width:100%;box-sizing:border-box"
-        oninput="invLineData[${i}].quantity=parseFloat(this.value)||0;recalcInvLine(${i})">
-      <input type="number" value="${l.unit_price.toFixed(2)}" min="0" step="0.01" placeholder="Unit Price"
-        style="border:1px solid var(--burg);border-radius:6px;padding:0.3rem 0.4rem;font-family:'DM Sans',sans-serif;font-size:0.8rem;background:var(--cream);outline:none;text-align:right;width:100%;box-sizing:border-box"
-        oninput="invLineData[${i}].unit_price=parseFloat(this.value)||0;recalcInvLine(${i})">
-      <div id="invLine${i}Amt" style="text-align:right;font-weight:700;color:var(--burg)">R ${l.amount.toFixed(2)}</div>
-      <button onclick="removeInvLine(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;padding:0;line-height:1">✕</button>
-    </div>`).join('')+
-    `<div style="padding:0.4rem 0.8rem;font-size:0.65rem;color:var(--muted);display:grid;grid-template-columns:1fr 70px 80px 70px 24px;gap:0.4rem"><span style="color:var(--muted)">Description</span><span style="text-align:center">Qty</span><span style="text-align:right">Unit (excl VAT)</span><span style="text-align:right">Amount</span><span></span></div>`;
-  recalcInvTotals();
-}
-
-function recalcInvLine(i){
-  const l=invLineData[i];
-  l.amount=Math.round(l.quantity*l.unit_price*100)/100;
-  l.vat_amount=Math.round(l.amount*0.15*100)/100;
-  const amtEl=document.getElementById(`invLine${i}Amt`);
-  if(amtEl) amtEl.textContent=`R ${l.amount.toFixed(2)}`;
-  recalcInvTotals();
-}
-
-function recalcInvTotals(){
-  const sub=invLineData.reduce((s,l)=>s+l.amount,0);
-  const vat=Math.round(sub*0.15*100)/100;
-  document.getElementById('invSubtotal').textContent=`R ${sub.toFixed(2)}`;
-  document.getElementById('invVAT').textContent=`R ${vat.toFixed(2)}`;
-  document.getElementById('invTotal').textContent=`R ${(sub+vat).toFixed(2)}`;
-}
-
-function addInvLineItem(){
-  invLineData.push({description:'',quantity:1,unit_price:0,amount:0,vat_amount:0});
-  renderInvLineItems();
-}
-
-function removeInvLine(i){ invLineData.splice(i,1); renderInvLineItems(); }
-
-// ── Submit invoice to Xero ────────────────────────────────────────────────
-async function submitInvoiceToXero(){
-  const contactId=document.getElementById('invSupplierSel').value;
-  if(!contactId){showToast('Select a supplier contact first.',true);return;}
-  if(!invLineData.length){showToast('No line items to submit.',true);return;}
-  const tok=localStorage.getItem('xeroAccessToken');
-  if(!tok){showToast('Not connected to Xero — reconnect in Settings.',true);return;}
-
-  const btn=document.getElementById('invSubmitBtn');
-  const status=document.getElementById('invSubmitStatus');
-  btn.disabled=true; btn.textContent='Uploading...';
-  status.style.display='block';
-  status.style.background='var(--surface)'; status.style.color='var(--muted)'; status.style.border='1px solid var(--border)';
-  status.textContent='Sending to Xero...';
-
-  const accountCode=localStorage.getItem('xeroAccountCode')||'310';
-  const invoiceDate=document.getElementById('invDate').value;
-  const dueDate=document.getElementById('invDueDate').value;
-  const invNum=document.getElementById('invNumber').value;
-
-  const payload={
-    Invoices:[{
-      Type:'ACCPAY',
-      Contact:{ContactID:contactId},
-      Date:invoiceDate,
-      ...(dueDate?{DueDate:dueDate}:{}),
-      ...(invNum?{InvoiceNumber:invNum}:{}),
-      Status:'AUTHORISED',
-      LineAmountTypes:'EXCLUSIVE',
-      LineItems:invLineData.map(l=>({
-        Description:l.description||'Item',
-        Quantity:l.quantity,
-        UnitAmount:l.unit_price,
-        AccountCode:accountCode,
-        TaxType:'INPUT2'
-      }))
-    }]
-  };
-
-  try{
-    const data=await xeroAPI('Invoices','POST',payload);
-    const created=data?.Invoices?.[0];
-    if(!created||created.HasErrors){
-      const errs=(created?.ValidationErrors||[]).map(e=>e.Message).join('; ');
-      throw new Error(errs||'Xero returned an error');
-    }
-    status.style.background='var(--green-l)'; status.style.color='var(--green)'; status.style.border='1px solid var(--green-b)';
-    status.textContent=`✅ Bill created in Xero! Ref: ${created.InvoiceNumber||created.InvoiceID}`;
-    await logAudit('invoices','Xero Upload',`Invoice ${invNum||created.InvoiceID} uploaded to Xero — R${(created.Total||0).toFixed(2)}`);
-    btn.textContent='✓ Done';
-    setTimeout(()=>{closeMo('moInvoiceScan');loadXeroInvoices();},1800);
-  }catch(e){
-    status.style.background='#fff0f0'; status.style.color='var(--red)'; status.style.border='1px solid var(--red-b,#fca5a5)';
-    status.textContent='Upload failed: '+e.message;
-    btn.disabled=false; btn.textContent='📤 Upload to Xero';
-  }
-}
-
-// ── On page load: handle OAuth callback if returning from Xero ────────────
-(async function xeroInit(){
-  if(window.location.search.includes('state=xeroauth')){
-    // Show loading while we handle the OAuth callback
-    await xeroHandleCallback();
-  }
-  // Restore cached contacts on startup
-  const cached=localStorage.getItem('xeroContactsCache');
-  if(cached) try{ xeroContacts=JSON.parse(cached); }catch(e){}
-  updateXeroStatus();
-})();
-
-// ═══════════════════════════════════════════
 // PHOTO STOCKTAKE SCAN
 // ═══════════════════════════════════════════
 let photoSTPhotos = []; // array of {base64, mediaType, thumb}
@@ -11394,20 +10411,6 @@ function initReportDates(){
   document.getElementById('rpFrom').value=m.toISOString().split('T')[0];
 }
 
-function initAnalytics(){
-  // Set default compare dates: today and yesterday
-  const now=new Date();
-  const today=now.toISOString().split('T')[0];
-  const yest=new Date(now);yest.setDate(yest.getDate()-1);
-  const yesterdayStr=yest.toISOString().split('T')[0];
-  const cmpA=document.getElementById('anCmpA');
-  const cmpB=document.getElementById('anCmpB');
-  if(cmpA&&!cmpA.value) cmpA.value=yesterdayStr;
-  if(cmpB&&!cmpB.value) cmpB.value=today;
-  // Default period button
-  document.getElementById('anPd30')?.classList.replace('btn','btn');
-  anPeriodDays=30;
-}
 
 async function loadReports(){
   const from=document.getElementById('rpFrom').value;
@@ -11860,255 +10863,6 @@ async function loadYesterdayStock(){
       }
     });
   } catch(e){ yesterdayStock={}; }
-}
-
-// ═══════════════════════════════════════════
-// ANALYTICS
-// ═══════════════════════════════════════════
-function anSetPeriod(days,btn){
-  anPeriodDays=days;
-  document.querySelectorAll('#p-analytics .card .btn').forEach(b=>b.className='btn bs bsm');
-  if(btn) btn.className='btn bp bsm';
-  loadAnalytics();
-}
-
-function anSwitch(tab,btn){
-  anActiveTab=tab;
-  ['usage','waste','value','reorder','compare','sales'].forEach(t=>{
-    const el=document.getElementById('an-'+t);
-    if(el) el.style.display=t===tab?'block':'none';
-  });
-  document.querySelectorAll('#anTabs .ct').forEach(b=>b.classList.remove('act'));
-  if(btn) btn.classList.add('act');
-  if(tab==='sales') renderPanelSalesChart('analytics');
-  else renderAnTab();
-}
-
-async function loadAnalytics(){
-  setSyncStatus('syncing');
-  const from=new Date();
-  from.setDate(from.getDate()-anPeriodDays);
-  const fromStr=from.toISOString().split('T')[0];
-  const toStr=new Date().toISOString().split('T')[0];
-
-  document.getElementById('anDateRange').textContent=`${fromStr} → ${toStr}`;
-
-  try {
-    const [histR,varR]=await Promise.all([
-      SB.from('stock_history').select('*').gte('recorded_at',fromStr+'T00:00:00').order('recorded_at',{ascending:true}),
-      SB.from('variance_log').select('*').gte('recorded_at',fromStr+'T00:00:00').order('recorded_at',{ascending:false}),
-    ]);
-    anHistoryData=histR.data||[];
-    anVarianceData=varR.data||[];
-
-    // KPIs
-    const days=[...new Set(anHistoryData.map(h=>h.recorded_at?.split('T')[0]))];
-    const items=[...new Set(anHistoryData.map(h=>h.item_name))];
-    const totalWaste=anVarianceData.filter(v=>v.diff<0).reduce((s,v)=>s+Math.abs(v.diff||0),0);
-    const stocktakes=[...new Set(anHistoryData.map(h=>h.recorded_at?.split('T')[0]))];
-    document.getElementById('an-days').textContent=days.length;
-    document.getElementById('an-stocktakes').textContent=stocktakes.length;
-    document.getElementById('an-items').textContent=items.length;
-    document.getElementById('an-wasteKpi').textContent=totalWaste.toFixed(1);
-  } catch(e){ console.error(e); }
-
-  renderAnTab();
-  setSyncStatus('ok');
-}
-
-function renderAnTab(){
-  if(anActiveTab==='usage') renderAnUsage();
-  if(anActiveTab==='waste') renderAnWaste();
-  if(anActiveTab==='value') renderAnValue();
-  if(anActiveTab==='reorder') renderAnReorder();
-  if(anActiveTab==='compare') renderAnCompare();
-}
-
-function renderAnUsage(){
-  const cat=document.getElementById('anUsageCat')?.value||'all';
-  // Calculate usage = sum of daily drops (where today < yesterday)
-  const usage={};
-  const itemMeta={};
-  // Group history by item and day
-  const byItem={};
-  anHistoryData.forEach(h=>{
-    if(cat!=='all'){const dbItem=DB.find(i=>i.id===h.item_id);if(!dbItem||dbItem.category!==cat)return;}
-    if(!byItem[h.item_name]) byItem[h.item_name]={records:[],unit:h.unit};
-    byItem[h.item_name].records.push({date:h.recorded_at,qty:h.actual_qty});
-  });
-  Object.entries(byItem).forEach(([name,{records,unit}])=>{
-    records.sort((a,b)=>a.date.localeCompare(b.date));
-    let totalUsed=0;
-    for(let i=1;i<records.length;i++){
-      const drop=records[i-1].qty-records[i].qty;
-      if(drop>0) totalUsed+=drop;
-    }
-    if(totalUsed>0){ usage[name]=totalUsed; itemMeta[name]=unit; }
-  });
-  const sorted=Object.entries(usage).sort((a,b)=>b[1]-a[1]).slice(0,20);
-  const el=document.getElementById('anUsageChart');
-  if(!sorted.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">No usage data yet. Keep submitting daily stocktakes to build this chart.</div>';return;}
-  const max=sorted[0][1];
-  const colors=['#7a1528','#9e1e35','#b85c10','#1a4a7a','#1a7a45','#5c3d1a','#2d1a5c','#1a5c4a'];
-  el.innerHTML=sorted.map(([name,qty],i)=>`
-    <div class="an-bar-wrap">
-      <div class="an-bar-label"><span>${name}</span><span>${qty.toFixed(1)} ${itemMeta[name]||''}</span></div>
-      <div class="an-bar-track"><div class="an-bar-fill" style="width:${Math.round(qty/max*100)}%;background:${colors[i%colors.length]}"></div></div>
-    </div>`).join('');
-}
-
-function renderAnWaste(){
-  const waste={};
-  const unitMap={};
-  anVarianceData.filter(v=>v.diff<0).forEach(v=>{
-    if(!waste[v.item_name]) waste[v.item_name]=0;
-    waste[v.item_name]+=Math.abs(v.diff||0);
-    unitMap[v.item_name]=v.unit||'';
-  });
-  const sorted=Object.entries(waste).sort((a,b)=>b[1]-a[1]).slice(0,15);
-  const el=document.getElementById('anWasteChart');
-  if(!sorted.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--green)">✅ No waste recorded in this period</div>';return;}
-  const max=sorted[0][1];
-  el.innerHTML=sorted.map(([name,qty])=>`
-    <div class="an-bar-wrap">
-      <div class="an-bar-label"><span>${name}</span><span style="color:var(--red)">-${qty.toFixed(1)} ${unitMap[name]}</span></div>
-      <div class="an-bar-track"><div class="an-bar-fill" style="width:${Math.round(qty/max*100)}%;background:var(--red)"></div></div>
-    </div>`).join('');
-
-  // Waste trend by day
-  const byDay={};
-  anVarianceData.filter(v=>v.diff<0).forEach(v=>{
-    const day=v.recorded_at?.split('T')[0];
-    if(!day) return;
-    if(!byDay[day]) byDay[day]=0;
-    byDay[day]+=Math.abs(v.diff||0);
-  });
-  const days=Object.entries(byDay).sort((a,b)=>a[0].localeCompare(b[0]));
-  const tEl=document.getElementById('anWasteTrend');
-  if(!days.length){tEl.innerHTML='';return;}
-  const tMax=Math.max(...days.map(d=>d[1]),1);
-  tEl.innerHTML='<div class="card" style="padding:1rem"><div style="overflow-x:auto"><div style="display:flex;align-items:flex-end;gap:4px;height:80px;min-width:'+Math.max(days.length*28,280)+'px">'+
-    days.map(([day,qty])=>`<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:20px"><div style="width:100%;background:var(--red);border-radius:3px 3px 0 0;height:${Math.round(qty/tMax*70)}px" title="${day}: ${qty.toFixed(1)} units lost"></div><div style="font-size:0.52rem;color:var(--muted);margin-top:2px;transform:rotate(-45deg);white-space:nowrap">${day.slice(5)}</div></div>`).join('')+
-    '</div></div></div>';
-}
-
-function renderAnValue(){
-  const cats=[...new Set(DB.map(i=>i.category))];
-  // Estimate value using item count × average unit value (rough estimate)
-  const catValues=cats.map(cat=>{
-    const items=DB.filter(i=>i.category===cat);
-    const totalStock=items.reduce((s,i)=>s+(i.stock||0),0);
-    return {cat,items:items.length,totalStock};
-  }).filter(c=>c.totalStock>0).sort((a,b)=>b.totalStock-a.totalStock);
-  const maxStock=Math.max(...catValues.map(c=>c.totalStock),1);
-  const colors={Meat:'#7a1528',Dairy:'#1a4a7a',Produce:'#1a7a45','Dry Goods':'#b85c10',Bar:'#5c1a4a',Bakery:'#c8922a',Freezer:'#152438',Cleaning:'#2d5c1a'};
-  document.getElementById('anValueChart').innerHTML=catValues.map(c=>`
-    <div class="an-bar-wrap">
-      <div class="an-bar-label"><span>${CEM[c.cat]||''} ${c.cat}</span><span>${c.totalStock.toFixed(1)} units total</span></div>
-      <div class="an-bar-track"><div class="an-bar-fill" style="width:${Math.round(c.totalStock/maxStock*100)}%;background:${colors[c.cat]||'var(--burg)'}"></div></div>
-    </div>`).join('');
-
-  // Category cards
-  document.getElementById('anCatBreakdown').innerHTML=catValues.map(c=>{
-    const items=DB.filter(i=>i.category===c.cat);
-    const low=items.filter(i=>i.stock<=i.min_level&&i.stock>0).length;
-    const out=items.filter(i=>i.stock<=0).length;
-    const ok=items.length-low-out;
-    return `<div class="card" style="padding:0.7rem 1rem;margin-bottom:0.5rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">
-        <div style="font-weight:700;font-size:0.88rem">${CEM[c.cat]||''} ${c.cat}</div>
-        <div style="font-size:0.72rem;color:var(--muted)">${c.items} items · ${c.totalStock.toFixed(1)} units on hand</div>
-      </div>
-      <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
-        ${ok>0?`<span class="bdg bgg">✓ ${ok} OK</span>`:''}
-        ${low>0?`<span class="bdg bgo">⚠ ${low} Low</span>`:''}
-        ${out>0?`<span class="bdg bgr">✕ ${out} Out</span>`:''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderAnReorder(){
-  // Calculate avg daily usage per item from history
-  const usage={};
-  const unitMap={};
-  const byItem={};
-  anHistoryData.forEach(h=>{
-    if(!byItem[h.item_name]) byItem[h.item_name]=[];
-    byItem[h.item_name].push({date:h.recorded_at,qty:h.actual_qty,unit:h.unit});
-    unitMap[h.item_name]=h.unit;
-  });
-  Object.entries(byItem).forEach(([name,records])=>{
-    records.sort((a,b)=>a.date.localeCompare(b.date));
-    let totalUsed=0,days=0;
-    for(let i=1;i<records.length;i++){
-      const drop=records[i-1].qty-records[i].qty;
-      if(drop>0){totalUsed+=drop;days++;}
-    }
-    if(days>0) usage[name]={avgDaily:totalUsed/days,unit:unitMap[name]};
-  });
-
-  const el=document.getElementById('anReorderList');
-  const rows=DB.map(item=>{
-    const u=usage[item.name];
-    if(!u||u.avgDaily<=0) return null;
-    const daysLeft=item.stock/u.avgDaily;
-    const status=daysLeft<=1?'critical':daysLeft<=7?'soon':'ok';
-    return{item,daysLeft,avgDaily:u.avgDaily,status};
-  }).filter(Boolean).sort((a,b)=>a.daysLeft-b.daysLeft);
-
-  const filtered=anReorderFilt==='all'?rows:rows.filter(r=>r.status===anReorderFilt);
-  if(!filtered.length){el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No reorder predictions yet — needs more daily stocktake history.</div>';return;}
-
-  el.innerHTML=filtered.map(r=>{
-    const col=r.status==='critical'?'var(--red)':r.status==='soon'?'var(--gold)':'var(--green)';
-    const icon=r.status==='critical'?'🔴':r.status==='soon'?'🟡':'🟢';
-    return `<div class="an-reorder-card">
-      <div style="font-size:1.2rem">${icon}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:0.88rem">${r.item.name}</div>
-        <div style="font-size:0.72rem;color:var(--muted)">${r.item.supplier} · Uses avg ${r.avgDaily.toFixed(2)} ${r.item.unit}/day</div>
-        <div style="font-size:0.72rem;color:var(--muted)">Current stock: ${r.item.stock} ${r.item.unit}</div>
-      </div>
-      <div class="an-days-pill" style="color:${col}">${r.daysLeft<1?'<1':r.daysLeft.toFixed(0)}</div>
-      <div style="font-size:0.62rem;color:var(--muted);text-align:right">days<br>left</div>
-    </div>`;
-  }).join('');
-}
-
-function anReorderFilter(f,btn){
-  anReorderFilt=f;
-  document.querySelectorAll('#an-reorder .ct').forEach(b=>b.classList.remove('act'));
-  if(btn) btn.classList.add('act');
-  renderAnReorder();
-}
-
-async function renderAnCompare(){
-  const a=document.getElementById('anCmpA')?.value;
-  const b=document.getElementById('anCmpB')?.value;
-  const el=document.getElementById('anCompareTable');
-  if(!a||!b){el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted)">Select two dates above to compare.</div>';return;}
-
-  try {
-    const [rA,rB]=await Promise.all([
-      SB.from('stock_history').select('*').gte('recorded_at',a+'T00:00:00').lte('recorded_at',a+'T23:59:59').order('recorded_at',{ascending:false}),
-      SB.from('stock_history').select('*').gte('recorded_at',b+'T00:00:00').lte('recorded_at',b+'T23:59:59').order('recorded_at',{ascending:false}),
-    ]);
-    const dayA={},dayB={};
-    (rA.data||[]).forEach(r=>{if(!dayA[r.item_name])dayA[r.item_name]=r;});
-    (rB.data||[]).forEach(r=>{if(!dayB[r.item_name])dayB[r.item_name]=r;});
-    const allItems=[...new Set([...Object.keys(dayA),...Object.keys(dayB)])].sort();
-    if(!allItems.length){el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted)">No stocktake data found for these dates. Submit stocktakes to build comparison data.</div>';return;}
-    el.innerHTML='<div class="card" style="padding:0.5rem 1rem"><div class="tw"><table class="tbl"><thead><tr><th>Item</th><th class="r">'+a+'</th><th class="r">'+b+'</th><th class="r">Difference</th></tr></thead><tbody>'+
-      allItems.map(name=>{
-        const qA=dayA[name]?.actual_qty;
-        const qB=dayB[name]?.actual_qty;
-        const unit=dayA[name]?.unit||dayB[name]?.unit||'';
-        const diff=qA!==undefined&&qB!==undefined?qB-qA:null;
-        const col=diff===null?'var(--muted)':diff<0?'var(--red)':diff>0?'var(--green)':'var(--muted)';
-        return `<tr><td><strong>${name}</strong></td><td class="r">${qA!==undefined?qA+' '+unit:'—'}</td><td class="r">${qB!==undefined?qB+' '+unit:'—'}</td><td class="r" style="color:${col};font-weight:700">${diff===null?'—':(diff>0?'+':'')+diff.toFixed(1)+' '+unit}</td></tr>`;
-      }).join('')+'</tbody></table></div></div>';
-  } catch(e){el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted)">Error loading comparison data.</div>';}
 }
 
 // ═══════════════════════════════════════════
@@ -15044,78 +13798,6 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       <div class="brow" style="margin-top:0.8rem">
         <button class="btn bp" onclick="applyScanResults()" style="flex:1">✓ Apply to Stocktake</button>
         <button class="btn bs" onclick="resetPhotoST()">↩ Rescan</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: TAX INVOICE SCANNER -->
-<div class="mo" id="moInvoiceScan">
-  <div class="md" style="max-width:520px">
-    <button class="md-close" onclick="closeMo('moInvoiceScan')">✕</button>
-    <div class="md-title">🧾 Scan Tax Invoice</div>
-
-    <!-- Step 1: Photo upload -->
-    <div id="invStep1">
-      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.9rem">Take a photo of the supplier's tax invoice. The AI reads all line items, amounts, VAT and supplier details automatically.</div>
-      <div id="invPhotoSlots" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:0.8rem"></div>
-      <div style="display:flex;gap:0.5rem;margin-bottom:0.8rem">
-        <button class="btn bp" onclick="document.getElementById('invPhotoCamera').click()" style="flex:1">📸 Camera</button>
-        <button class="btn bs" onclick="document.getElementById('invPhotoGallery').click()" style="flex:1">🖼️ Gallery</button>
-      </div>
-      <input type="file" id="invPhotoCamera" accept="image/*" capture="environment" style="display:none" onchange="addInvPhoto(this)">
-      <input type="file" id="invPhotoGallery" accept="image/*" multiple style="display:none" onchange="addInvPhotos(this)">
-      <div id="invScanStatus" style="font-size:0.78rem;color:var(--muted);text-align:center;padding:0.3rem 0;display:none"></div>
-      <button class="btn bp" onclick="scanInvoice()" style="width:100%;margin-top:0.3rem" id="invScanBtn">🤖 Read Invoice with AI</button>
-    </div>
-
-    <!-- Step 2: Review extracted data -->
-    <div id="invStep2" style="display:none">
-      <div style="background:var(--green-l);border:1px solid var(--green-b);border-radius:10px;padding:0.8rem;margin-bottom:0.8rem;font-size:0.82rem;color:var(--green);font-weight:600" id="invScanSummary"></div>
-
-      <!-- Supplier + invoice header -->
-      <div class="fg2" style="margin-bottom:0.6rem">
-        <div class="fg">
-          <label>Supplier</label>
-          <select id="invSupplierSel" style="width:100%;border:1px solid var(--burg);border-radius:8px;padding:0.55rem 0.7rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none">
-            <option value="">— Select Xero contact —</option>
-          </select>
-        </div>
-        <div class="fg">
-          <label>Invoice #</label>
-          <input type="text" id="invNumber" placeholder="e.g. INV-001"
-            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
-        </div>
-      </div>
-      <div class="fg2" style="margin-bottom:0.9rem">
-        <div class="fg">
-          <label>Invoice Date</label>
-          <input type="date" id="invDate"
-            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
-        </div>
-        <div class="fg">
-          <label>Due Date</label>
-          <input type="date" id="invDueDate"
-            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--cream);outline:none;box-sizing:border-box">
-        </div>
-      </div>
-
-      <!-- Line items table -->
-      <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">Line Items</div>
-      <div id="invLineItems" style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin-bottom:0.7rem"></div>
-      <button class="btn bs bsm" onclick="addInvLineItem()" style="width:100%;margin-bottom:0.9rem">+ Add Line Item</button>
-
-      <!-- Totals -->
-      <div style="background:var(--surface);border-radius:10px;padding:0.8rem;margin-bottom:0.9rem;font-size:0.85rem">
-        <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span style="color:var(--muted)">Subtotal (excl. VAT)</span><span id="invSubtotal" style="font-weight:600">R 0.00</span></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span style="color:var(--muted)">VAT (15%)</span><span id="invVAT" style="font-weight:600">R 0.00</span></div>
-        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:0.4rem;margin-top:0.3rem"><span style="font-weight:700">Total</span><span id="invTotal" style="font-weight:800;font-size:1rem;color:var(--burg)">R 0.00</span></div>
-      </div>
-
-      <div id="invSubmitStatus" style="font-size:0.78rem;padding:0.5rem 0.7rem;border-radius:8px;margin-bottom:0.7rem;display:none"></div>
-      <div class="brow">
-        <button class="btn bp" onclick="submitInvoiceToXero()" style="flex:2" id="invSubmitBtn">📤 Upload to Xero</button>
-        <button class="btn bs" onclick="invRescan()">↩ Rescan</button>
       </div>
     </div>
   </div>
