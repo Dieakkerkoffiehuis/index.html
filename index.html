@@ -4,6 +4,152 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Die Akker — Management System</title>
+<script>
+/* ── Global error capture — loads before everything else so it can catch ──
+   errors even if a later script tag fails to parse or throws during boot.
+   Goals: never show a blank white screen on a real error; log console
+   errors, unhandled rejections, and network failures; detect Android
+   WebView / SUNMI / Web NFC support for compatibility diagnostics. */
+(function(){
+  var ERR_KEY='daErrorLog', MAX_ERRORS=100;
+  function nowIso(){ return new Date().toISOString(); }
+  function readLog(){ try{ return JSON.parse(localStorage.getItem(ERR_KEY)||'[]'); }catch(e){ return []; } }
+  function writeLog(arr){ try{ localStorage.setItem(ERR_KEY, JSON.stringify(arr.slice(-MAX_ERRORS))); }catch(e){} }
+  window.__daErrors = readLog();
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  function pushError(entry){
+    entry.at = entry.at || nowIso();
+    window.__daErrors.push(entry);
+    if(window.__daErrors.length > MAX_ERRORS) window.__daErrors = window.__daErrors.slice(-MAX_ERRORS);
+    writeLog(window.__daErrors);
+    try{
+      if(window.SB && typeof window.SB.from==='function'){
+        window.SB.from('client_error_log').insert({
+          type: entry.type, message: String(entry.message||'').slice(0,2000),
+          stack: String(entry.stack||'').slice(0,4000),
+          url: entry.url||location.href, section: entry.extra&&entry.extra.section||null,
+          user_agent: navigator.userAgent, staff_name: (window.CU&&window.CU.name)||null,
+          logged_at: entry.at,
+        }).then(function(){}, function(){});
+      }
+    }catch(e){}
+    showErrorOverlay(entry);
+  }
+  window.logClientError = function(type, err, extra){
+    pushError({ type: type||'manual', message:(err&&err.message)||String(err), stack:(err&&err.stack)||'', extra:extra||null });
+  };
+
+  // Uncaught runtime errors (this is what causes a "blank white screen").
+  window.addEventListener('error', function(e){
+    pushError({ type:'error', message:e.message, stack:(e.error&&e.error.stack)||'', url:e.filename, line:e.lineno });
+  });
+  // Unhandled promise rejections — this app uses async functions heavily
+  // (Supabase calls) and many aren't individually try/caught by callers.
+  window.addEventListener('unhandledrejection', function(e){
+    var reason=e.reason;
+    pushError({ type:'unhandledrejection', message:(reason&&reason.message)||String(reason), stack:(reason&&reason.stack)||'' });
+  });
+
+  // Capture console.error/warn without touching any existing call sites.
+  ['error','warn'].forEach(function(level){
+    var orig=console[level].bind(console);
+    console[level]=function(){
+      try{
+        pushError({ type:'console.'+level, message:Array.prototype.slice.call(arguments).map(function(a){
+          try{ return typeof a==='string'?a:JSON.stringify(a); }catch(e){ return String(a); }
+        }).join(' ') });
+      }catch(e){}
+      orig.apply(console, arguments);
+    };
+  });
+
+  // Network failure logging — wrapping fetch covers the Supabase JS client
+  // (which uses fetch internally) plus anything else, with no per-call-site changes.
+  var origFetch=window.fetch;
+  window.fetch=function(){
+    var args=arguments;
+    return origFetch.apply(window, args).then(function(res){
+      if(!res.ok) pushError({ type:'network', message:'HTTP '+res.status+' '+res.statusText, url:(args[0]&&args[0].url)||args[0] });
+      return res;
+    }, function(err){
+      pushError({ type:'network', message:err.message, stack:err.stack, url:(args[0]&&args[0].url)||args[0] });
+      throw err;
+    });
+  };
+
+  // Environment / compatibility detection — feeds the Settings > Client
+  // Diagnostics card and complements the NFC module's own capability check.
+  (function detectEnv(){
+    var ua=navigator.userAgent||'';
+    var isAndroid=/Android/i.test(ua);
+    var isWebView=/; wv\)/i.test(ua) || (isAndroid && /Version\/[\d.]+/.test(ua) && !/Chrome\/[\d.]+/.test(ua));
+    var isSunmi=/sunmi/i.test(ua);
+    var env={
+      ua:ua, isAndroid:isAndroid, isWebView:isWebView, isSunmi:isSunmi,
+      hasWebNFC:('NDEFReader' in window), hasGeolocation:('geolocation' in navigator),
+      standalone: !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches),
+      screen: (screen.width+'x'+screen.height),
+    };
+    window.__daEnv = env;
+    try{ console.log('[DieAkker env]', env); }catch(e){}
+    if(isAndroid && isWebView){
+      pushError({ type:'compat', message:'Running inside an embedded Android WebView — Web NFC and some browser APIs may not work here. Use the Chrome browser app for the Clock In/Out screen if NFC taps don’t register.', extra:env });
+    } else if(isSunmi){
+      pushError({ type:'compat', message:'SUNMI device detected via user agent.', extra:env });
+    }
+  })();
+
+  // Visible overlay — only for the two error classes that would otherwise
+  // leave the screen blank or silently broken. Handled/expected console
+  // errors and routine network hiccups are still logged, just not popped
+  // up, so this doesn't turn into alarming noise during normal use.
+  function showErrorOverlay(entry){
+    var visible={error:1, unhandledrejection:1};
+    var el=document.getElementById('daErrOverlay');
+    if(!el){
+      el=document.createElement('div');
+      el.id='daErrOverlay';
+      el.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:999999;background:#3d0d12;color:#fff;font:12px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-height:45vh;overflow:auto;box-shadow:0 -4px 20px rgba(0,0,0,.4);display:none';
+      el.innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#5c1218;position:sticky;top:0">'+
+          '<strong style="font-size:13px">⚠️ Die Akker — Something went wrong (<span id="daErrCount">0</span>)</strong>'+
+          '<span>'+
+            '<button id="daErrCopy" style="background:#fff;color:#3d0d12;border:none;border-radius:5px;padding:4px 9px;font-size:11px;cursor:pointer;margin-right:6px">Copy details</button>'+
+            '<button id="daErrClear" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:5px;padding:4px 9px;font-size:11px;cursor:pointer;margin-right:6px">Clear</button>'+
+            '<button id="daErrClose" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:5px;padding:4px 9px;font-size:11px;cursor:pointer">Dismiss ✕</button>'+
+          '</span>'+
+        '</div>'+
+        '<div id="daErrList" style="padding:8px 12px"></div>';
+      document.documentElement.appendChild(el);
+      el.querySelector('#daErrClose').onclick=function(){ el.style.display='none'; };
+      el.querySelector('#daErrClear').onclick=function(){
+        window.__daErrors=[]; writeLog([]);
+        el.querySelector('#daErrList').innerHTML=''; el.querySelector('#daErrCount').textContent='0';
+        el.style.display='none';
+      };
+      el.querySelector('#daErrCopy').onclick=function(){
+        var text=JSON.stringify(window.__daErrors, null, 2);
+        if(navigator.clipboard) navigator.clipboard.writeText(text);
+        this.textContent='Copied ✓'; var b=this; setTimeout(function(){b.textContent='Copy details';},1500);
+      };
+    }
+    if(!visible[entry.type]) return; // still logged above, just not surfaced visibly
+    el.style.display='block';
+    var list=el.querySelector('#daErrList');
+    var row=document.createElement('div');
+    row.style.cssText='border-top:1px solid rgba(255,255,255,.15);padding:6px 0';
+    var where=entry.url?(entry.url+(entry.line?(':'+entry.line):'')):'';
+    row.innerHTML = '<div style="color:#ffb3b3;font-weight:600">'+entry.type+' · '+new Date(entry.at).toLocaleTimeString()+'</div>'+
+      '<div style="margin-top:2px">'+escapeHtml(entry.message||'')+'</div>'+
+      (where?'<div style="color:#d9a5a5;font-size:11px;margin-top:2px">'+escapeHtml(where)+'</div>':'')+
+      (entry.stack?'<pre style="white-space:pre-wrap;color:#d9a5a5;font-size:10.5px;margin-top:4px">'+escapeHtml(entry.stack)+'</pre>':'');
+    list.insertBefore(row, list.firstChild);
+    el.querySelector('#daErrCount').textContent = list.children.length;
+  }
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Karla:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -2309,6 +2455,38 @@ DROP POLICY IF EXISTS "allow_all" ON attendance_settings;
 CREATE POLICY "allow_all" ON attendance_settings FOR ALL USING (true) WITH CHECK (true);</pre>
           <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('nfcAttendanceSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
         </div>
+        <div class="card" id="clientErrorLogSQL" style="display:none">
+          <div class="card-title">Client Error Log Setup</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Optional. Run this SQL once in Supabase so JavaScript errors from any device (phone, SUNMI terminal, etc.) get saved centrally and are visible below in Client Diagnostics — not just in that device's own browser. The app works fine without this table; errors just stay local to the device until it's created.</div>
+          <pre style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">CREATE TABLE IF NOT EXISTS client_error_log (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  type text,
+  message text,
+  stack text,
+  url text,
+  section text,
+  user_agent text,
+  staff_name text,
+  logged_at timestamptz DEFAULT now()
+);
+ALTER TABLE client_error_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "allow_all" ON client_error_log;
+CREATE POLICY "allow_all" ON client_error_log FOR ALL USING (true) WITH CHECK (true);
+CREATE INDEX IF NOT EXISTS cel_logged_at_idx ON client_error_log(logged_at DESC);</pre>
+          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('clientErrorLogSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+        </div>
+        <div class="card" id="clientDiagnosticsCard" style="display:none">
+          <div class="card-title">🩺 Client Diagnostics &amp; Error Log</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">This device, right now — plus recent JavaScript errors, whether logged here or on other devices (once the table above is set up).</div>
+          <div id="diagEnvBox" style="font-size:0.78rem;background:var(--surface);border-radius:8px;padding:0.7rem 0.9rem;margin-bottom:0.8rem">Loading…</div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.7rem">
+            <button class="btn bs bsm" onclick="renderDiagnosticsPanel()">↻ Refresh</button>
+            <button class="btn bs bsm" onclick="loadRemoteErrorLog()">☁️ Load remote errors (all devices)</button>
+            <button class="btn bs bsm" onclick="copyDiagnostics()">📋 Copy for support</button>
+            <button class="btn bs bsm" onclick="clearLocalErrorLog()">🗑️ Clear this device's log</button>
+          </div>
+          <div id="diagErrList" style="font-size:0.76rem"></div>
+        </div>
         <div class="card" id="spotCheckSQL" style="display:none">
           <div class="card-title">Spot Check Table Setup</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this SQL in your Supabase SQL editor to enable the Daily Spot Check feature:</div>
@@ -3410,6 +3588,28 @@ function goGroup(grpKey,el){
 const _panelLoaded = {};
 
 function go(id){
+  // Per-section error boundary: a broken render in one panel must never take
+  // down the whole app or leave a blank screen — it's caught here, logged,
+  // and shown as a friendly in-place message inside that panel only.
+  try{
+    _goInner(id);
+  }catch(err){
+    try{ window.logClientError && window.logClientError('section-render', err, {section:id}); }catch(e){}
+    console.error('[go] section render failed:', id, err);
+    const panel = document.getElementById('p-'+id);
+    if(panel){
+      document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('act'));
+      panel.classList.add('act');
+      panel.insertAdjacentHTML('afterbegin',
+        `<div style="background:#fdecec;border:1px solid #e8a4a4;color:#7a1f1f;border-radius:10px;padding:1rem 1.2rem;margin-bottom:1rem">
+           <strong>⚠️ This section hit an error and couldn't load properly.</strong>
+           <div style="font-size:0.8rem;margin-top:0.4rem;font-family:monospace;white-space:pre-wrap">${(err&&err.message||String(err)).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>
+           <button class="btn" style="margin-top:0.6rem" onclick="go('${id}')">Try again</button>
+         </div>`);
+    }
+  }
+}
+function _goInner(id){
   const userAccess = CU?.access || [];
   // 'modules' is always accessible — it's the navigation hub
   if(id !== 'modules' && !userAccess.includes(id)){showToast('No access to this section.','err');return;}
@@ -3456,7 +3656,12 @@ function go(id){
     if(nfcSqlCard) nfcSqlCard.style.display=CU?.role==='owner'?'block':'none';
     const lvSqlCard=document.getElementById('leaveManagementSQL');
     if(lvSqlCard) lvSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    const errLogSqlCard=document.getElementById('clientErrorLogSQL');
+    if(errLogSqlCard) errLogSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    const diagCard=document.getElementById('clientDiagnosticsCard');
+    if(diagCard) diagCard.style.display=CU?.role==='owner'?'block':'none';
     checkSectionColStatus();
+    if(CU?.role==='owner') renderDiagnosticsPanel();
   }
   updateSectionTabBar(id);
   closeSb();
@@ -10171,6 +10376,64 @@ async function checkSectionColStatus(){
       el.textContent='❌ Section column not found — copy and run the SQL below in Supabase first';
     }
   }catch(e){ el.style.display='none'; }
+}
+
+// ── Client Diagnostics & Error Log (owner-only Settings card) ──────────────
+function renderDiagnosticsPanel(){
+  const envBox=document.getElementById('diagEnvBox');
+  const list=document.getElementById('diagErrList');
+  if(!envBox||!list) return;
+  const env=window.__daEnv||{};
+  envBox.innerHTML = `
+    <div><strong>Device:</strong> ${env.isAndroid?'Android':/iPhone|iPad|iPod/i.test(env.ua||'')?'iOS':'Desktop/Other'}${env.isSunmi?' — SUNMI (best-effort detection)':''}</div>
+    <div><strong>Browser context:</strong> ${env.isWebView?'⚠️ Android WebView (embedded — Web NFC and some APIs may be unavailable)':'Regular browser'}</div>
+    <div><strong>Web NFC support:</strong> ${env.hasWebNFC?'✅ Yes':'❌ No'} ${window.NativeNFC?' · Native NFC bridge detected':''}</div>
+    <div><strong>Geolocation:</strong> ${env.hasGeolocation?'✅ Available':'❌ Not available'}</div>
+    <div><strong>Screen:</strong> ${env.screen||'—'} · <strong>Standalone/installed:</strong> ${env.standalone?'Yes':'No'}</div>
+    <div style="margin-top:0.4rem;color:var(--muted);font-size:0.7rem;word-break:break-all">${(env.ua||'').replace(/</g,'&lt;')}</div>
+  `;
+  const errs=(window.__daErrors||[]).slice().reverse().slice(0,50);
+  if(!errs.length){
+    list.innerHTML='<div style="color:var(--muted)">No errors logged on this device. ✅</div>';
+    return;
+  }
+  list.innerHTML = errs.map(e=>`
+    <div style="border-top:1px solid var(--border);padding:0.5rem 0">
+      <div style="font-weight:600;color:${(e.type==='error'||e.type==='unhandledrejection')?'var(--red)':'var(--ink)'}">${e.type} <span style="font-weight:400;color:var(--muted)">· ${e.at?new Date(e.at).toLocaleString():''}</span></div>
+      <div>${(e.message||'').toString().replace(/</g,'&lt;').slice(0,300)}</div>
+      ${e.extra&&e.extra.section?`<div style="color:var(--muted);font-size:0.7rem">section: ${e.extra.section}</div>`:''}
+    </div>
+  `).join('');
+}
+async function loadRemoteErrorLog(){
+  const list=document.getElementById('diagErrList');
+  if(!list) return;
+  list.innerHTML='Loading remote errors…';
+  try{
+    const {data,error}=await SB.from('client_error_log').select('*').order('logged_at',{ascending:false}).limit(50);
+    if(error) throw error;
+    if(!data || !data.length){ list.innerHTML='<div style="color:var(--muted)">No remote errors logged yet.</div>'; return; }
+    list.innerHTML = data.map(e=>`
+      <div style="border-top:1px solid var(--border);padding:0.5rem 0">
+        <div style="font-weight:600;color:var(--red)">${e.type||'error'} <span style="font-weight:400;color:var(--muted)">· ${e.logged_at?new Date(e.logged_at).toLocaleString():''}${e.staff_name?(' · '+e.staff_name):''}</span></div>
+        <div>${(e.message||'').toString().replace(/</g,'&lt;').slice(0,300)}</div>
+        ${e.section?`<div style="color:var(--muted);font-size:0.7rem">section: ${e.section}</div>`:''}
+        <div style="color:var(--muted);font-size:0.68rem;word-break:break-all">${(e.user_agent||'').replace(/</g,'&lt;')}</div>
+      </div>
+    `).join('');
+  }catch(e){
+    list.innerHTML='<div style="color:var(--muted)">Remote error log table not set up yet — copy/run the SQL above first.</div>';
+  }
+}
+function copyDiagnostics(){
+  const text = JSON.stringify({env:window.__daEnv||{}, errors:window.__daErrors||[]}, null, 2);
+  if(navigator.clipboard) navigator.clipboard.writeText(text).then(()=>showToast('Diagnostics copied ✓'));
+}
+function clearLocalErrorLog(){
+  window.__daErrors=[];
+  try{ localStorage.setItem('daErrorLog','[]'); }catch(e){}
+  renderDiagnosticsPanel();
+  showToast('Local error log cleared');
 }
 
 function saveAnthropicKey(){
