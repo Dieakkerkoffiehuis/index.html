@@ -92,14 +92,35 @@
       standalone: !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches),
       screen: (screen.width+'x'+screen.height),
     };
+    // Feature-detect modern JS syntax support (optional chaining / nullish
+    // coalescing) using a safe string-eval — never write ?. or ?? literally
+    // in THIS file, since that source text itself would fail to parse on
+    // the very old engines we're trying to detect.
+    var supportsModernSyntax = true;
+    try{ new Function('var a={b:1}; return a' + '?' + '.' + 'b ' + '?' + '?' + ' 0;')(); }
+    catch(e){ supportsModernSyntax = false; }
+    env.supportsModernSyntax = supportsModernSyntax;
     window.__daEnv = env;
     try{ console.log('[DieAkker env]', env); }catch(e){}
-    if(isAndroid && isWebView){
+    if(!supportsModernSyntax){
+      showCompatWarning();
+      pushError({ type:'compat', message:'Browser JS engine does not support modern syntax (optional chaining / nullish coalescing). Update Chrome or WebView on this device.', extra:env });
+    } else if(isAndroid && isWebView){
       pushError({ type:'compat', message:'Running inside an embedded Android WebView — Web NFC and some browser APIs may not work here. Use the Chrome browser app for the Clock In/Out screen if NFC taps don’t register.', extra:env });
     } else if(isSunmi){
       pushError({ type:'compat', message:'SUNMI device detected via user agent.', extra:env });
     }
   })();
+
+  function showCompatWarning(){
+    if(document.getElementById('daCompatWarn')) return;
+    var el = document.createElement('div');
+    el.id = 'daCompatWarn';
+    el.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:999998;background:#5c4a12;color:#fff;font:13px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;padding:10px 14px;text-align:center';
+    el.innerHTML = '⚠️ This device\'s browser is out of date and may not run this app correctly. Please update Chrome / the system WebView, or open this page in a newer browser.';
+    function attach(){ if(document.body) document.body.insertBefore(el, document.body.firstChild); else setTimeout(attach, 50); }
+    attach();
+  }
 
   // Visible overlay — only for the two error classes that would otherwise
   // leave the screen blank or silently broken. Handled/expected console
@@ -3326,7 +3347,7 @@ function doLogout(){
       <button class="btab bt-center" id="bt-modules" onclick="goTab('modules')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></svg></span><span>Modules</span></button>
       <button class="btab" id="bt-cashup" onclick="goTab('cashup')"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span><span>Cash Up</span></button>
       <button class="btab" id="bt-more" onclick="toggleSb()"><span class="bt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span><span>Menu</span></button>`;
-    const main = document.getElementById('app')?.querySelector('.main');
+    const _appEl0 = document.getElementById('app'); const main = _appEl0==null?undefined:_appEl0.querySelector('.main');
     if(main) main.style.paddingBottom = '';
   }
   document.getElementById('app').classList.remove('show');
@@ -3517,7 +3538,7 @@ async function loadAllData(){
       lvBalances = {};
       (lbR.data||[]).forEach(b=>{ lvBalances[b.staff_name]=b; });
       // Run monthly accrual check silently (owner/manager only)
-      if(CU?.role==='owner'||CU?.role==='manager') await lvRunAccrual();
+      if((CU==null?undefined:CU.role)==='owner'||(CU==null?undefined:CU.role)==='manager') await lvRunAccrual();
     }catch(e){ lvBalances={}; }
 
     // Load docs
@@ -3558,11 +3579,11 @@ async function loadAllData(){
     setSyncStatus('err');
     const hint = !navigator.onLine
       ? 'You appear to be offline.'
-      : err?.message?.includes('JWT')
+      : (err&&err.message&&err.message.includes('JWT'))
         ? 'Session expired — please refresh and log in again.'
-        : err?.message?.includes('relation') || err?.message?.includes('column')
+        : (err&&err.message&&(err.message.includes('relation') || err.message.includes('column')))
           ? 'Database schema mismatch — a table or column may be missing. Check Supabase.'
-          : err?.message || 'Unknown error.';
+          : (err&&err.message) || 'Unknown error.';
     showError('Failed to load data', { message: hint });
   }
 }
@@ -3574,8 +3595,8 @@ function goGroup(grpKey,el){
   if(grpKey==='overview'){go('dashboard');return;}
   const grp=SEC_GROUPS[grpKey];
   if(!grp) return;
-  const access=CU?.access||[];
-  const role=CU?.role||'employee';
+  const access=(CU==null?undefined:CU.access)||[];
+  const role=(CU==null?undefined:CU.role)||'employee';
   const first=grp.tabs.find(t=>{
     if(!access.includes(t.id)) return false;
     if(t.r==='owner'&&role!=='owner') return false;
@@ -3610,7 +3631,7 @@ function go(id){
   }
 }
 function _goInner(id){
-  const userAccess = CU?.access || [];
+  const userAccess = (CU==null?undefined:CU.access) || [];
   // 'modules' is always accessible — it's the navigation hub
   if(id !== 'modules' && !userAccess.includes(id)){showToast('No access to this section.','err');return;}
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('act'));
@@ -3645,23 +3666,23 @@ function _goInner(id){
   if(id==='orders'){ renderSups(); ordUpdateReceivedBadge(); }
   if(id==='settings' && firstVisit){
     const sqlCard=document.getElementById('pendingOrdersSQL');
-    if(sqlCard) sqlCard.style.display=CU?.role==='owner'?'block':'none';
+    if(sqlCard) sqlCard.style.display=(CU==null?undefined:CU.role)==='owner'?'block':'none';
     const scSqlCard=document.getElementById('spotCheckSQL');
-    if(scSqlCard) scSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    if(scSqlCard) scSqlCard.style.display=(CU==null?undefined:CU.role)==='owner'?'block':'none';
     const ccSqlCard=document.getElementById('cleaningChecklistSQL');
-    if(ccSqlCard) ccSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    if(ccSqlCard) ccSqlCard.style.display=(CU==null?undefined:CU.role)==='owner'?'block':'none';
     const attSqlCard=document.getElementById('attendanceSQL');
-    if(attSqlCard) attSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    if(attSqlCard) attSqlCard.style.display=(CU==null?undefined:CU.role)==='owner'?'block':'none';
     const nfcSqlCard=document.getElementById('nfcAttendanceSQL');
-    if(nfcSqlCard) nfcSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    if(nfcSqlCard) nfcSqlCard.style.display=(CU==null?undefined:CU.role)==='owner'?'block':'none';
     const lvSqlCard=document.getElementById('leaveManagementSQL');
-    if(lvSqlCard) lvSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    if(lvSqlCard) lvSqlCard.style.display=(CU==null?undefined:CU.role)==='owner'?'block':'none';
     const errLogSqlCard=document.getElementById('clientErrorLogSQL');
-    if(errLogSqlCard) errLogSqlCard.style.display=CU?.role==='owner'?'block':'none';
+    if(errLogSqlCard) errLogSqlCard.style.display=(CU==null?undefined:CU.role)==='owner'?'block':'none';
     const diagCard=document.getElementById('clientDiagnosticsCard');
-    if(diagCard) diagCard.style.display=CU?.role==='owner'?'block':'none';
+    if(diagCard) diagCard.style.display=(CU==null?undefined:CU.role)==='owner'?'block':'none';
     checkSectionColStatus();
-    if(CU?.role==='owner') renderDiagnosticsPanel();
+    if((CU==null?undefined:CU.role)==='owner') renderDiagnosticsPanel();
   }
   updateSectionTabBar(id);
   closeSb();
@@ -3712,8 +3733,8 @@ function updateSectionTabBar(id){
   const grpKey=SEC_GROUP_MAP[id];
   if(!grpKey){bar.style.display='none';return;}
   const grp=SEC_GROUPS[grpKey];
-  const access=CU?.access||[];
-  const role=CU?.role||'employee';
+  const access=(CU==null?undefined:CU.access)||[];
+  const role=(CU==null?undefined:CU.role)||'employee';
   const visibleTabs=grp.tabs.filter(t=>{
     if(!access.includes(t.id)) return false;
     if(t.r==='owner'&&role!=='owner') return false;
@@ -3725,7 +3746,7 @@ function updateSectionTabBar(id){
   ).join('');
   bar.style.display='block';
 }
-function tg(h,g){ h.classList.toggle('op'); document.getElementById(g)?.classList.toggle('op'); }
+function tg(h,g){ h.classList.toggle('op'); const _tgEl=document.getElementById(g); if(_tgEl) _tgEl.classList.toggle('op'); }
 function toggleSb(){ document.getElementById('sb').classList.toggle('open'); document.getElementById('ov').classList.toggle('show'); }
 function closeSb(){ document.getElementById('sb').classList.remove('open'); document.getElementById('ov').classList.remove('show'); }
 
@@ -3753,11 +3774,11 @@ function syncBottomTabs(id){
 // ── STOCK EMPLOYEE MODE (Fridah + similar roles) ──────────────────────────
 // Detects staff who only need stock counting + ordering interface
 function isStockEmployee(){
-  const name = (CU?.name||'').toLowerCase();
+  const name = ((CU==null?undefined:CU.name)||'').toLowerCase();
   // By name (Fridah, or similar stock-ordering staff)
   if(name.includes('fridah')) return true;
   // By access pattern: has 'orders' but not management sections
-  if(CU?.role==='employee' && CU?.access?.includes('orders') && !CU?.access?.includes('cashup')) return true;
+  if((CU==null?undefined:CU.role)==='employee' && (CU.access==null?undefined:CU.access.includes('orders')) && !(CU.access==null?undefined:CU.access.includes('cashup'))) return true;
   return false;
 }
 
@@ -3860,8 +3881,8 @@ async function renderPanelSalesChart(panel){
   let fromStr, toStr;
   const today = new Date().toISOString().slice(0,10);
   if(panel==='reports'){
-    fromStr = document.getElementById('rpFrom')?.value || (() => { const d=new Date(); d.setDate(d.getDate()-29); return d.toISOString().slice(0,10); })();
-    toStr   = document.getElementById('rpTo')?.value   || today;
+    fromStr = (document.getElementById('rpFrom')&&document.getElementById('rpFrom').value) || (() => { const d=new Date(); d.setDate(d.getDate()-29); return d.toISOString().slice(0,10); })();
+    toStr   = (document.getElementById('rpTo')&&document.getElementById('rpTo').value)   || today;
   } else {
     // Analytics uses anPeriodDays
     const d=new Date(); d.setDate(d.getDate()-(anPeriodDays-1));
@@ -3937,7 +3958,7 @@ async function renderPanelSalesChart(panel){
       </div>`;
 
     if(_panelCharts[panel]){ _panelCharts[panel].destroy(); delete _panelCharts[panel]; }
-    const ctx = document.getElementById(chartId)?.getContext('2d');
+    const _ctxEl = document.getElementById(chartId); const ctx = _ctxEl?_ctxEl.getContext('2d'):undefined;
     if(!ctx) return;
 
     const gradBurg = ctx.createLinearGradient(0,0,0,180);
@@ -4136,7 +4157,7 @@ function renderST(){
         ${hasYest?`<div class="sti-yesterday">📆 Yesterday: <strong>${yest} ${i.unit}</strong> ${diffLabel}</div>`:'<div class="sti-yesterday" style="color:var(--muted)">No previous count</div>'}
       </div>
       <div class="sti-ctrl">
-        <input type="number" class="sti-in" min="0" step="0.1" value="${stC[i.id]??''}" placeholder="${i.stock}" oninput="stC[${i.id}]=parseFloat(this.value)||0;renderSTItem(${i.id})">
+        <input type="number" class="sti-in" min="0" step="0.1" value="${stC[i.id]!=null?stC[i.id]:''}" placeholder="${i.stock}" oninput="stC[${i.id}]=parseFloat(this.value)||0;renderSTItem(${i.id})">
         <div class="sti-u">${i.unit}</div>
       </div>
     </div>`;
@@ -4184,7 +4205,7 @@ function renderDB(){
   const q=document.getElementById('dbSrch').value.toLowerCase();
   document.getElementById('dbTabs').innerHTML=CATS.map(c=>`<button class="ct ${dbCat===c?'act':''}" onclick="dbCat='${c}';renderDB()">${CEM[c]||'📦'} ${c}</button>`).join('');
   let items=DB; if(dbCat!=='All')items=items.filter(i=>i.category===dbCat); if(q)items=items.filter(i=>i.name.toLowerCase().includes(q)||i.supplier.toLowerCase().includes(q));
-  const ce=['owner','manager'].includes(CU?.role) && !isReadOnly();
+  const ce=['owner','manager'].includes((CU==null?undefined:CU.role)) && !isReadOnly();
   document.getElementById('addStBtn').style.display=ce?'inline-flex':'none';
   // Detect duplicates
   const names=DB.map(i=>i.name.toLowerCase().trim());
@@ -4194,7 +4215,7 @@ function renderDB(){
   const backupBtn=document.getElementById('backupStBtn');
   if(backupBtn) backupBtn.style.display=ce?'inline-flex':'none';
   const delAllBtn=document.getElementById('delAllStBtn');
-  if(delAllBtn) delAllBtn.style.display=CU?.role==='owner'?'inline-flex':'none';
+  if(delAllBtn) delAllBtn.style.display=(CU==null?undefined:CU.role)==='owner'?'inline-flex':'none';
 
   document.getElementById('dbList').innerHTML=items.map(i=>{
     const pct=i.min_level>0?Math.min(100,Math.round(i.stock/i.min_level*100)):100;
@@ -4236,7 +4257,7 @@ function setSelectVal(sel, val){
 }
 
 function openEditStock(id){
-  if(!['owner','manager'].includes(CU?.role)||isReadOnly()) return;
+  if(!['owner','manager'].includes((CU==null?undefined:CU.role))||isReadOnly()) return;
   const it=DB.find(i=>i.id===id); if(!it) return;
   document.getElementById('stockMoTitle').textContent='Edit Stock Item';
   document.getElementById('nsId').value=id;
@@ -4245,7 +4266,7 @@ function openEditStock(id){
   document.getElementById('nsUn').value=it.unit;
   document.getElementById('nsQty').value=it.stock;
   document.getElementById('nsMn').value=it.min_level;
-  document.getElementById('nsPrice').value=it.price??'';
+  document.getElementById('nsPrice').value=it.price!=null?it.price:'';
   setSelectVal(document.getElementById('nsSup'), it.supplier);
   document.getElementById('nsSection').value=it.section||'';
   document.getElementById('nsDeleteBtn').style.display='inline-flex';
@@ -4361,7 +4382,7 @@ function exportStockBackup(){
 // scratch with accurate products, prices and dish-usage. Owner-only, backed up first,
 // and gated behind a typed confirmation since this cannot be undone.
 async function deleteAllStockItems(){
-  if(CU?.role!=='owner'){ showToast('Only the owner can delete all stock items.', true); return; }
+  if((CU==null?undefined:CU.role)!=='owner'){ showToast('Only the owner can delete all stock items.', true); return; }
   if(!DB.length){ showToast('Stock Database is already empty.', true); return; }
   exportStockBackup();
   const typed=prompt(`This will permanently delete all ${DB.length} products from the Stock Database.\n\nA backup spreadsheet was just downloaded.\n\nType DELETE to confirm:`);
@@ -4658,11 +4679,11 @@ function updateSupplierDropdowns(){
   // Update the supplier <select> in the stock edit modal
   const supOptions=Object.keys(SUPS).sort().map(n=>`<option>${n}</option>`).join('');
   const el=document.getElementById('nsSup');
-  if(el){ const cur=el.value; el.innerHTML=supOptions+'<option>Other</option>'; el.value=cur||el.options[0]?.value; }
+  if(el){ const cur=el.value; el.innerHTML=supOptions+'<option>Other</option>'; el.value=cur||(el.options[0]&&el.options[0].value); }
 }
 function renderTodayOrdersBanner(){
   const dayName=new Date().toLocaleDateString('en-ZA',{weekday:'long'});
-  const isOwner=CU?.role==='owner';
+  const isOwner=(CU==null?undefined:CU.role)==='owner';
   // Non-owners only see today; owners see all
   const todayList=ORDER_SCHEDULE[dayName]||[];
   const banner=document.getElementById('todayOrdersBanner');
@@ -4688,7 +4709,7 @@ let todaySubmittedSuppliers=new Set(); // tracks which suppliers Fridah submitte
 
 async function renderSups(){
   const mi={wa:'📱',phone:'📞',email:'📧',app:'📋'};
-  const isOwner=CU?.role==='owner';
+  const isOwner=(CU==null?undefined:CU.role)==='owner';
   const editBtn=document.getElementById('editSuppliersBtn');
   if(editBtn) editBtn.style.display=isOwner?'inline-flex':'none';
   const pendSec=document.getElementById('pendingOrdersSection');
@@ -4704,7 +4725,7 @@ async function renderSups(){
     try{
       const today=new Date().toISOString().slice(0,10);
       const {data}=await SB.from('pending_orders').select('supplier')
-        .eq('order_date',today).eq('submitted_by',CU?.name||CU?.username||'')
+        .eq('order_date',today).eq('submitted_by',(CU==null?undefined:CU.name)||(CU==null?undefined:CU.username)||'')
         .in('status',['pending','do_not_order','approved']);
       todaySubmittedSuppliers=new Set((data||[]).map(r=>r.supplier));
     }catch(e){ todaySubmittedSuppliers=new Set(); }
@@ -4782,7 +4803,7 @@ async function ordQuickOrdered(s){
     const tplItems = ordGetItems(s).map(it=>({n:it.n, ml:it.ml, soh:0, qty:1}));
     await SB.from('pending_orders').insert({
       supplier:s, message:'(Already ordered — logged by owner)',
-      items:tplItems, submitted_by:CU?.name||CU?.username||'owner',
+      items:tplItems, submitted_by:(CU==null?undefined:CU.name)||(CU==null?undefined:CU.username)||'owner',
       order_date:new Date().toISOString().slice(0,10),
       status:'approved'
     });
@@ -4798,7 +4819,7 @@ async function ordQuickDNO(s){
   try{
     await SB.from('pending_orders').insert({
       supplier:s, message:'(Do Not Order)',
-      items:[], submitted_by:CU?.name||CU?.username||'owner',
+      items:[], submitted_by:(CU==null?undefined:CU.name)||(CU==null?undefined:CU.username)||'owner',
       order_date:new Date().toISOString().slice(0,10),
       status:'do_not_order'
     });
@@ -4914,7 +4935,7 @@ function ordGetItems(s){
   const dbItems=DB.filter(i=>i.supplier===s);
   const items=tpl.map((t,idx)=>{
     const dbMatch=dbItems.find(d=>d.name.toLowerCase()===t.n.toLowerCase());
-    return {n:t.n, ml:t.ml, dbId:dbMatch?.id||null};
+    return {n:t.n, ml:t.ml, dbId:(dbMatch&&dbMatch.id)||null};
   });
   // Add DB items not in template
   dbItems.forEach(d=>{
@@ -5036,7 +5057,7 @@ function ordBuildMessage(){
     .filter(Boolean);
   if(!lines.length) return null;
   const td=new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'});
-  return `${inf.g||'Good morning'}\n\n${inf.i||'Can we please order:'}\n${lines.join('\n')}${inf.urg?'\n\n⚠️ Required today before 08:30':''}\n\nThank you, ${CU?.name||'Zavier'}\nDie Akker Koffiehuis\n(${td})`;
+  return `${inf.g||'Good morning'}\n\n${inf.i||'Can we please order:'}\n${lines.join('\n')}${inf.urg?'\n\n⚠️ Required today before 08:30':''}\n\nThank you, ${(CU==null?undefined:CU.name)||'Zavier'}\nDie Akker Koffiehuis\n(${td})`;
 }
 
 function refreshOrdMsg(){
@@ -5080,7 +5101,7 @@ async function ordSubmitOrder(){
   // Use edited message from textarea if available, otherwise build fresh
   const ta=document.getElementById('ordMsgEdit');
   const msg=(ta&&ta.value.trim())?ta.value.trim():ordBuildMessage();
-  const isOwner=CU?.role==='owner';
+  const isOwner=(CU==null?undefined:CU.role)==='owner';
   if(isOwner){
     ordSendDirect(msg);
     closeMo('moOrder');
@@ -5088,7 +5109,7 @@ async function ordSubmitOrder(){
     try{
       await SB.from('pending_orders').insert({
         supplier:actSup, message:msg, items,
-        submitted_by:CU?.name||CU?.username||'staff',
+        submitted_by:(CU==null?undefined:CU.name)||(CU==null?undefined:CU.username)||'staff',
         order_date:new Date().toISOString().slice(0,10),
         status:'pending'
       });
@@ -5110,7 +5131,7 @@ async function ordDoNotOrder(){
   try{
     await SB.from('pending_orders').insert({
       supplier:actSup, message:'(No order placed)', items,
-      submitted_by:CU?.name||CU?.username||'staff',
+      submitted_by:(CU==null?undefined:CU.name)||(CU==null?undefined:CU.username)||'staff',
       order_date:new Date().toISOString().slice(0,10),
       status:'do_not_order'
     });
@@ -5258,11 +5279,11 @@ function openEditStockCount(id){
     </div>`).join('')}
     <div style="display:flex;gap:0.5rem;margin-top:0.9rem">
       <button class="btn bp" style="flex:1" onclick="saveEditedStockCount()">💾 Save Changes</button>
-      <button class="btn bs" style="flex:1" onclick="document.getElementById('editStockCard')?.remove();editingOrderId=null">Cancel</button>
+      <button class="btn bs" style="flex:1" onclick="(function(){var _e=document.getElementById('editStockCard');if(_e)_e.remove();})();editingOrderId=null">Cancel</button>
     </div>
   </div>`;
   // Remove any existing edit card first
-  document.getElementById('editStockCard')?.remove();
+  (function(){var _e=document.getElementById('editStockCard');if(_e)_e.remove();})();
   document.getElementById('pendingOrdersList').insertAdjacentHTML('afterbegin',editHtml);
   document.getElementById('editStockCard').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -5298,7 +5319,7 @@ async function saveEditedStockCount(){
     setSyncStatus('ok');
     showToast('Stock count updated ✓');
     await logAudit('orders','Stock Edited',`Corrected stock count for ${data.supplier}`);
-    document.getElementById('editStockCard')?.remove();
+    (function(){var _e=document.getElementById('editStockCard');if(_e)_e.remove();})();
     editingOrderId=null;
     loadPendingOrders();
   }catch(e){
@@ -5311,7 +5332,7 @@ async function saveEditedStockCount(){
 function openEditOrderMsg(id){
   const data=pendingOrderCache[id];
   if(!data){showToast('Reload and try again.',true);return;}
-  document.getElementById('editOrderMsgCard')?.remove();
+  (function(){var _e=document.getElementById('editOrderMsgCard');if(_e)_e.remove();})();
   const html=`<div class="card" id="editOrderMsgCard" style="padding:0.9rem 1rem;margin-bottom:0.8rem;border:2px solid var(--burg)">
     <div style="font-weight:700;font-size:0.9rem;margin-bottom:0.25rem;color:var(--burg)">✏️ Edit Message — ${data.supplier}</div>
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.6rem">Edit the message below before sending, then choose how to send it.</div>
@@ -5319,7 +5340,7 @@ function openEditOrderMsg(id){
     <div style="display:flex;gap:0.5rem;margin-top:0.7rem;flex-wrap:wrap">
       <button class="btn bgn bsm" style="flex:1;min-width:130px" onclick="sendEditedPendingOrder('${id}')">📤 Approve & Send</button>
       <button class="btn bs bsm" style="flex:0 0 auto" onclick="copyPendingMsg('${id}')">📋 Copy Only</button>
-      <button class="btn bs bsm" style="flex:0 0 auto" onclick="document.getElementById('editOrderMsgCard')?.remove()">Cancel</button>
+      <button class="btn bs bsm" style="flex:0 0 auto" onclick="(function(){var _e=document.getElementById('editOrderMsgCard');if(_e)_e.remove();})()">Cancel</button>
     </div>
   </div>`;
   document.getElementById('pendingOrdersList').insertAdjacentHTML('afterbegin',html);
@@ -5328,19 +5349,19 @@ function openEditOrderMsg(id){
 
 function copyPendingMsg(id){
   const ta=document.getElementById('pendOrdMsgEdit');
-  const msg=ta?ta.value:(pendingOrderCache[id]?.message||'');
+  const msg=ta?ta.value:((pendingOrderCache[id]&&pendingOrderCache[id].message)||'');
   navigator.clipboard.writeText(msg).then(()=>showToast('Message copied — paste and edit anywhere ✓'));
 }
 
 async function sendEditedPendingOrder(id){
   const ta=document.getElementById('pendOrdMsgEdit');
-  const msg=ta?ta.value.trim():(pendingOrderCache[id]?.message||'');
+  const msg=ta?ta.value.trim():((pendingOrderCache[id]&&pendingOrderCache[id].message)||'');
   if(!msg){showToast('Message is empty.',true);return;}
   try{
     await SB.from('pending_orders').update({status:'approved',message:msg}).eq('id',id);
-    actSup=pendingOrderCache[id]?.supplier||'';
+    actSup=(pendingOrderCache[id]&&pendingOrderCache[id].supplier)||'';
     ordSendDirect(msg);
-    document.getElementById('editOrderMsgCard')?.remove();
+    (function(){var _e=document.getElementById('editOrderMsgCard');if(_e)_e.remove();})();
     await logAudit('orders','Order Approved',`Approved & sent edited order to ${actSup}`);
     loadPendingOrders();
   }catch(e){showToast('Error sending order.',true);}
@@ -5385,12 +5406,12 @@ async function openDeliveryCheck(id){
     <div style="display:flex;gap:0.5rem;margin-top:1rem;flex-wrap:wrap">
       <button class="btn bsm" style="flex:1;min-width:160px;background:var(--burg);color:#fff;border-color:var(--burg);font-size:0.78rem" onclick="sendDeliveryReport()">📤 Report Issues to Supplier</button>
       <button class="btn bgn bsm" style="flex:1;min-width:140px;font-size:0.78rem" onclick="markDelivered('${id}')">✅ Mark as Delivered</button>
-      <button class="btn bs bsm" style="font-size:0.78rem" onclick="document.getElementById('delivCheckCard')?.remove();delivCheckId=null">Cancel</button>
+      <button class="btn bs bsm" style="font-size:0.78rem" onclick="(function(){var _e=document.getElementById('delivCheckCard');if(_e)_e.remove();})();delivCheckId=null">Cancel</button>
     </div>
   </div>`;
-  document.getElementById('delivCheckCard')?.remove();
+  (function(){var _e=document.getElementById('delivCheckCard');if(_e)_e.remove();})();
   const awEl=document.getElementById('awaitingDeliveryList');
-  if(awEl){ awEl.insertAdjacentHTML('afterbegin',html); awEl.firstElementChild?.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  if(awEl){ awEl.insertAdjacentHTML('afterbegin',html); if(awEl.firstElementChild) awEl.firstElementChild.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 }
 
 function setDelivStatus(i,status){
@@ -5418,7 +5439,7 @@ function sendDeliveryReport(){
   const data=approvedOrderCache[id];
   if(!data){showToast('Order data missing — reload.',true);return;}
   const orderedItems=(data.items||[]).filter(it=>it.qty>0);
-  const issues=delivCheckItems.map((dc,i)=>({...dc,name:orderedItems[i]?.n||'',qty:orderedItems[i]?.qty||''})).filter(dc=>dc.status!=='ok');
+  const issues=delivCheckItems.map((dc,i)=>({...dc,name:(orderedItems[i]&&orderedItems[i].n)||'',qty:(orderedItems[i]&&orderedItems[i].qty)||''})).filter(dc=>dc.status!=='ok');
   if(!issues.length){showToast('No issues to report — all items are marked as received.',true);return;}
   const inf=SUPS[data.supplier]||{};
   const greet=inf.g||'Good morning';
@@ -5435,9 +5456,9 @@ function sendDeliveryReport(){
 
 async function markDelivered(id){
   try{
-    const sup=approvedOrderCache[id]?.supplier||'supplier';
+    const sup=(approvedOrderCache[id]&&approvedOrderCache[id].supplier)||'supplier';
     await SB.from('pending_orders').update({status:'delivered'}).eq('id',id);
-    document.getElementById('delivCheckCard')?.remove();
+    (function(){var _e=document.getElementById('delivCheckCard');if(_e)_e.remove();})();
     delivCheckId=null;
     showToast(`${sup} delivery confirmed ✓`);
     await logAudit('orders','Delivery Confirmed',`Marked ${sup} delivery as complete`);
@@ -5650,7 +5671,7 @@ async function saveSpotCheck(){
   const flagged = items.filter(it => it.variance_pct !== null && Math.abs(it.variance_pct) >= 15);
   const rec = {
     date: todayStr,
-    submitted_by: CU?.name || CU?.username || 'Unknown',
+    submitted_by: (CU==null?undefined:CU.name) || (CU==null?undefined:CU.username) || 'Unknown',
     submitted_at: new Date().toISOString(),
     items,
     flagged_count: flagged.length,
@@ -5690,7 +5711,7 @@ async function loadSpotCheckHistory(){
   el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">Loading…</div>';
   try{
     const {data,error} = await SB.from('spot_checks').select('*').order('date',{ascending:false}).limit(30);
-    if(error||!data?.length){
+    if(error||!(data==null?undefined:data.length)){
       el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No spot checks recorded yet.</div>';
       return;
     }
@@ -5894,7 +5915,7 @@ async function saveCleaningChecklist(){
   const completedCount = items.filter(it=>it.done).length;
   const rec = {
     date: todayStr,
-    submitted_by: CU?.name || CU?.username || 'Unknown',
+    submitted_by: (CU==null?undefined:CU.name) || (CU==null?undefined:CU.username) || 'Unknown',
     submitted_at: new Date().toISOString(),
     items,
     completed_count: completedCount,
@@ -5932,7 +5953,7 @@ async function loadCleaningHistory(){
   el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">Loading…</div>';
   try{
     const {data,error} = await SB.from('cleaning_checklist_log').select('*').order('date',{ascending:false}).limit(30);
-    if(error||!data?.length){
+    if(error||!(data==null?undefined:data.length)){
       el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No cleaning checklists recorded yet.</div>';
       return;
     }
@@ -6025,7 +6046,7 @@ function cuLoadScheduledWaiters(){
   const dayIdx=(d.getDay()+6)%7; // Mon=0..Sun=6
   const dayName=MON_DAYS[dayIdx];// use fixed Mon-indexed array for day name lookup
   const shiftKey=shift==='Morning'?'morning':shift==='Afternoon'?'afternoon':'evening';
-  const scheduled=(schedData[wk]?.[dayName]?.[shiftKey])||[];
+  const scheduled=(schedData[wk]&&schedData[wk][dayName]&&schedData[wk][dayName][shiftKey])||[];
 
   // Populate the Add Waiter dropdown with all waiters not already added
   const allWaiters=getWaiters();
@@ -6056,10 +6077,10 @@ function cuLoadScheduledWaiters(){
 
 function cuAddWaiter(){
   const sel=document.getElementById('cuAddWaiterSel');
-  const name=sel?.value;
+  const name=sel&&sel.value;
   if(!name){showToast('Select a waiter first.',true);return;}
   if(cuD.waiters.find(w=>w.name===name)){showToast(`${name} is already on this cash up.`,true);return;}
-  const defaultShift=document.getElementById('cuShift')?.value||'Morning';
+  const defaultShift=(document.getElementById('cuShift')&&document.getElementById('cuShift').value)||'Morning';
   cuD.waiters.push({name,shift:defaultShift,vk:0,kt:0,rk:0,st:0,ks:0,zp:0,vo:0,s2:0});
   renderCUCards(); updCUTots();
   cuLoadScheduledWaiters(); // refresh dropdown
@@ -6294,7 +6315,7 @@ async function loadCUHistory(){
     if(from) q=q.gte('date',from);
     if(to)   q=q.lte('date',to);
     const {data,error}=await q;
-    if(error||!data?.length){
+    if(error||!(data==null?undefined:data.length)){
       el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No cash up records found for this period.</div>';
       return;
     }
@@ -6523,7 +6544,7 @@ function renderVar(){
   if(!d.length){el.innerHTML='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">No variance data — submit a stock take first</div>';return;}
   el.innerHTML=d.slice(0,30).map(v=>`<div class="vc"><div class="vc-i"><div class="vc-nm">${v.item_name}</div><div class="vc-mt">Expected: ${v.expected} · Actual: ${v.actual} ${v.unit}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem"><div class="vc-d ${v.diff<0?'vneg':v.diff>0?'vpos':'vzero'}">${v.diff>0?'+':''}${parseFloat(v.diff).toFixed(1)}</div><span class="bdg ${v.diff<0?'bgr':v.diff>0?'bgg':'bgm'}">${v.diff<0?'Loss':v.diff>0?'Over':'OK'}</span></div></div>`).join('');
   const lm={};varianceD.filter(v=>v.diff<0).forEach(v=>{lm[v.item_name]=(lm[v.item_name]||0)+Math.abs(v.diff);});
-  const sr=Object.entries(lm).sort((a,b)=>b[1]-a[1]).slice(0,5),mx=sr[0]?.[1]||1;
+  const sr=Object.entries(lm).sort((a,b)=>b[1]-a[1]).slice(0,5),mx=(sr[0]&&sr[0][1])||1;
   document.getElementById('topLoss').innerHTML=sr.length?sr.map(([n,l])=>`<div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.5rem"><div style="min-width:110px;font-size:0.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n}</div><div style="flex:1;height:14px;background:var(--surface);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.round(l/mx*100)}%;background:var(--red);border-radius:3px"></div></div><div style="font-size:0.78rem;font-weight:700;color:var(--red);min-width:32px;text-align:right">-${l.toFixed(1)}</div></div>`).join(''):'<div style="text-align:center;padding:1.5rem;color:var(--muted)">✅ No losses</div>';
 }
 function fVar(t,b){varF=t;document.querySelectorAll('#p-reports .ct').forEach(x=>x.classList.remove('act'));b.classList.add('act');renderVar();}
@@ -6578,7 +6599,7 @@ function staffForGroup(g){
   return[];
 }
 function calcShiftHours(start,end,brk){if(!start||!end)return 0;const[sh,sm]=start.split(':').map(Number);const[eh,em]=end.split(':').map(Number);if(isNaN(sh)||isNaN(eh))return 0;let mins=(eh*60+em)-(sh*60+sm)-(parseFloat(brk)||0)*60;if(mins<0)mins+=24*60;return Math.max(0,Math.round(mins/60*10)/10);}
-function getShift(wk,grp,nm,di){return(rosterData[wk]?.[grp]?.[nm]?.[di])||{start:'',end:'',brk:''};}
+function getShift(wk,grp,nm,di){return((rosterData[wk]&&rosterData[wk][grp]&&rosterData[wk][grp][nm]&&rosterData[wk][grp][nm][di]))||{start:'',end:'',brk:''};}
 // ── LEAVE ↔ ROSTER HELPERS ──────────────────────────────────────────────────
 // Check if a staff member has APPROVED leave covering a given date object
 function isOnApprovedLeave(staffName, dateObj){
@@ -6591,7 +6612,7 @@ function isOnPendingLeave(staffName, dateObj){
   return leaveData.some(l=>l.staff_name===staffName&&l.status==='Pending'&&l.start_date<=ds&&l.end_date>=ds);
 }
 // ────────────────────────────────────────────────────────────────────────────
-function getShiftFlags(wk,grp,nm,di){return(rosterFlags[wk]?.[grp]?.[nm]?.[di])||{leave:false,ph:false};}
+function getShiftFlags(wk,grp,nm,di){return((rosterFlags[wk]&&rosterFlags[wk][grp]&&rosterFlags[wk][grp][nm]&&rosterFlags[wk][grp][nm][di]))||{leave:false,ph:false};}
 function setShiftFlag(wk,grp,nm,di,flag,val){
   if(!rosterFlags[wk]) rosterFlags[wk]={};
   if(!rosterFlags[wk][grp]) rosterFlags[wk][grp]={};
@@ -6624,7 +6645,7 @@ function toggleFlag(wk,grp,nm,di,flag){
 function calcEffectiveHours(start,end,brk,dayIndex,flags){
   const raw=calcShiftHours(start,end,brk);
   if(!raw) return 0;
-  if(flags?.ph) return raw*2;
+  if((flags&&flags.ph)) return raw*2;
   if(dayIndex===6) return raw*1.5; // Sunday
   return raw;
 }
@@ -6824,9 +6845,9 @@ function updRSummary(){
     }
     const totalEffHrs=normalHrs+sunHrs+phHrs;
     let pay=0,note='';
-    if(rosterGroup==='Managers'){const r=payD.mgr?.find(m=>m.name===s.name)?.hourly_rate||resolveRate(s.name,42.50);pay=totalEffHrs*r;note=`R${r}/hr`;}
-    else if(rosterGroup==='Kitchen'){const r=payD.kit?.find(m=>m.name===s.name)?.hourly_rate||resolveRate(s.name,30.23);pay=totalEffHrs*r;note=`R${r}/hr`;}
-    else if(rosterGroup==='Waiters PH'){const r=payD.waitph?.find(m=>m.name===s.name)?.hourly_rate||resolveRate(s.name,30.23);pay=totalEffHrs*r;note=`R${r}/hr`;}
+    if(rosterGroup==='Managers'){const _m=payD.mgr&&payD.mgr.find(m=>m.name===s.name);const r=(_m&&_m.hourly_rate)||resolveRate(s.name,42.50);pay=totalEffHrs*r;note=`R${r}/hr`;}
+    else if(rosterGroup==='Kitchen'){const _m=payD.kit&&payD.kit.find(m=>m.name===s.name);const r=(_m&&_m.hourly_rate)||resolveRate(s.name,30.23);pay=totalEffHrs*r;note=`R${r}/hr`;}
+    else if(rosterGroup==='Waiters PH'){const _m=payD.waitph&&payD.waitph.find(m=>m.name===s.name);const r=(_m&&_m.hourly_rate)||resolveRate(s.name,30.23);pay=totalEffHrs*r;note=`R${r}/hr`;}
     else{note='Tips + 3% sales';}
     const badges=[];
     if(leaveHrs>0) badges.push(`<span class="bdg" style="background:var(--gold-l);color:var(--gold);border:1px solid #f0d090">🏖 ${leaveHrs}h leave</span>`);
@@ -6848,7 +6869,7 @@ async function saveRoster(){
     Object.entries(names).forEach(([staffName,days])=>{
       Object.entries(days).forEach(([dayIdx,sh])=>{
         if(sh.start||sh.end){
-          const fl=rosterFlags[wk]?.[grp]?.[staffName]?.[parseInt(dayIdx)]||{};
+          const fl=(rosterFlags[wk]&&rosterFlags[wk][grp]&&rosterFlags[wk][grp][staffName]&&rosterFlags[wk][grp][staffName][parseInt(dayIdx)])||{};
           rowsWithGrp.push({group_type:grp,staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0,flags:fl});
           rowsWithoutGrp.push({staff_name:staffName,week_start:wk,day_index:parseInt(dayIdx),start_time:sh.start,end_time:sh.end,break_hours:parseFloat(sh.brk)||0,flags:fl});
         }
@@ -6922,9 +6943,9 @@ function printRoster(){
 // PAYROLL
 // ═══════════════════════════════════════════
 const PAC=['#7a1528','#152438','#2d5c1a','#1a4a7a','#5c3d1a','#2d1a5c','#1a5c4a','#5c1a4a','#3d1a5c'];
-const canER=()=>CU?.role==='owner';
-const canEdit=()=>CU?.role==='owner'||CU?.role==='manager';
-const isReadOnly=()=>CU?.role==='investor'||CU?.role==='employee';
+const canER=()=>(CU==null?undefined:CU.role)==='owner';
+const canEdit=()=>(CU==null?undefined:CU.role)==='owner'||(CU==null?undefined:CU.role)==='manager';
+const isReadOnly=()=>(CU==null?undefined:CU.role)==='investor'||(CU==null?undefined:CU.role)==='employee';
 // Cash-up editing: owner + specific named staff (Marleigh, Mare)
 const CASHUP_EDIT_NAMES=['marleigh','mare'];
 function canEditCashup(){
@@ -6959,7 +6980,7 @@ function buildPayEntry(s, rows, defaultRate){
 function calcHoursBreakdown(start,end,brk,dayIndex,flags){
   const raw=calcShiftHours(start,end,brk);
   if(!raw) return{reg:0,sun:0,hol:0};
-  if(flags?.ph) return{reg:0,sun:0,hol:raw};
+  if((flags&&flags.ph)) return{reg:0,sun:0,hol:raw};
   if(dayIndex===6) return{reg:0,sun:raw,hol:0};
   return{reg:raw,sun:0,hol:0};
 }
@@ -7041,7 +7062,7 @@ async function syncRosterHoursToPayroll(){
       if(!payGrp) return;
 
       // Prefer flags stored in DB row; fall back to in-memory rosterFlags (current session edits)
-      const flags=r.flags||(rosterFlags[r.week_start]?.[rowGrp]?.[r.staff_name]?.[r.day_index])||{ph:false};
+      const flags=r.flags||(rosterFlags[r.week_start]&&rosterFlags[r.week_start][rowGrp]&&rosterFlags[r.week_start][rowGrp][r.staff_name]&&rosterFlags[r.week_start][rowGrp][r.staff_name][r.day_index])||{ph:false};
       const raw=calcShiftHours(r.start_time,r.end_time,r.break_hours);
       if(!raw||raw<=0) return;
 
@@ -7079,7 +7100,7 @@ async function syncRosterHoursToPayroll(){
     });
 
     // Re-render payroll
-    if(document.getElementById('p-payroll')?.style.display!=='none'||document.getElementById('p-payroll')?.classList.contains('active')){
+    if(document.getElementById('p-payroll').style.display!=='none'||document.getElementById('p-payroll').classList.contains('active')){
       renderPay();
     }
   } catch(e){ console.error('Roster→Payroll sync error',e); }
@@ -7152,7 +7173,7 @@ async function syncAttendanceToPayroll(){
     // Update sync label
     if(updated>0){
       const lbl=document.getElementById('payPeriodSyncLabel');
-      const misses=Object.values(hourMap).reduce((a,v)=>a+(v.incomplete?.length||0),0);
+      const misses=Object.values(hourMap).reduce((a,v)=>a+((v.incomplete&&v.incomplete.length)||0),0);
       let msg=`⏱ ${updated} staff: hours auto-filled from clock-in records.`;
       if(misses>0) msg+=` ⚠️ ${misses} day${misses!==1?'s':''} missing clock-out — check Attendance tab.`;
       if(lbl) lbl.textContent=msg;
@@ -7237,7 +7258,7 @@ function renderPaySec(list,cId,tId){
             <div class="prn">${s.name}</div>
             <button onclick="editPayName('${cId}',${i},'${tId}')" style="background:none;border:none;cursor:pointer;font-size:0.75rem;color:var(--muted);padding:0.1rem 0.3rem;border-radius:4px" title="Edit name">✏️</button>
             ${s._attSource?`<span style="font-size:0.56rem;background:#1a6a42;color:#fff;padding:0.1rem 0.35rem;border-radius:20px;font-weight:700;white-space:nowrap" title="Hours auto-filled from clock-in/out records">⏱ Auto</span>`:''}
-            ${s._incomplete?.length?`<span style="font-size:0.56rem;background:#c0392b;color:#fff;padding:0.1rem 0.35rem;border-radius:20px;font-weight:700;white-space:nowrap;cursor:help" title="Missing clock-out on: ${s._incomplete.join(', ')}">⚠ ${s._incomplete.length} missing</span>`:''}
+            ${(s._incomplete&&s._incomplete.length)?`<span style="font-size:0.56rem;background:#c0392b;color:#fff;padding:0.1rem 0.35rem;border-radius:20px;font-weight:700;white-space:nowrap;cursor:help" title="Missing clock-out on: ${s._incomplete.join(', ')}">⚠ ${s._incomplete.length} missing</span>`:''}
             ${hasAnyPayOverride(cId,s.name)?`<span style="font-size:0.56rem;background:#7c3aed;color:#fff;padding:0.1rem 0.35rem;border-radius:20px;font-weight:700;white-space:nowrap;cursor:help" title="Manually edited — auto-sync from roster/clock-in will not overwrite this">✏️ Manual</span><button onclick="resetPayOverrides('${cId}',${i})" style="background:none;border:none;cursor:pointer;font-size:0.7rem;color:var(--muted);padding:0.1rem 0.3rem;border-radius:4px" title="Reset to auto-calculated">↺</button>`:''}
           </div>
           <div class="prp">${s.pos}</div>
@@ -7350,7 +7371,7 @@ async function exportDailyHoursToExcel(){
     .lte('week_start',fmt(monthEnd))
     .order('staff_name').order('week_start').order('day_index');
 
-  if(error||!data?.length){ showToast('No roster data found for this pay period.',true); return; }
+  if(error||!(data==null?undefined:data.length)){ showToast('No roster data found for this pay period.',true); return; }
 
   const DAYS      = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const GRP_LABEL = {'Managers':'Management','Kitchen':'Kitchen','Bar / Waiters':'Bar','Waiters PH':'Waiters PH'};
@@ -7735,7 +7756,7 @@ function calcNetForEntry(s, grp){
 
 function sendPayslipWhatsApp(name, netPay){
   const st=stfD.find(x=>x.name===name);
-  const raw=(st?.phone||'').replace(/\D/g,'');
+  const raw=((st&&st.phone)||'').replace(/\D/g,'');
   if(!raw){showToast('No phone number saved for '+name+'. Add it in Staff.',true);return;}
   const wa=raw.startsWith('27')?raw:raw.startsWith('0')?'27'+raw.slice(1):'27'+raw;
   const pp=getPayPeriod();
@@ -7828,8 +7849,8 @@ function openPayslip(name, group){
   document.getElementById('psGroup').value = group;
   // Auto-fill from staff record
   const staffRec = stfD.find(s=>s.name===name);
-  document.getElementById('psId').value = staffRec?.id_number || '';
-  document.getElementById('psAcct').value = staffRec?.eft_account || 'EFT ACCOUNT';
+  document.getElementById('psId').value = (staffRec&&staffRec.id_number) || '';
+  document.getElementById('psAcct').value = (staffRec&&staffRec.eft_account) || 'EFT ACCOUNT';
   document.getElementById('psBreakage').value = '';
   document.getElementById('psBorrowed').value = '';
   document.getElementById('psTaxi').value = '';
@@ -7843,7 +7864,7 @@ function openPayslip(name, group){
   document.getElementById('psExtraIncome').innerHTML=`<div class="fg2" style="margin-bottom:0.4rem"><div class="fg"><label>Description</label><input type="text" class="ps-desc" placeholder="e.g. Admin Work"></div><div class="fg"><label>Amount (R)</label><input type="number" class="ps-amt" placeholder="0.00" min="0" step="0.01"></div></div>`;
   if(group==='waiter'){
     // Waiter commission-based staff — pull breakage and borrowed from waiter payroll data
-    const w=payD.waiters?.find(x=>x.name===name);
+    const w=payD.waiters&&payD.waiters.find(x=>x.name===name);
     if(w){document.getElementById('psBreakage').value=w.breakage||'';document.getElementById('psBorrowed').value=w.borrowed||'';}
   } else {
     // Hourly-rate staff (manager, kitchen, bar, waitph) — pull breakage, borrowed and taxi
@@ -7888,7 +7909,7 @@ function printPayslip(){
   let staffRec = stfD.find(s=>s.name===name);
 
   if(group==='waiter'){
-    const w=payD.waiters?.find(x=>x.name===name)||{sales:0,tips:0};
+    const w=(payD.waiters&&payD.waiters.find(x=>x.name===name))||{sales:0,tips:0};
     const sales=w.sales||0, tips=w.tips||0;
     const comm=Math.round(sales*0.03*100)/100;
     if(sales>0) incomeLines.push({desc:'Sales 3%', rate:'0.03', qty:`@ R ${sales.toFixed(2)}`, amt:comm});
@@ -7908,7 +7929,7 @@ function printPayslip(){
   // Extra income lines from modal
   const descs=document.querySelectorAll('.ps-desc');
   const amts =document.querySelectorAll('.ps-amt');
-  descs.forEach((d,i)=>{ const a=parseFloat(amts[i]?.value)||0; if(d.value.trim()&&a>0) incomeLines.push({desc:d.value.trim(),rate:'1',qty:`@ R ${a.toFixed(2)}`,amt:a}); });
+  descs.forEach((d,i)=>{ const a=parseFloat(amts[i]&&amts[i].value)||0; if(d.value.trim()&&a>0) incomeLines.push({desc:d.value.trim(),rate:'1',qty:`@ R ${a.toFixed(2)}`,amt:a}); });
 
   const gross = incomeLines.reduce((s,l)=>s+l.amt,0);
   const uif   = Math.round(gross*0.01*100)/100;
@@ -7974,7 +7995,7 @@ table.pay-table td.qty{text-align:center;color:#444;padding:0 3mm;}
   <div class="info-grid">
     <span class="lbl">NAME :</span><span>${name}</span>
     ${idNum?`<span class="lbl">ID # :</span><span>${idNum}</span>`:''}
-    <span class="lbl">JOB DESCRIPTION :</span><span>${staffRec?.role||'Staff'}</span>
+    <span class="lbl">JOB DESCRIPTION :</span><span>${(staffRec&&staffRec.role)||'Staff'}</span>
     <span class="lbl">MANNER OF PAYMENT :</span><span>Monthly</span>
     <span class="lbl">PAYMENT PERIOD :</span><span>${period}</span>
     <span class="lbl">PAYMENT METHOD :</span><span>${acct}</span>
@@ -8046,7 +8067,7 @@ table.pay-table td.qty{text-align:center;color:#444;padding:0 3mm;}
 // ═══════════════════════════════════════════
 const DC={Floor:'var(--blue)',Kitchen:'var(--orange)',Management:'var(--burg)',Bar:'var(--navy)'};
 function renderStf(){
-  const ce=CU?.role==='owner' && !isReadOnly();
+  const ce=(CU==null?undefined:CU.role)==='owner' && !isReadOnly();
   document.getElementById('staffList').innerHTML=stfD.map(s=>`
     <div style="padding:0.7rem 0;border-bottom:1px solid var(--surface)">
       <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
@@ -8075,19 +8096,19 @@ function openEditStf(id){
   document.getElementById('stfModalTitle').textContent=isNew?'Add New Staff':'Edit Staff';
   document.getElementById('stfId').value=isNew?'':id;
   const s=isNew?null:stfD.find(x=>x.id===id);
-  document.getElementById('stfName').value=s?.name||'';
-  document.getElementById('stfIdNum').value=s?.id_number||'';
-  document.getElementById('stfPhone').value=s?.phone||'';
-  document.getElementById('stfEft').value=s?.eft_account||'';
-  document.getElementById('stfRole').value=s?.role||'Waiter';
-  document.getElementById('stfDiv').value=s?.division||'Floor';
-  document.getElementById('stfEmergName').value=s?.emergency_name||'';
-  document.getElementById('stfEmergPhone').value=s?.emergency_phone||'';
-  document.getElementById('stfBloodType').value=s?.blood_type||'';
-  document.getElementById('stfMedicalAid').value=s?.medical_aid||'';
-  document.getElementById('stfAllergies').value=s?.allergies||'';
-  document.getElementById('stfConditions').value=s?.conditions||'';
-  document.getElementById('stfMedication').value=s?.medication||'';
+  document.getElementById('stfName').value=(s&&s.name)||'';
+  document.getElementById('stfIdNum').value=(s&&s.id_number)||'';
+  document.getElementById('stfPhone').value=(s&&s.phone)||'';
+  document.getElementById('stfEft').value=(s&&s.eft_account)||'';
+  document.getElementById('stfRole').value=(s&&s.role)||'Waiter';
+  document.getElementById('stfDiv').value=(s&&s.division)||'Floor';
+  document.getElementById('stfEmergName').value=(s&&s.emergency_name)||'';
+  document.getElementById('stfEmergPhone').value=(s&&s.emergency_phone)||'';
+  document.getElementById('stfBloodType').value=(s&&s.blood_type)||'';
+  document.getElementById('stfMedicalAid').value=(s&&s.medical_aid)||'';
+  document.getElementById('stfAllergies').value=(s&&s.allergies)||'';
+  document.getElementById('stfConditions').value=(s&&s.conditions)||'';
+  document.getElementById('stfMedication').value=(s&&s.medication)||'';
   openMo('moAddStaff');
 }
 
@@ -8363,7 +8384,7 @@ function setLeaveYearFilter(){ renderLeave(); }
 function switchLeaveTab(tab){
   leaveActiveTab=tab;
   ['dashboard','requests','calendar','balances','reports','policy'].forEach(t=>{
-    document.getElementById('lvtab-'+t)?.classList.toggle('act',t===tab);
+    const _lvtEl=document.getElementById('lvtab-'+t); if(_lvtEl) _lvtEl.classList.toggle('act',t===tab);
     const el=document.getElementById('leaveTab'+t.charAt(0).toUpperCase()+t.slice(1));
     if(el) el.style.display=t===tab?'block':'none';
   });
@@ -8417,7 +8438,7 @@ function renderLeaveDashboard(){
 
   // Pending requests (quick approve/reject)
   const pendEl=document.getElementById('lvd-pendingList');
-  const canAct=CU?.role==='owner'||CU?.role==='manager';
+  const canAct=(CU==null?undefined:CU.role)==='owner'||(CU==null?undefined:CU.role)==='manager';
   if(!pendingReqs.length) pendEl.innerHTML='<div class="card" style="text-align:center;padding:1.2rem;color:var(--muted);font-size:0.85rem">No pending requests ✓</div>';
   else pendEl.innerHTML=pendingReqs.map(l=>lvReqCard(l,canAct)).join('');
 
@@ -8486,7 +8507,7 @@ function lvFilterReq(filter, btn){
 }
 
 function renderLeaveRequests(){
-  const canAct=!isReadOnly()&&(CU?.role==='owner'||CU?.role==='manager');
+  const canAct=!isReadOnly()&&((CU==null?undefined:CU.role)==='owner'||(CU==null?undefined:CU.role)==='manager');
   let sorted=[...leaveData].sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||''));
   if(lvReqFilter!=='all') sorted=sorted.filter(l=>l.status===lvReqFilter);
   const el=document.getElementById('lvRequestList');
@@ -8498,7 +8519,7 @@ function renderLeaveRequests(){
 }
 
 function renderLeaveRequests_OLD(){
-  const canAct=!isReadOnly()&&(CU?.role==='owner'||CU?.role==='manager');
+  const canAct=!isReadOnly()&&((CU==null?undefined:CU.role)==='owner'||(CU==null?undefined:CU.role)==='manager');
   const sorted=[...leaveData].sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||''));
   const el=document.getElementById('leaveTabRequests'); // legacy fallback
   if(!sorted.length){
@@ -8605,7 +8626,7 @@ function lvCalShowDay(ds){
   const entries=leaveData.filter(l=>l.start_date<=ds&&l.end_date>=ds&&l.status!=='Rejected');
   const el=document.getElementById('lvCalDetail');
   if(!entries.length){el.innerHTML=`<div class="card" style="padding:1rem;color:var(--muted);text-align:center">${dt} — no leave recorded</div>`;return;}
-  const canAct=CU?.role==='owner'||CU?.role==='manager';
+  const canAct=(CU==null?undefined:CU.role)==='owner'||(CU==null?undefined:CU.role)==='manager';
   el.innerHTML=`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.5rem;font-weight:700">${dt}</div>`+entries.map(l=>lvReqCard(l,canAct)).join('');
 }
 
@@ -8614,7 +8635,7 @@ function renderLeaveBalances(){
   const el=document.getElementById('leaveTabBalances');
   const staff=allActiveStaff();
   if(!staff.length){el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No staff found.</div>';return;}
-  const canManage=CU?.role==='owner'||CU?.role==='manager';
+  const canManage=(CU==null?undefined:CU.role)==='owner'||(CU==null?undefined:CU.role)==='manager';
   const divisions=[...new Set(staff.map(s=>s.division||'Other'))];
 
   const allBal=staff.map(s=>({...s,bal:lvGetBalance(s.name),fam:lvFamUsedThisYear(s.name)}));
@@ -8689,10 +8710,10 @@ async function lvAdjustBalance(staffName){
   const newAdj=(b.adjustment||0)+delta;
   await SB.from('leave_balances').update({manual_adjustment:newAdj,updated_at:new Date().toISOString()}).eq('staff_name',staffName);
   await SB.from('leave_accrual_log').insert({staff_name:staffName,accrual_month:new Date().toISOString().slice(0,7),
-    days_added:delta,balance_before:b.available,balance_after:b.available+delta,note:`Manual adjustment by ${CU?.name||'manager'}`});
+    days_added:delta,balance_before:b.available,balance_after:b.available+delta,note:`Manual adjustment by ${(CU==null?undefined:CU.name)||'manager'}`});
   if(lvBalances[staffName]) lvBalances[staffName].manual_adjustment=newAdj;
   showToast(`${staffName} leave balance adjusted by ${delta>0?'+':''}${delta} days ✓`);
-  await logAudit('leave','Balance Adjusted',`${staffName}: ${delta>0?'+':''}${delta} days by ${CU?.name||'manager'}`);
+  await logAudit('leave','Balance Adjusted',`${staffName}: ${delta>0?'+':''}${delta} days by ${(CU==null?undefined:CU.name)||'manager'}`);
   renderLeaveBalances();
 }
 
@@ -8706,8 +8727,8 @@ function lvRpSetPeriod(p){
 }
 
 function lvRenderReports(){
-  const from=document.getElementById('lvRpFrom')?.value;
-  const to=document.getElementById('lvRpTo')?.value;
+  const from=document.getElementById('lvRpFrom')&&document.getElementById('lvRpFrom').value;
+  const to=document.getElementById('lvRpTo')&&document.getElementById('lvRpTo').value;
   const el=document.getElementById('lvReportContent');
   const expBtn=document.getElementById('lvExportBtn');
   if(!el) return;
@@ -8773,8 +8794,8 @@ function lvRenderReports(){
 async function lvExportReport(){
   if(!lvReportData.length){ showToast('Run a report first.','err'); return; }
   if(!window.XLSX){ showToast('Excel library not loaded — try refreshing.','err'); return; }
-  const from=document.getElementById('lvRpFrom')?.value||new Date().getFullYear()+'-01-01';
-  const to=document.getElementById('lvRpTo')?.value||new Date().toISOString().slice(0,10);
+  const from=(document.getElementById('lvRpFrom')&&document.getElementById('lvRpFrom').value)||new Date().getFullYear()+'-01-01';
+  const to=(document.getElementById('lvRpTo')&&document.getElementById('lvRpTo').value)||new Date().toISOString().slice(0,10);
   const rows=lvReportData.map(r=>({
     'Employee':r.name,
     'Department':r.division,
@@ -8995,10 +9016,10 @@ async function approveLeave(id){
   const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});
   leaveData=leaveR.data||[];
   renderLeave();
-  if(document.getElementById('p-roster')?.classList.contains('act')) renderRGrid();
+  if(document.getElementById('p-roster').classList.contains('act')) renderRGrid();
   setSyncStatus('ok');
-  showToast(`✅ Leave approved for ${rec?.staff_name||'staff member'} · balance updated ✓`);
-  await logAudit('leave','Leave Approved',`${rec?.staff_name} — ${rec?.leave_type} ${rec?.start_date} to ${rec?.end_date}`);
+  showToast(`✅ Leave approved for ${(rec&&rec.staff_name)||'staff member'} · balance updated ✓`);
+  await logAudit('leave','Leave Approved',`${rec&&rec.staff_name} — ${rec&&rec.leave_type} ${rec&&rec.start_date} to ${rec&&rec.end_date}`);
 }
 
 async function lvRejectWithNote(id){
@@ -9008,7 +9029,7 @@ async function lvRejectWithNote(id){
   const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});
   leaveData=leaveR.data||[];
   renderLeave();
-  if(document.getElementById('p-roster')?.classList.contains('act')) renderRGrid();
+  if(document.getElementById('p-roster').classList.contains('act')) renderRGrid();
   showToast('Leave request rejected.');
   const rec=leaveData.find(l=>l.id===id);
   if(rec) await logAudit('leave','Leave Rejected',`${rec.staff_name} — ${rec.leave_type}`);
@@ -9022,7 +9043,7 @@ async function rejectLeave(id){
   const leaveR=await SB.from('leave_records').select('*').order('start_date',{ascending:false});
   leaveData=leaveR.data||[];
   renderLeave();
-  if(document.getElementById('p-roster')?.classList.contains('act')) renderRGrid();
+  if(document.getElementById('p-roster').classList.contains('act')) renderRGrid();
   setSyncStatus('ok');
   showToast('Leave request rejected.');
 }
@@ -9034,7 +9055,7 @@ function printLeaveForm(id){
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Leave Form</title><style>@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'DM Sans',Arial,sans-serif;color:#1a0d10;}@page{size:A4;margin:18mm;}.hdr{display:flex;justify-content:space-between;padding-bottom:6mm;border-bottom:3px solid #7a1528;margin-bottom:6mm;}.brand{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:28pt;color:#7a1528;}.title{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:18pt;text-align:center;margin-bottom:5mm;padding:3mm 0;border-top:1px solid #e0d5cc;border-bottom:1px solid #e0d5cc;}.sec{margin-bottom:5mm;}.sec-t{font-size:7pt;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#7a1528;margin-bottom:2.5mm;padding-bottom:1mm;border-bottom:1px solid #e0d5cc;}.row{display:flex;gap:5mm;margin-bottom:3mm;}.fld{flex:1;}.fld label{font-size:7pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9a8070;display:block;margin-bottom:1.5mm;}.val{border-bottom:1.5px solid #1a0d10;padding:1.5mm 0;font-size:11pt;font-weight:600;min-height:6mm;}.val.burg{color:#7a1528;}.tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2.5mm;}.tbox{border:1.5px solid #e0d5cc;border-radius:4px;padding:2mm 3mm;display:flex;align-items:center;gap:2mm;font-size:8.5pt;}.tbox.sel{border-color:#7a1528;background:#fdf0f3;}.ck{width:14px;height:14px;border-radius:50%;border:1.5px solid #c0b0a8;display:flex;align-items:center;justify-content:center;flex-shrink:0;}.ck.on{background:#7a1528;border-color:#7a1528;color:#fff;font-size:8px;}.rbox{border:1.5px solid #e0d5cc;border-radius:5px;min-height:16mm;padding:2.5mm;font-size:10pt;line-height:1.6;}.stamp{text-align:center;margin:4mm 0;}.st{display:inline-block;border:2.5px solid;border-radius:5px;padding:2mm 8mm;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:15pt;letter-spacing:0.15em;}.st.app{border-color:#1a7a45;color:#1a7a45;}.st.pen{border-color:#c8922a;color:#c8922a;}.st.rej{border-color:#8e1a1a;color:#8e1a1a;}.sig{display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin-top:3mm;}.sl{font-size:7pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#9a8070;margin-bottom:6mm;}.sline{border-bottom:1.5px solid #1a0d10;margin-bottom:2mm;}.sn{font-size:7.5pt;color:#9a8070;}.ft{display:flex;justify-content:space-between;font-size:7pt;color:#9a8070;padding-top:3mm;border-top:1px solid #e0d5cc;margin-top:6mm;}.no-print{text-align:center;padding:15px;font-family:sans-serif;}@media print{.no-print{display:none;}body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}</style></head><body>
 <div class="hdr"><div><div class="brand">DIE AKKER</div><div style="font-size:8pt;color:#9a8070;letter-spacing:0.15em;text-transform:uppercase">Koffiehuis — Potchefstroom</div></div><div style="text-align:right;font-size:8pt;color:#9a8070">Leave Application / Verlofaansoek<br><strong style="font-size:10pt;color:#1a0d10">Ref: LA-${id.slice(-6).toUpperCase()}</strong><br>Recorded: ${recorded}</div></div>
 <div class="title">Leave Application / Verlofaansoek</div>
-<div class="sec"><div class="sec-t">Employee Details</div><div class="row"><div class="fld" style="flex:3"><label>Full Name</label><div class="val burg">${l.staff_name}</div></div><div class="fld"><label>Division</label><div class="val">${s?.division||'Kitchen'}</div></div><div class="fld"><label>Position</label><div class="val">${s?.role||''}</div></div></div></div>
+<div class="sec"><div class="sec-t">Employee Details</div><div class="row"><div class="fld" style="flex:3"><label>Full Name</label><div class="val burg">${l.staff_name}</div></div><div class="fld"><label>Division</label><div class="val">${(s&&s.division)||'Kitchen'}</div></div><div class="fld"><label>Position</label><div class="val">${(s&&s.role)||''}</div></div></div></div>
 <div class="sec"><div class="sec-t">Type of Leave</div><div class="tgrid">${['Annual','Sick','Family','Unpaid','Sick — Unplanned','Other'].map(t=>`<div class="tbox ${l.leave_type===t?'sel':''}"><div class="ck ${l.leave_type===t?'on':''}">${l.leave_type===t?'✓':''}</div><span style="font-size:8pt;font-weight:600">${t==='Annual'?'Annual':t==='Sick'?'Sick Leave':t==='Family'?'Family Resp.':t==='Unpaid'?'Unpaid':t}</span></div>`).join('')}</div></div>
 <div class="sec"><div class="sec-t">Leave Dates</div><div class="row"><div class="fld"><label>First Day</label><div class="val burg">${l.start_date}</div></div><div class="fld"><label>Last Day</label><div class="val burg">${l.end_date}</div></div><div class="fld"><label>Total Days</label><div class="val burg">${days} day${days!==1?'s':''}</div></div></div><div class="row" style="margin-top:2mm"><div class="fld" style="flex:2"><label>Return to Work Date</label><div class="val" style="color:#c0b0a8">&nbsp;</div></div><div class="fld" style="flex:2"><label>Acting Person / Replacement</label><div class="val" style="color:#c0b0a8">&nbsp;</div></div></div></div>
 <div class="sec"><div class="sec-t">Reason / Notes</div><div class="rbox">${l.notes||'&nbsp;'}</div></div>
@@ -9135,16 +9156,16 @@ function loadKpiForm(type){
   if(!staffName||!period){formEl.innerHTML='';return;}
   // Find existing record
   const existing=kpiData.find(r=>r.staff_name===staffName&&r.staff_type===type&&r.period===period);
-  const scores=existing?.scores||{};
+  const scores=(existing&&existing.scores)||{};
   const criteria=KPI_CRITERIA[type]||[];
   const maxScore=KPI_MAX[type]||45;
-  const totalScore=existing?.total_score||criteria.reduce((s,c)=>s+(scores[c.key]||0),0);
+  const totalScore=(existing&&existing.total_score)||criteria.reduce((s,c)=>s+(scores[c.key]||0),0);
   const avgScore=criteria.length?Math.round((totalScore/criteria.length)*10)/10:0;
   const pct=Math.round(totalScore/maxScore*100);
   const col=pct>=80?'#1a7a45':pct>=60?'var(--green)':pct>=40?'var(--gold)':pct>=20?'var(--orange)':'var(--red)';
-  const salesVal=existing?.sales_figure||'';
-  const shiftsVal=existing?.shifts_count||'';
-  const notesVal=existing?.notes||'';
+  const salesVal=(existing&&existing.sales_figure)||'';
+  const shiftsVal=(existing&&existing.shifts_count)||'';
+  const notesVal=(existing&&existing.notes)||'';
   const readOnly=isReadOnly();
   const scoreRow=(c)=>{
     const cur=scores[c.key]||0;
@@ -9200,7 +9221,7 @@ function setKpiScore(type,key,val){
   if(!staffName||!period)return;
   const existing=kpiData.find(r=>r.staff_name===staffName&&r.staff_type===type&&r.period===period);
   // Temporarily apply scores so form re-renders with new value
-  const tempRecord={...(existing||{staff_name:staffName,staff_type:type,period}),scores:{...(existing?.scores||{}),...window._kpiScores[type]}};
+  const tempRecord={...(existing||{staff_name:staffName,staff_type:type,period}),scores:{...((existing&&existing.scores)||{}),...window._kpiScores[type]}};
   const idx=kpiData.findIndex(r=>r.staff_name===staffName&&r.staff_type===type&&r.period===period);
   const notesEl=document.getElementById(`kpiNotes_${type}`);
   const salesEl=document.getElementById(`kpiSales_${type}`);
@@ -9230,10 +9251,10 @@ async function saveKpiReview(type){
   const period=periodEl?periodEl.value:'';
   if(!staffName||!period){showToast('Select staff and period.',true);return;}
   const criteria=KPI_CRITERIA[type]||[];
-  const scores={...(window._kpiScores?.[type]||{})};
+  const scores={...((window._kpiScores&&window._kpiScores[type])||{})};
   // Also read from existing record if present
   const existing=kpiData.find(r=>r.staff_name===staffName&&r.staff_type===type&&r.period===period);
-  if(existing?.scores) Object.assign(scores,existing.scores,...[window._kpiScores?.[type]||{}]);
+  if(existing&&existing.scores) Object.assign(scores,existing.scores,...[(window._kpiScores&&window._kpiScores[type])||{}]);
   const total=criteria.reduce((s,c)=>s+(scores[c.key]||0),0);
   const avg=criteria.length?Math.round((total/criteria.length)*100)/100:0;
   const rec={
@@ -9242,12 +9263,12 @@ async function saveKpiReview(type){
     notes:notesEl?notesEl.value.trim():'',
     sales_figure:salesEl&&salesEl.value?parseFloat(salesEl.value):null,
     shifts_count:shiftsEl&&shiftsEl.value?parseInt(shiftsEl.value):null,
-    reviewed_by:CU?.name||null,
+    reviewed_by:(CU==null?undefined:CU.name)||null,
     updated_at:new Date().toISOString()
   };
   setSyncStatus('syncing');
   let error;
-  if(existing?.id){
+  if(existing&&existing.id){
     const r=await SB.from('kpi_scores').update(rec).eq('id',existing.id);error=r.error;
   } else {
     const r=await SB.from('kpi_scores').insert(rec);error=r.error;
@@ -9282,9 +9303,9 @@ async function deleteKpiReview(id){
 function renderKpiHistory(){
   const el=document.getElementById('kpiHistoryList');
   if(!el)return;
-  const typeFilter=document.getElementById('kpiHistType')?.value||'all';
-  const staffFilter=document.getElementById('kpiHistStaff')?.value||'all';
-  const yearFilter=document.getElementById('kpiHistYear')?.value||'all';
+  const typeFilter=(document.getElementById('kpiHistType')&&document.getElementById('kpiHistType').value)||'all';
+  const staffFilter=(document.getElementById('kpiHistStaff')&&document.getElementById('kpiHistStaff').value)||'all';
+  const yearFilter=(document.getElementById('kpiHistYear')&&document.getElementById('kpiHistYear').value)||'all';
   let records=[...kpiData];
   if(typeFilter!=='all') records=records.filter(r=>r.staff_type===typeFilter);
   if(staffFilter!=='all') records=records.filter(r=>r.staff_name===staffFilter);
@@ -9331,7 +9352,7 @@ function showKpiDetail(id){
       <div><div style="font-size:0.82rem;font-weight:700">${pct}% — ${pct>=80?'Excellent':pct>=60?'Good':pct>=40?'Average':pct>=20?'Below Average':'Needs Improvement'}</div><div style="font-size:0.7rem;color:var(--muted)">avg ${r.avg_score||0}/5 per criterion</div>${r.sales_figure?`<div style="font-size:0.7rem;color:var(--muted)">Sales: R${r.sales_figure.toLocaleString()}</div>`:''}${r.shifts_count?`<div style="font-size:0.7rem;color:var(--muted)">Shifts: ${r.shifts_count}</div>`:''}</div>
     </div>
     <div style="background:var(--surface);border-radius:6px;height:8px;overflow:hidden;margin-bottom:0.8rem"><div style="background:${col};height:100%;width:${pct}%;border-radius:6px"></div></div>
-    ${criteria.map(c=>{const s=r.scores?.[c.key]||0;const sc=KPI_SCORE_COLORS[s]||'var(--muted)';return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--surface)"><div style="flex:1"><div style="font-weight:600;font-size:0.82rem">${c.label}</div></div><div style="display:flex;gap:0.2rem">${[1,2,3,4,5].map(n=>`<div style="width:22px;height:22px;border-radius:4px;background:${s>=n?sc:'var(--surface)'};border:1px solid ${s>=n?sc:'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:${s>=n?'#fff':'var(--muted)'}">${n}</div>`).join('')}</div><div style="font-size:0.7rem;font-weight:700;color:${sc};min-width:50px;text-align:right">${s?KPI_SCORE_LABELS[s]:'—'}</div></div>`;}).join('')}
+    ${criteria.map(c=>{const s=(r.scores&&r.scores[c.key])||0;const sc=KPI_SCORE_COLORS[s]||'var(--muted)';return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--surface)"><div style="flex:1"><div style="font-weight:600;font-size:0.82rem">${c.label}</div></div><div style="display:flex;gap:0.2rem">${[1,2,3,4,5].map(n=>`<div style="width:22px;height:22px;border-radius:4px;background:${s>=n?sc:'var(--surface)'};border:1px solid ${s>=n?sc:'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:${s>=n?'#fff':'var(--muted)'}">${n}</div>`).join('')}</div><div style="font-size:0.7rem;font-weight:700;color:${sc};min-width:50px;text-align:right">${s?KPI_SCORE_LABELS[s]:'—'}</div></div>`;}).join('')}
     ${r.notes?`<div style="background:var(--surface);border-radius:8px;padding:0.7rem 0.9rem;margin-top:0.7rem"><div style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Notes</div><div style="font-size:0.82rem;line-height:1.5">${r.notes}</div></div>`:''}
     ${r.reviewed_by?`<div style="font-size:0.7rem;color:var(--muted);margin-top:0.6rem;text-align:right">Reviewed by ${r.reviewed_by}</div>`:''}`;
   openMo('moKpiDetail');
@@ -9411,7 +9432,7 @@ function openDocModal(nm){
   const s=stfD.find(x=>x.name===nm);
   const emergDiv=document.getElementById('docEmergInfo');
   if(emergDiv){
-    emergDiv.innerHTML=s?.emergency_name||s?.emergency_phone
+    emergDiv.innerHTML=(s&&s.emergency_name)||(s&&s.emergency_phone)
       ?`<strong>${s.emergency_name||'—'}</strong>${s.emergency_phone?` <a href="tel:${s.emergency_phone}" style="color:var(--burg);font-weight:700">📞 ${s.emergency_phone}</a>`:''}`
       :'<span style="color:var(--muted)">No emergency contact on file — add in Staff Management</span>';
   }
@@ -9420,11 +9441,11 @@ function openDocModal(nm){
   if(medDiv){
     const row=(icon,label,val)=>val?`<div style="display:flex;gap:0.5rem"><span style="flex-shrink:0">${icon}</span><span><strong style="font-size:0.72rem;color:#b85c00">${label}:</strong> ${val}</span></div>`:'';
     const medHtml=[
-      row('🩸','Blood Type', s?.blood_type),
-      row('🏥','Medical Aid', s?.medical_aid),
-      row('⚠️','Allergies',   s?.allergies),
-      row('💊','Conditions',  s?.conditions),
-      row('💉','Medication',  s?.medication),
+      row('🩸','Blood Type', s&&s.blood_type),
+      row('🏥','Medical Aid', s&&s.medical_aid),
+      row('⚠️','Allergies',   s&&s.allergies),
+      row('💊','Conditions',  s&&s.conditions),
+      row('💉','Medication',  s&&s.medication),
     ].filter(Boolean).join('');
     medDiv.innerHTML=medHtml||'<span style="color:var(--muted);font-size:0.8rem">No medical information on file — add in Staff Management</span>';
   }
@@ -9444,7 +9465,7 @@ function openDocModal(nm){
 }
 
 function toggleWarningFields(){
-  const type=document.getElementById('newDocType')?.value||'';
+  const type=(document.getElementById('newDocType')&&document.getElementById('newDocType').value)||'';
   const isWarning=['Verbal Warning','Written Warning','Final Warning'].includes(type);
   const isIncident=type==='Incident Report';
   const wf=document.getElementById('warningFields');
@@ -9463,7 +9484,7 @@ function toggleWarningFields(){
 
 function renderDocChecklist(nm){
   const docs=docsData[nm]||[];
-  document.getElementById('docChecklist').innerHTML=DOC_REQ.map(t=>{const has=docs.some(d=>d.doc_type===t);const last=docs.filter(d=>d.doc_type===t).slice(-1)[0];return `<div class="doc-check-row"><span>${t}</span><div style="display:flex;align-items:center;gap:0.5rem">${has?`<span style="font-size:0.7rem;color:var(--green)">${last?.date_received||''}</span>`:''}<div class="doc-tick ${has?'dt-yes':'dt-no'}">${has?'✓':'—'}</div></div></div>`;}).join('');
+  document.getElementById('docChecklist').innerHTML=DOC_REQ.map(t=>{const has=docs.some(d=>d.doc_type===t);const last=docs.filter(d=>d.doc_type===t).slice(-1)[0];return `<div class="doc-check-row"><span>${t}</span><div style="display:flex;align-items:center;gap:0.5rem">${has?`<span style="font-size:0.7rem;color:var(--green)">${(last&&last.date_received)||''}</span>`:''}<div class="doc-tick ${has?'dt-yes':'dt-no'}">${has?'✓':'—'}</div></div></div>`;}).join('');
 }
 
 function renderDocLog(nm){
@@ -9476,7 +9497,7 @@ function renderDocLog(nm){
     // Try parsing incident JSON from notes
     let incidentData=null;
     if(isIncident&&d.notes){try{incidentData=JSON.parse(d.notes);}catch(e){}}
-    const notesStr=(!isIncident&&d.notes)?` · ${d.notes}`:(incidentData?.user_notes?` · ${incidentData.user_notes}`:'');
+    const notesStr=(!isIncident&&d.notes)?` · ${d.notes}`:((incidentData&&incidentData.user_notes)?` · ${incidentData.user_notes}`:'');
     const mgrStr=d.manager_on_duty&&!isIncident?`<div style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;display:flex;gap:1rem;flex-wrap:wrap"><span>👔 <strong>${d.manager_on_duty}</strong></span>${d.witness?`<span>👁 Witness: <strong>${d.witness}</strong></span>`:''}</div>`:'';
     const reasonStr=d.reason&&!isIncident?`<div style="font-size:0.8rem;color:var(--text);background:var(--red-l);border-left:3px solid var(--red);border-radius:0 6px 6px 0;padding:0.5rem 0.7rem;margin:0.4rem 0;white-space:pre-wrap">${d.reason}</div>`:'';
     // Incident-specific expanded view
@@ -9484,13 +9505,13 @@ function renderDocLog(nm){
       <div style="margin-top:0.6rem">
         ${d.reason?`<div style="font-size:0.8rem;color:var(--text);background:#fff8f0;border-left:3px solid #e07000;border-radius:0 6px 6px 0;padding:0.5rem 0.7rem;margin-bottom:0.5rem;white-space:pre-wrap"><strong>Description:</strong> ${d.reason}</div>`:''}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.35rem 1rem;font-size:0.75rem;margin-bottom:0.4rem">
-          ${incidentData?.incident_datetime?`<div style="color:var(--muted)">🕐 Incident</div><div style="font-weight:700">${incidentData.incident_datetime.replace('T',' ')}</div>`:''}
-          ${incidentData?.date_informed?`<div style="color:var(--muted)">📣 Management Informed</div><div style="font-weight:700">${incidentData.date_informed}</div>`:''}
-          ${incidentData?.date_submitted?`<div style="color:var(--muted)">📋 Reports Submitted</div><div style="font-weight:700">${incidentData.date_submitted}</div>`:''}
-          ${incidentData?.persons_involved?`<div style="color:var(--muted)">👥 Persons Involved</div><div style="font-weight:700">${incidentData.persons_involved}</div>`:''}
+          ${(incidentData&&incidentData.incident_datetime)?`<div style="color:var(--muted)">🕐 Incident</div><div style="font-weight:700">${incidentData.incident_datetime.replace('T',' ')}</div>`:''}
+          ${(incidentData&&incidentData.date_informed)?`<div style="color:var(--muted)">📣 Management Informed</div><div style="font-weight:700">${incidentData.date_informed}</div>`:''}
+          ${(incidentData&&incidentData.date_submitted)?`<div style="color:var(--muted)">📋 Reports Submitted</div><div style="font-weight:700">${incidentData.date_submitted}</div>`:''}
+          ${(incidentData&&incidentData.persons_involved)?`<div style="color:var(--muted)">👥 Persons Involved</div><div style="font-weight:700">${incidentData.persons_involved}</div>`:''}
         </div>
         ${d.manager_on_duty||d.witness?`<div style="font-size:0.72rem;color:var(--muted);display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.4rem">${d.manager_on_duty?`<span>👔 Reported by: <strong>${d.manager_on_duty}</strong></span>`:''}${d.witness?`<span>👁 Witness: <strong>${d.witness}</strong></span>`:''}</div>`:''}
-        ${incidentData?.next_steps?`<div style="font-size:0.78rem;background:#f0f8ff;border:1px solid #b0d4f0;border-radius:6px;padding:0.5rem 0.7rem;margin-top:0.3rem"><div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#2060a0;margin-bottom:0.25rem">📌 Next Steps</div><div style="white-space:pre-wrap;color:var(--text)">${incidentData.next_steps}</div></div>`:''}
+        ${(incidentData&&incidentData.next_steps)?`<div style="font-size:0.78rem;background:#f0f8ff;border:1px solid #b0d4f0;border-radius:6px;padding:0.5rem 0.7rem;margin-top:0.3rem"><div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#2060a0;margin-bottom:0.25rem">📌 Next Steps</div><div style="white-space:pre-wrap;color:var(--text)">${incidentData.next_steps}</div></div>`:''}
       </div>`:'';
     return `<div class="doc-log-item" style="${isWarning?'border-left:3px solid var(--red);padding-left:0.7rem':isIncident?'border-left:3px solid #e07000;padding-left:0.7rem':''}">
       <div style="display:flex;align-items:center;justify-content:space-between">
@@ -9512,19 +9533,19 @@ async function saveDoc(){
   if(!date){showToast('Select a date.',true);return;}
   const isWarning=['Verbal Warning','Written Warning','Final Warning'].includes(type);
   const isIncident=type==='Incident Report';
-  const manager_on_duty=isWarning?document.getElementById('newDocManager')?.value||''
-                       :isIncident?document.getElementById('incidentManager')?.value||'':null;
-  const witness=isWarning?document.getElementById('newDocWitness')?.value.trim()||''
-               :isIncident?document.getElementById('incidentWitness')?.value.trim()||'':null;
-  const reason=isWarning?document.getElementById('newDocReason')?.value.trim()||''
-              :isIncident?document.getElementById('incidentDescription')?.value.trim()||'':null;
+  const manager_on_duty=isWarning?(document.getElementById('newDocManager')&&document.getElementById('newDocManager').value)||''
+                       :isIncident?(document.getElementById('incidentManager')&&document.getElementById('incidentManager').value)||'':null;
+  const witness=isWarning?(document.getElementById('newDocWitness')&&document.getElementById('newDocWitness').value.trim())||''
+               :isIncident?(document.getElementById('incidentWitness')&&document.getElementById('incidentWitness').value.trim())||'':null;
+  const reason=isWarning?(document.getElementById('newDocReason')&&document.getElementById('newDocReason').value.trim())||''
+              :isIncident?(document.getElementById('incidentDescription')&&document.getElementById('incidentDescription').value.trim())||'':null;
   if(isWarning){
     if(!reason){showToast('Please describe the offence.',true);document.getElementById('newDocReason').focus();return;}
     if(!witness){showToast('Please enter a witness name.',true);document.getElementById('newDocWitness').focus();return;}
   }
   if(isIncident){
-    if(!document.getElementById('incidentDateTime')?.value){showToast('Please enter the date and time of the incident.',true);return;}
-    if(!document.getElementById('incidentDateInformed')?.value){showToast('Please enter the date management was informed.',true);return;}
+    if(!(document.getElementById('incidentDateTime')&&document.getElementById('incidentDateTime').value)){showToast('Please enter the date and time of the incident.',true);return;}
+    if(!(document.getElementById('incidentDateInformed')&&document.getElementById('incidentDateInformed').value)){showToast('Please enter the date management was informed.',true);return;}
     if(!reason){showToast('Please describe the incident.',true);document.getElementById('incidentDescription').focus();return;}
   }
   // For incidents, pack extra fields as JSON into notes
@@ -9590,8 +9611,8 @@ const PAC_W=['#7a1528','#152438','#2d5c1a','#1a4a7a','#5c3d1a','#2d1a5c','#1a5c4
 function waiters(){ return stfD.filter(s=>s.division==='Floor'||s.role==='Waiter'); }
 
 async function loadWLData(){
-  const from = document.getElementById('wlFrom')?.value;
-  const to   = document.getElementById('wlTo')?.value;
+  const from = document.getElementById('wlFrom')&&document.getElementById('wlFrom').value;
+  const to   = document.getElementById('wlTo')&&document.getElementById('wlTo').value;
   let q = SB.from('waiter_events').select('*').order('event_time',{ascending:false});
   if(from) q = q.gte('event_time', from+'T00:00:00');
   if(to)   q = q.lte('event_time', to+'T23:59:59');
@@ -9830,7 +9851,7 @@ async function saveWL(){
   closeMo('moWL');
   await loadWLData();
   setSyncStatus('ok');
-  showToast(`${WL_TYPE_CFG[type]?.icon||''} Event logged for ${wlConfirmedWaiter} ✓`);
+  showToast(`${(WL_TYPE_CFG[type]&&WL_TYPE_CFG[type].icon)||''} Event logged for ${wlConfirmedWaiter} ✓`);
 }
 
 async function deleteWL(id){
@@ -9947,7 +9968,7 @@ function renderLoginsList(){
 // Managers get QR Codes + Attendance only (clock-in tools); Staff List & User Logins
 // stay owner-only since they expose pay rates and login/role credentials.
 function applyStaffTabAccess(){
-  const role = CU?.role || 'employee';
+  const role = (CU==null?undefined:CU.role) || 'employee';
   const isOwner = role==='owner' || role==='investor';
   const listBtn   = document.getElementById('staffTabBtnList');
   const loginsBtn = document.getElementById('staffTabBtnLogins');
@@ -10108,9 +10129,9 @@ async function logAudit(category, action, detail){
 }
 
 async function loadAuditLog(){
-  const from = document.getElementById('auFrom')?.value;
-  const to   = document.getElementById('auTo')?.value;
-  const user = document.getElementById('auUser')?.value;
+  const from = document.getElementById('auFrom')&&document.getElementById('auFrom').value;
+  const to   = document.getElementById('auTo')&&document.getElementById('auTo').value;
+  const user = document.getElementById('auUser')&&document.getElementById('auUser').value;
   try {
     let q = SB.from('audit_log').select('*').order('logged_at',{ascending:false}).limit(200);
     if(from) q=q.gte('logged_at',from+'T00:00:00');
@@ -10589,7 +10610,7 @@ Only include items where a quantity number is clearly visible. Match item names 
       })
     });
     const data = await response.json();
-    const text = data.content?.find(b=>b.type==='text')?.text||'';
+    const _tb = data.content&&data.content.find(b=>b.type==='text'); const text = (_tb&&_tb.text)||'';
     // Extract JSON — handle various formats
     const jsonMatch = text.match(/\[[\s\S]*?\]/);
     if(!jsonMatch) throw new Error('No item data found in photos');
@@ -10733,7 +10754,7 @@ async function loadReports(){
 }
 
 function renderTrend(){
-  const item=document.getElementById('trendItem')?.value;
+  const item=document.getElementById('trendItem')&&document.getElementById('trendItem').value;
   if(!item||!rpHistoryData.length){
     document.getElementById('trendChart').innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">No historical data yet. Submit stocktakes to build trend data.</div>';
     document.getElementById('trendTable').innerHTML='';
@@ -10787,7 +10808,7 @@ function renderTrend(){
 
 function renderValueReport(){
   const items=[...new Set(rpHistoryData.map(h=>h.item_name))];
-  const days=[...new Set(rpHistoryData.map(h=>h.recorded_at?.split('T')[0]))];
+  const days=[...new Set(rpHistoryData.map(h=>h.recorded_at&&h.recorded_at.split('T')[0]))];
   const totalLoss=rpVarianceData.filter(v=>v.diff<0).reduce((s,v)=>s+Math.abs(v.diff),0);
   const avgPerDay=days.length>0?Math.round(rpHistoryData.length/days.length*10)/10:0;
 
@@ -11372,7 +11393,7 @@ async function loadRecipes(){
 // dishes and prices — no leftover preset/seed data. Owner-only, gated behind
 // a typed confirmation since this cannot be undone.
 async function eraseAllRecipes(){
-  if(CU?.role!=='owner'){ showToast('Only the owner can erase all recipes.', true); return; }
+  if((CU==null?undefined:CU.role)!=='owner'){ showToast('Only the owner can erase all recipes.', true); return; }
   if(!recipeData.length){ showToast('Recipe Costing is already empty.', true); return; }
   const typed=prompt(`This will permanently delete all ${recipeData.length} dishes from Recipe Costing and clear the ingredient price history.\n\nThis cannot be undone.\n\nType DELETE to confirm:`);
   if(typed!=='DELETE'){ showToast('Cancelled — nothing was deleted.'); return; }
@@ -11418,9 +11439,9 @@ async function seedRecipes(){
 const RECIPE_CATS = ['All','Breakfast','Omelettes','Bakery','Open Sandwiches','Toasted Sandwiches','Akker Specialities','Wraps','Tramezzinis','Burgers','Salads','Coffee','Cold Drinks','Milkshakes','Smoothies','Other'];
 
 function renderRecipes(){
-  const q = (document.getElementById('recipeSearch')?.value||'').toLowerCase();
+  const q = ((document.getElementById('recipeSearch')&&document.getElementById('recipeSearch').value)||'').toLowerCase();
   const delAllRecBtn=document.getElementById('delAllRecipesBtn');
-  if(delAllRecBtn) delAllRecBtn.style.display=CU?.role==='owner'?'inline-flex':'none';
+  if(delAllRecBtn) delAllRecBtn.style.display=(CU==null?undefined:CU.role)==='owner'?'inline-flex':'none';
   // Category tabs
   document.getElementById('recipeCatTabs').innerHTML = RECIPE_CATS.map(c=>
     `<button class="ct ${recipeCatFilter===c?'act':''}" onclick="recipeCatFilter='${c}';renderRecipes()">${c}</button>`).join('');
@@ -11550,12 +11571,12 @@ function openEditRecipe(id){
   document.getElementById('recipeEditId').value=id||'';
   document.getElementById('deleteRecipeBtn').style.display=isNew?'none':'inline-flex';
   const r=isNew?null:recipeData.find(x=>x.id===id);
-  document.getElementById('recipeName').value=r?.name||'';
-  document.getElementById('recipeCat').value=r?.category||r?.cat||'Breakfast';
-  document.getElementById('recipePrice').value=r?.price||'';
-  document.getElementById('recipeMicros').value=r?.micros_name||r?.micros||'';
+  document.getElementById('recipeName').value=(r&&r.name)||'';
+  document.getElementById('recipeCat').value=(r&&r.category)||(r&&r.cat)||'Breakfast';
+  document.getElementById('recipePrice').value=(r&&r.price)||'';
+  document.getElementById('recipeMicros').value=(r&&r.micros_name)||(r&&r.micros)||'';
   // Render ingredient rows
-  const ings=r?.ingredients||[{name:'',qty:1,unit:'each'}];
+  const ings=(r&&r.ingredients)||[{name:'',qty:1,unit:'each'}];
   renderIngRows(ings);
   openMo('moRecipe');
 }
@@ -11603,7 +11624,7 @@ function getIngRows(){
   const rows=document.querySelectorAll('.recipe-ing-row');
   return Array.from(rows).map(row=>{
     const inputs=row.querySelectorAll('input,select');
-    return{name:inputs[0]?.value||'',qty:parseFloat(inputs[1]?.value)||0,unit:inputs[2]?.value||'each'};
+    return{name:(inputs[0]&&inputs[0].value)||'',qty:parseFloat(inputs[1]&&inputs[1].value)||0,unit:(inputs[2]&&inputs[2].value)||'each'};
   });
 }
 
@@ -11841,7 +11862,7 @@ function switchRecipeTab(tab, btn){
 }
 
 function renderGPHealth(){
-  const targetGP = parseFloat(document.getElementById('gpTargetInput')?.value||65);
+  const targetGP = parseFloat((document.getElementById('gpTargetInput')&&document.getElementById('gpTargetInput').value)||65);
   const targetFoodCost = 100 - targetGP;
 
   // Score every dish that has a price set
@@ -11866,7 +11887,7 @@ function renderGPHealth(){
     return {...r, cost, price, foodCostPct, gpPct, gpRand, topIng, suggestedPrice, status};
   }).sort((a,b)=>{
     const ord={negative:0,critical:1,warning:2,healthy:3,unknown:4};
-    return (ord[a.status]-ord[b.status]) || (a.gpPct??999)-(b.gpPct??999);
+    return (ord[a.status]-ord[b.status]) || (a.gpPct!=null?a.gpPct:999)-(b.gpPct!=null?b.gpPct:999);
   });
 
   const counts = {negative:0,critical:0,warning:0,healthy:0,unknown:0};
@@ -11913,7 +11934,7 @@ function renderGPHealth(){
     if(r.status==='negative') diagnosis = `Selling price (R${r.price}) is <strong style="color:var(--red)">lower than ingredient cost</strong> (R${r.cost.toFixed(2)}).`;
     else if(r.status==='critical'||r.status==='warning'){
       const gap = r.price - (r.suggestedPrice||0);
-      diagnosis = `Food cost is ${r.foodCostPct?.toFixed(1)}% — needs to be ≤${targetFoodCost}%.${r.topIng?` Biggest driver: <strong>${r.topIng.name}</strong> (R${r.topIng.cost.toFixed(2)}).`:''}`;
+      diagnosis = `Food cost is ${r.foodCostPct==null?undefined:r.foodCostPct.toFixed(1)}% — needs to be ≤${targetFoodCost}%.${r.topIng?` Biggest driver: <strong>${r.topIng.name}</strong> (R${r.topIng.cost.toFixed(2)}).`:''}`;
     }
     const needsFix = r.status==='negative'||r.status==='critical'||r.status==='warning';
     const priceFix = needsFix && r.suggestedPrice && r.suggestedPrice!==r.price
@@ -11969,7 +11990,7 @@ const ING_CATS = ['All','Meat','Dairy','Produce','Bakery','Sauces','Bar','Dry Go
 
 function renderIngPrices(){
   initIngredientDB();
-  const q = (document.getElementById('ingPriceSearch')?.value||'').toLowerCase();
+  const q = ((document.getElementById('ingPriceSearch')&&document.getElementById('ingPriceSearch').value)||'').toLowerCase();
   const ce = canEdit();
 
   // Hide add button for read-only users
@@ -12080,7 +12101,7 @@ async function saveIngPrice(){
   if(!name){showToast('Enter ingredient name.',true);return;}
   if(isNaN(price)||price<0){showToast('Enter a valid price.',true);return;}
 
-  const oldPrice = ingredientDB[name]?.price ?? (INGR_COST[name] || 0);
+  const _ingp = ingredientDB[name]&&ingredientDB[name].price; const oldPrice = (_ingp!=null?_ingp:(INGR_COST[name] || 0));
 
   // Update live prices
   INGR_COST[name] = price;
@@ -12339,7 +12360,7 @@ function openAddPriceChange(){
 function loadPrevPrice(){
   const name=document.getElementById('pcIngredient').value.toLowerCase();
   const known=ingredientPrices[name];
-  document.getElementById('pcOldPrice').value=known?.price||INGR_COST[name]||'';
+  document.getElementById('pcOldPrice').value=(known&&known.price)||INGR_COST[name]||'';
   document.getElementById('pcNewPrice').value='';
   document.getElementById('pcGPPreview').style.display='none';
 }
@@ -12466,7 +12487,7 @@ function initLeaderboard(){
 }
 
 async function renderLeaderboard(){
-  const month=document.getElementById('lbMonth')?.value||new Date().toISOString().slice(0,7);
+  const month=(document.getElementById('lbMonth')&&document.getElementById('lbMonth').value)||new Date().toISOString().slice(0,7);
   const [yr,mo]=month.split('-');
   const from=`${yr}-${mo}-01`;
   const lastDay=new Date(parseInt(yr),parseInt(mo),0).getDate();
@@ -12518,7 +12539,7 @@ async function renderLeaderboard(){
     document.getElementById('lb-shifts').textContent=totalShifts;
     document.getElementById('lb-avg').textContent='R'+Math.round(avgPerShift).toLocaleString();
 
-    const maxSales=ranked[0]?.sales||1;
+    const maxSales=(ranked[0]&&ranked[0].sales)||1;
     const medals=['🥇','🥈','🥉'];
     document.getElementById('lbRankings').innerHTML=ranked.map((w,i)=>{
       const pct=Math.round(w.sales/totalSales*100);
@@ -12558,7 +12579,7 @@ async function renderLBTrend(){
     const {data:cuData}=await SB.from('cash_up').select('date,waiters').gte('date',fromStr).order('date');
     const monthTotals={};
     (cuData||[]).forEach(cu=>{
-      const mo=cu.date?.slice(0,7);
+      const mo=cu.date&&cu.date.slice(0,7);
       if(!mo) return;
       const daySales=(cu.waiters||[]).reduce((s,w)=>s+(parseFloat(w.vk)||0),0);
       monthTotals[mo]=(monthTotals[mo]||0)+daySales;
@@ -12825,7 +12846,7 @@ async function saveSchedule(){
   setSyncStatus('syncing');
   try {
     const rows=SCHED_DAYS.map(d=>{
-      const day=schedData[wk]?.[d]||emptySchedDay();
+      const day=(schedData[wk]&&schedData[wk][d])||emptySchedDay();
       const row={week_start:wk,day_name:d};
       SHIFTS.forEach(s=>{row[s.key]=day[s.key]||[];});
       MGR_SHIFTS.forEach(s=>{row[s.key]=day[s.key]||[];});
@@ -12855,7 +12876,7 @@ function schedCopyToRoster(){
       (d[s.key]||[]).forEach(name=>{
         if(!rosterData[wk]['Managers']) rosterData[wk]['Managers']={};
         if(!rosterData[wk]['Managers'][name]) rosterData[wk]['Managers'][name]={};
-        if(!rosterData[wk]['Managers'][name][i]?.start)
+        if(!(rosterData[wk]['Managers'][name][i]&&rosterData[wk]['Managers'][name][i].start))
           rosterData[wk]['Managers'][name][i]=mgrTimes[s.key];
       });
     });
@@ -12864,7 +12885,7 @@ function schedCopyToRoster(){
     allWaiters.forEach(name=>{
       if(!rosterData[wk]['Bar / Waiters']) rosterData[wk]['Bar / Waiters']={};
       if(!rosterData[wk]['Bar / Waiters'][name]) rosterData[wk]['Bar / Waiters'][name]={};
-      if(!rosterData[wk]['Bar / Waiters'][name][i]?.start){
+      if(!(rosterData[wk]['Bar / Waiters'][name][i]&&rosterData[wk]['Bar / Waiters'][name][i].start)){
         const onM=d.morning.includes(name);
         const onA=d.afternoon.includes(name);
         const onE=d.evening.includes(name);
@@ -13004,8 +13025,8 @@ function renderPayPeriodLabel(){
   lbl.textContent=`${fmt(from)} – ${fmt(to)} · ${days} day${days!==1?'s':''}`;
 }
 function getPayPeriod(){
-  const f=document.getElementById('payPeriodFrom')?.value;
-  const t=document.getElementById('payPeriodTo')?.value;
+  const f=document.getElementById('payPeriodFrom')&&document.getElementById('payPeriodFrom').value;
+  const t=document.getElementById('payPeriodTo')&&document.getElementById('payPeriodTo').value;
   return {from:f||null,to:t||null};
 }
 async function loadPayrollForPeriod(){
@@ -13117,7 +13138,7 @@ function showToast(m, type=false){
 }
 // Improved error toast helper — shows what actually went wrong
 function showError(context, err){
-  const msg = err?.message || err?.error_description || (typeof err==='string'?err:'Unknown error');
+  const msg = (err&&err.message) || (err&&err.error_description) || (typeof err==='string'?err:'Unknown error');
   showToast(`${context}: ${msg}`, 'err');
   console.error(context, err);
 }
@@ -13144,7 +13165,7 @@ let nfcPendingType = null;        // 'check-in' | 'check-out' currently being ca
 
 // ── Small helpers ──────────────────────────────────────────────────────────
 function uuidv4(){
-  if(window.crypto?.randomUUID) return crypto.randomUUID();
+  if(window.crypto&&window.crypto.randomUUID) return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
     const r=Math.random()*16|0, v=c==='x'?r:(r&0x3|0x8); return v.toString(16);
   });
@@ -13186,7 +13207,7 @@ async function syncNfcOfflineQueue(showMsg){
   updateNfcOfflineBanner();
   if(synced) showToast(`Synced ${synced} offline clock event${synced!==1?'s':''} ✓`);
   else if(showMsg) showToast('Still offline — will keep trying.', true);
-  if(document.getElementById('p-clockin')?.classList.contains('act')) renderClockinTodayList();
+  if(document.getElementById('p-clockin').classList.contains('act')) renderClockinTodayList();
 }
 window.addEventListener('online', ()=>syncNfcOfflineQueue(false));
 
@@ -13195,10 +13216,10 @@ window.addEventListener('online', ()=>syncNfcOfflineQueue(false));
 // can expose window.NativeNFC = { scan(timeoutMs) => Promise<{uid}>,
 // getWifiSSID() => Promise<string> } for the SUNMI V3 Mix if Web NFC proves
 // unreliable there. Until that exists, Web NFC (Chrome on Android) is used.
-function nfcReadSupported(){ return !!(window.NativeNFC?.scan || window.NDEFReader); }
+function nfcReadSupported(){ return !!((window.NativeNFC&&window.NativeNFC.scan) || window.NDEFReader); }
 
 async function readNfcTagOnce(timeoutMs=15000){
-  if(window.NativeNFC?.scan) return await window.NativeNFC.scan(timeoutMs);
+  if(window.NativeNFC&&window.NativeNFC.scan) return await window.NativeNFC.scan(timeoutMs);
   if(!window.NDEFReader) throw new Error('NFC_UNSUPPORTED');
   const reader = new NDEFReader();
   const ac = new AbortController();
@@ -13276,7 +13297,7 @@ async function refreshClockinStatus(){
   let last=null;
   try{
     const {data}=await SB.from('attendance_log').select('*').eq('staff_name',CU.name).eq('date',todayStr).order('logged_at',{ascending:false}).limit(1);
-    last=data?.[0]||null;
+    last=(data&&data[0])||null;
   }catch(e){ /* offline — fall through to the local queue below */ }
   const queued=getNfcQueue().filter(r=>r.staff_name===CU.name && r.date===todayStr).sort((a,b)=>a.logged_at<b.logged_at?1:-1);
   if(queued.length && (!last || queued[0].logged_at>last.logged_at)) last=queued[0];
@@ -13347,7 +13368,7 @@ async function handleNfcTagRead(uid, type){
   // Wi-Fi SSID can only ever be verified through a native bridge — browsers
   // deliberately don't expose the connected network name to JS.
   let wifiOk=null;
-  if(window.NativeNFC?.getWifiSSID && attendanceSettings.wifi_ssid_hint){
+  if(window.NativeNFC&&window.NativeNFC.getWifiSSID && attendanceSettings.wifi_ssid_hint){
     try{
       const ssid = await window.NativeNFC.getWifiSSID();
       wifiOk = ssid===attendanceSettings.wifi_ssid_hint;
@@ -13359,7 +13380,7 @@ async function handleNfcTagRead(uid, type){
   let lastEvent=null;
   try{
     const {data}=await SB.from('attendance_log').select('*').eq('staff_name',CU.name).eq('date',todayStr).order('logged_at',{ascending:false}).limit(1);
-    lastEvent=data?.[0]||null;
+    lastEvent=(data&&data[0])||null;
   }catch(e){}
   if(lastEvent){
     const mins=(Date.now()-new Date(lastEvent.logged_at).getTime())/60000;
@@ -13459,7 +13480,7 @@ async function toggleNfcTag(id, active){
 }
 
 async function registerNfcTag(){
-  if(CU?.role!=='owner' && CU?.role!=='manager'){ showToast('Only managers/owner can register tags.', true); return; }
+  if((CU==null?undefined:CU.role)!=='owner' && (CU==null?undefined:CU.role)!=='manager'){ showToast('Only managers/owner can register tags.', true); return; }
   if(!nfcReadSupported()){ showToast('NFC not supported on this device/browser.', true); return; }
   const label = prompt('Label for this tag (e.g. "Staff Entrance"):', 'Staff Entrance');
   if(label===null) return;
@@ -13536,14 +13557,14 @@ async function loadAttendanceSettings(){
   await loadAttendanceSettingsQuiet();
   const s=attendanceSettings, el=id=>document.getElementById(id);
   if(el('nfcReqGeofence')) el('nfcReqGeofence').checked = !!s.require_geofence;
-  if(el('nfcGeoLat')) el('nfcGeoLat').value = s.geofence_lat ?? '';
-  if(el('nfcGeoLng')) el('nfcGeoLng').value = s.geofence_lng ?? '';
-  if(el('nfcGeoRadius')) el('nfcGeoRadius').value = s.geofence_radius_m ?? 150;
-  if(el('nfcWifiHint')) el('nfcWifiHint').value = s.wifi_ssid_hint ?? '';
+  if(el('nfcGeoLat')) el('nfcGeoLat').value = s.geofence_lat!=null?s.geofence_lat:'';
+  if(el('nfcGeoLng')) el('nfcGeoLng').value = s.geofence_lng!=null?s.geofence_lng:'';
+  if(el('nfcGeoRadius')) el('nfcGeoRadius').value = s.geofence_radius_m!=null?s.geofence_radius_m:150;
+  if(el('nfcWifiHint')) el('nfcWifiHint').value = s.wifi_ssid_hint!=null?s.wifi_ssid_hint:'';
 }
 
 async function saveAttendanceSettings(){
-  if(CU?.role!=='owner' && CU?.role!=='manager'){ showToast('Only managers/owner can change validation settings.', true); return; }
+  if((CU==null?undefined:CU.role)!=='owner' && (CU==null?undefined:CU.role)!=='manager'){ showToast('Only managers/owner can change validation settings.', true); return; }
   const row={
     id:1,
     require_geofence: document.getElementById('nfcReqGeofence').checked,
@@ -13712,7 +13733,7 @@ async function initCheckInScreen(){
     // Try Supabase lookup in case token was stored there
     try{
       const {data} = await SB.from('attendance_log').select('staff_name').eq('token',token).limit(1);
-      if(data?.[0]?.staff_name){
+      if(data&&data[0]&&data[0].staff_name){
         ciStaffName = data[0].staff_name;
       }
     }catch(e){}
@@ -13732,7 +13753,7 @@ async function initCheckInScreen(){
     const {data} = await SB.from('attendance_log')
       .select('*').eq('staff_name',ciStaffName).eq('date',todayStr)
       .order('logged_at',{ascending:false}).limit(1);
-    const last = data?.[0];
+    const last = data&&data[0];
     const lastMsg = last
       ? `Last action: ${last.type} at ${new Date(last.logged_at).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'})}`
       : 'No records today yet';
@@ -13800,13 +13821,13 @@ function attSetToday(){
 }
 
 async function loadAttendance(){
-  const date = document.getElementById('attDate')?.value;
+  const date = document.getElementById('attDate')&&document.getElementById('attDate').value;
   if(!date) return;
   const el = document.getElementById('attList');
   el.innerHTML = '<div class="skel-card"><div class="skel skel-line w60"></div><div class="skel skel-line w80 sm"></div></div>';
   try{
     const {data} = await SB.from('attendance_log').select('*').eq('date',date).order('logged_at');
-    if(!data?.length){
+    if(!(data==null?undefined:data.length)){
       el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">No attendance records for this date.</div>';
       return;
     }
