@@ -5,6 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Die Akker — Management System</title>
 <script>
+/* ── Universal clipboard helper ──────────────────────────────────────────
+   navigator.clipboard (the async Clipboard API) doesn't exist before
+   Chrome ~66/76 — on older engines like Chrome 56, calling it silently
+   does nothing (no error, but nothing gets copied either), which is why
+   "Copy details" looked broken on the Sunmi tablet. This falls back to
+   the classic execCommand('copy') approach, which works on virtually
+   every browser back to ~2015. */
+function daCopyText(text, onDone){
+  function fallback(){
+    var ok = false;
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly','');
+      ta.style.position='fixed'; ta.style.left='-9999px'; ta.style.top='0'; ta.style.opacity='0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try{ ta.setSelectionRange(0, text.length); }catch(e2){}
+      ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e){ ok = false; }
+    if(onDone) onDone(ok);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ if(onDone) onDone(true); }, fallback);
+  } else {
+    fallback();
+  }
+}
+</script>
+<script>
 /* ── Polyfills for older Android/Chrome (e.g. Chrome 56 on Sunmi terminals) ──
    These are runtime methods, not syntax — old engines parse calls to them
    fine but throw "is not a function" when actually invoked. Guarded so they
@@ -209,8 +240,11 @@
       };
       el.querySelector('#daErrCopy').onclick=function(){
         var text=JSON.stringify(window.__daErrors, null, 2);
-        if(navigator.clipboard) navigator.clipboard.writeText(text);
-        this.textContent='Copied ✓'; var b=this; setTimeout(function(){b.textContent='Copy details';},1500);
+        var b=this;
+        daCopyText(text, function(ok){
+          b.textContent = ok ? 'Copied ✓' : 'Copy failed — select text below';
+          setTimeout(function(){b.textContent='Copy details';},2000);
+        });
       };
     }
     if(!visible[entry.type]) return; // still logged above, just not surfaced visibly
@@ -2447,7 +2481,7 @@ ALTER TABLE leave_balances ENABLE ROW LEVEL SECURITY;
 CREATE POLICY IF NOT EXISTS "allow_all" ON leave_balances FOR ALL USING (true) WITH CHECK (true);
 ALTER TABLE leave_accrual_log ENABLE ROW LEVEL SECURITY;
 CREATE POLICY IF NOT EXISTS "allow_all" ON leave_accrual_log FOR ALL USING (true) WITH CHECK (true);</pre>
-          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('leaveManagementSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" onclick="daCopyText(document.getElementById('leaveManagementSQL').querySelector('pre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="attendanceSQL" style="display:none">
           <div class="card-title">Attendance Log Table Setup</div>
@@ -2465,7 +2499,7 @@ ALTER TABLE attendance_log ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "allow_all" ON attendance_log FOR ALL USING (true) WITH CHECK (true);
 CREATE INDEX IF NOT EXISTS att_date_idx ON attendance_log(date);
 CREATE INDEX IF NOT EXISTS att_staff_idx ON attendance_log(staff_name);</pre>
-          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('attendanceSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" onclick="daCopyText(document.getElementById('attendanceSQL').querySelector('pre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="nfcAttendanceSQL" style="display:none">
           <div class="card-title">NFC Clock-In Setup</div>
@@ -2531,7 +2565,7 @@ INSERT INTO attendance_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 ALTER TABLE attendance_settings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "allow_all" ON attendance_settings;
 CREATE POLICY "allow_all" ON attendance_settings FOR ALL USING (true) WITH CHECK (true);</pre>
-          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('nfcAttendanceSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" onclick="daCopyText(document.getElementById('nfcAttendanceSQL').querySelector('pre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="clientErrorLogSQL" style="display:none">
           <div class="card-title">Client Error Log Setup</div>
@@ -2551,7 +2585,7 @@ ALTER TABLE client_error_log ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "allow_all" ON client_error_log;
 CREATE POLICY "allow_all" ON client_error_log FOR ALL USING (true) WITH CHECK (true);
 CREATE INDEX IF NOT EXISTS cel_logged_at_idx ON client_error_log(logged_at DESC);</pre>
-          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('clientErrorLogSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" onclick="daCopyText(document.getElementById('clientErrorLogSQL').querySelector('pre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="clientDiagnosticsCard" style="display:none">
           <div class="card-title">🩺 Client Diagnostics &amp; Error Log</div>
@@ -2580,7 +2614,7 @@ CREATE INDEX IF NOT EXISTS cel_logged_at_idx ON client_error_log(logged_at DESC)
 );
 ALTER TABLE spot_checks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "allow_all" ON spot_checks FOR ALL USING (true) WITH CHECK (true);</pre>
-          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('spotCheckSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" onclick="daCopyText(document.getElementById('spotCheckSQL').querySelector('pre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="cleaningChecklistSQL" style="display:none">
           <div class="card-title">Cleaning Checklist Table Setup</div>
@@ -2605,7 +2639,7 @@ CREATE TABLE IF NOT EXISTS cleaning_checklist_log (
 );
 ALTER TABLE cleaning_checklist_log ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "allow_all" ON cleaning_checklist_log FOR ALL USING (true) WITH CHECK (true);</pre>
-          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.getElementById('cleaningChecklistSQL').querySelector('pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" onclick="daCopyText(document.getElementById('cleaningChecklistSQL').querySelector('pre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="pendingOrdersSQL" style="display:none">
           <div class="card-title">Pending Orders Table Setup</div>
@@ -2622,7 +2656,7 @@ CREATE POLICY "allow_all" ON cleaning_checklist_log FOR ALL USING (true) WITH CH
 );
 ALTER TABLE pending_orders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "allow_all" ON pending_orders FOR ALL USING (true) WITH CHECK (true);</pre>
-          <button class="btn bs bsm" onclick="navigator.clipboard.writeText(document.querySelector('#pendingOrdersSQL pre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" onclick="daCopyText(document.querySelector('#pendingOrdersSQL pre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="stockSetupSQL">
           <div class="card-title">Stock Database Setup</div>
@@ -2885,7 +2919,7 @@ VALUES
   ('Condensed Milk', 'Dry Goods', 'Golden Catering', 'unit', 0, 18),
   ('Caramel Treat', 'Dry Goods', 'Golden Catering', 'unit', 0, 12)
 ;</pre>
-          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('stockSetupSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="daCopyText(document.getElementById('stockSetupSQLPre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="payrollColsSQL">
           <div class="card-title">Payroll Table — Required Updates</div>
@@ -2901,7 +2935,7 @@ ALTER TABLE payroll ADD COLUMN IF NOT EXISTS breakage numeric DEFAULT 0;
 ALTER TABLE payroll DROP CONSTRAINT IF EXISTS payroll_staff_name_month_key;
 ALTER TABLE payroll DROP CONSTRAINT IF EXISTS payroll_pkey;
 ALTER TABLE payroll ADD CONSTRAINT payroll_staff_month_group_unique UNIQUE (staff_name, month, group_type);</pre>
-          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('payrollColsSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="daCopyText(document.getElementById('payrollColsSQLPre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="rosterGroupSQL">
           <div class="card-title">Roster Table — Group Type Update <span style="font-size:0.72rem;color:var(--red);font-weight:700">⚠️ Required</span></div>
@@ -2915,7 +2949,7 @@ ALTER TABLE roster DROP CONSTRAINT IF EXISTS roster_staff_name_week_start_day_in
 ALTER TABLE roster DROP CONSTRAINT IF EXISTS roster_pkey;
 ALTER TABLE roster ADD CONSTRAINT roster_group_staff_week_day_unique
   UNIQUE (group_type, staff_name, week_start, day_index);</pre>
-          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('rosterGroupSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="daCopyText(document.getElementById('rosterGroupSQLPre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="staffDocsSQL">
           <div class="card-title">Staff Documents Table — Required Updates</div>
@@ -2923,7 +2957,7 @@ ALTER TABLE roster ADD CONSTRAINT roster_group_staff_week_day_unique
           <pre id="staffDocsSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">ALTER TABLE staff_documents ADD COLUMN IF NOT EXISTS manager_on_duty text DEFAULT '';
 ALTER TABLE staff_documents ADD COLUMN IF NOT EXISTS witness text DEFAULT '';
 ALTER TABLE staff_documents ADD COLUMN IF NOT EXISTS reason text DEFAULT '';</pre>
-          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('staffDocsSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="daCopyText(document.getElementById('staffDocsSQLPre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="stockSectionSQL">
           <div class="card-title">Stock Sections Setup</div>
@@ -2940,13 +2974,13 @@ UPDATE stock SET section = 'Bar'        WHERE category = 'Beverages'  AND (secti
 UPDATE stock SET section = 'Soft Serve' WHERE category = 'Frozen'     AND (section IS NULL OR section = '');
 UPDATE stock SET section = 'Orders'     WHERE category IN ('Produce','Dairy') AND (section IS NULL OR section = '');
 UPDATE stock SET section = 'Cleaning'   WHERE category = 'Cleaning'   AND (section IS NULL OR section = '');</pre>
-          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('stockSectionSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="daCopyText(document.getElementById('stockSectionSQLPre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="stockPriceSQL">
           <div class="card-title">Stock Item Pricing Setup</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">Run this once in Supabase to add a <strong>price</strong> column to the Stock Database. Once added, every product gets its own cost price, and Recipe Costing will automatically use that price (by matching ingredient names) instead of the old hardcoded ingredient list.</div>
           <pre id="stockPriceSQLPre" style="background:var(--surface);border-radius:8px;padding:0.8rem;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;color:var(--text)">ALTER TABLE stock ADD COLUMN IF NOT EXISTS price numeric DEFAULT 0;</pre>
-          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById('stockPriceSQLPre').textContent).then(()=>showToast('SQL copied ✓'))">📋 Copy SQL</button>
+          <button class="btn bs bsm" style="margin-top:0.5rem" onclick="daCopyText(document.getElementById('stockPriceSQLPre').textContent, function(ok){showToast(ok?'SQL copied ✓':'Copy failed — select the SQL text manually')})">📋 Copy SQL</button>
         </div>
         <div class="card" id="aiSettingsCard">
           <div class="card-title">🤖 AI Photo Scan</div>
@@ -5125,7 +5159,7 @@ function refreshOrdMsg(){
 function copyOrderMsg(){
   const ta=document.getElementById('ordMsgEdit');
   const msg=ta?ta.value:(ordBuildMessage()||'');
-  navigator.clipboard.writeText(msg).then(()=>showToast('Message copied — paste and edit anywhere ✓'));
+  daCopyText(msg, function(ok){ showToast(ok?'Message copied — paste and edit anywhere ✓':'Copy failed — select the text manually'); });
 }
 
 function ordSendEdited(){
@@ -5142,9 +5176,9 @@ function ordSendDirect(msg){
     window.open(`mailto:${em?em[0]:''}?subject=${encodeURIComponent('Order — Die Akker Koffiehuis')}&body=${encodeURIComponent(msg)}`,'_blank');
     showToast('Email client opened ✓');
   } else if(inf.m==='phone'){
-    navigator.clipboard.writeText(msg).then(()=>showToast('Order copied — call to place ✓'));
+    daCopyText(msg, function(ok){ showToast(ok?'Order copied — call to place ✓':'Copy failed — select the text manually'); });
   } else if(inf.m==='app'){
-    navigator.clipboard.writeText(msg).then(()=>showToast('Order copied — paste into Bidfood app ✓'));
+    daCopyText(msg, function(ok){ showToast(ok?'Order copied — paste into Bidfood app ✓':'Copy failed — select the text manually'); });
   } else {
     const d=(inf.c||'').replace(/\D/g,'');
     window.open(d?`https://wa.me/27${d.replace(/^0/,'')}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
@@ -5407,7 +5441,7 @@ function openEditOrderMsg(id){
 function copyPendingMsg(id){
   const ta=document.getElementById('pendOrdMsgEdit');
   const msg=ta?ta.value:((pendingOrderCache[id]&&pendingOrderCache[id].message)||'');
-  navigator.clipboard.writeText(msg).then(()=>showToast('Message copied — paste and edit anywhere ✓'));
+  daCopyText(msg, function(ok){ showToast(ok?'Message copied — paste and edit anywhere ✓':'Copy failed — select the text manually'); });
 }
 
 async function sendEditedPendingOrder(id){
@@ -5537,9 +5571,9 @@ async function approvePendingOrder(id){
       window.open(`mailto:${em?em[0]:''}?subject=${encodeURIComponent('Order — Die Akker Koffiehuis')}&body=${encodeURIComponent(m)}`,'_blank');
       showToast('Email client opened ✓');
     } else if(inf.m==='phone'){
-      navigator.clipboard.writeText(m).then(()=>showToast('Order copied — call to place ✓'));
+      daCopyText(m, function(ok){ showToast(ok?'Order copied — call to place ✓':'Copy failed — select the text manually'); });
     } else if(inf.m==='app'){
-      navigator.clipboard.writeText(m).then(()=>showToast('Order copied — paste into Bidfood app ✓'));
+      daCopyText(m, function(ok){ showToast(ok?'Order copied — paste into Bidfood app ✓':'Copy failed — select the text manually'); });
     } else {
       const d=(inf.c||'').replace(/\D/g,'');
       window.open(d?`https://wa.me/27${d.replace(/^0/,'')}?text=${encodeURIComponent(m)}`:`https://wa.me/?text=${encodeURIComponent(m)}`,'_blank');
@@ -10505,7 +10539,7 @@ async function loadRemoteErrorLog(){
 }
 function copyDiagnostics(){
   const text = JSON.stringify({env:window.__daEnv||{}, errors:window.__daErrors||[]}, null, 2);
-  if(navigator.clipboard) navigator.clipboard.writeText(text).then(()=>showToast('Diagnostics copied ✓'));
+  daCopyText(text, function(ok){ showToast(ok?'Diagnostics copied ✓':'Copy failed — select the text manually'); });
 }
 function clearLocalErrorLog(){
   window.__daErrors=[];
