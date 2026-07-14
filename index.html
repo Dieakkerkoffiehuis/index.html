@@ -5979,7 +5979,7 @@ async function ccAddItem(){
     cleaningItems.push(data);
     ccItems.push(Object.assign({},data,{done:false}));
   }catch(e){
-    const local = {id:'local-'+Date.now(), ...newItem};
+    const local = Object.assign({id:'local-'+Date.now()}, newItem);
     cleaningItems.push(local);
     ccItems.push(Object.assign({},local,{done:false}));
   }
@@ -11905,7 +11905,7 @@ function initIngredientDB(){
   Object.entries(INGR_COST).forEach(([name, price])=>{
     const meta = ING_META[name] || {cat:'Other', unit:'kg', supplier:'Other'};
     if(!ingredientDB[name]){
-      ingredientDB[name] = {name, price, ...meta};
+      ingredientDB[name] = Object.assign({name:name, price:price}, meta);
     }
   });
   // Apply any price changes from DB
@@ -11924,7 +11924,7 @@ function initIngredientDB(){
       const key = i.name.toLowerCase().trim();
       if(!ingredientDB[key]){
         const meta = ING_META[key] || {cat:'Other', unit:i.unit||'each', supplier:'Other'};
-        ingredientDB[key] = {name:key, price:INGR_COST[key]||0, ...meta};
+        ingredientDB[key] = Object.assign({name:key, price:INGR_COST[key]||0}, meta);
       }
     });
   });
