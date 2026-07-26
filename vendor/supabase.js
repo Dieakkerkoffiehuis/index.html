@@ -4138,7 +4138,7 @@ var supabase = function (e, _Deno$version, _globalThis$process) {
     },
     vn = null;
   function yn() {
-    return vn === null && (vn = import(`@opentelemetry/api`).catch(() => null)), vn;
+    return vn === null && (vn = Promise.resolve(null)), vn;
   }
   function bn() {
     return n(this, void 0, void 0, function* () {
